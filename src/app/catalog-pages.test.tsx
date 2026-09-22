@@ -92,6 +92,10 @@ describe("public catalog pages", () => {
       ),
     ).toBe(true);
     expect(entries.some((entry) => entry.url.includes("missing"))).toBe(false);
+    expect(entries.some((entry) => entry.url.endsWith("/guides"))).toBe(true);
+    expect(
+      entries.some((entry) => entry.url.endsWith("/guides/what-is-vram")),
+    ).toBe(true);
     expect(robots().rules).toEqual({ userAgent: "*", allow: "/" });
     expect(robots().sitemap).toContain("/sitemap.xml");
   });
