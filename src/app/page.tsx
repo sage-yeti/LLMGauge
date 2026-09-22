@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Calculator } from "./calculator";
 import { gpuCatalog, modelCatalog } from "@/data/catalog";
 
@@ -16,7 +17,46 @@ export default function HomePage() {
           <Link href="/guides">Learn the basics</Link>
         </nav>
       </header>
-      <Calculator models={modelCatalog} gpus={gpuCatalog} />
+      <section className="workflow-choice" aria-labelledby="workflow-heading">
+        <div className="section-heading">
+          <p className="section-number">Start here</p>
+          <div>
+            <h2 id="workflow-heading">
+              Choose the question you want to answer
+            </h2>
+            <p>
+              Use the calculator for one model, or compare the catalog against
+              your hardware.
+            </p>
+          </div>
+        </div>
+        <div className="workflow-grid">
+          <article className="workflow-card">
+            <h3>Check one specific model</h3>
+            <p>
+              Pick a model and quantization when you already know what you want
+              to run.
+            </p>
+            <a href="#calculator">Use the calculator below</a>
+          </article>
+          <article className="workflow-card">
+            <h3>Discover models for your PC</h3>
+            <p>
+              Enter your hardware once and receive a deterministic list of
+              suitable catalog models.
+            </p>
+            <Link href="/recommendations">Open recommendations</Link>
+          </article>
+        </div>
+        <p className="workflow-note">
+          You will need your CPU, system RAM, GPU (if you have one), dedicated
+          VRAM, and operating system. Results are approximate planning guidance,
+          not performance guarantees.
+        </p>
+      </section>
+      <div id="calculator">
+        <Calculator models={modelCatalog} gpus={gpuCatalog} />
+      </div>
       <p className="page-note">
         Estimates are approximate memory guidance, not performance benchmarks or
         guarantees.
@@ -24,4 +64,3 @@ export default function HomePage() {
     </main>
   );
 }
-import Link from "next/link";

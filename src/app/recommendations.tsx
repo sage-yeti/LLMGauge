@@ -140,6 +140,7 @@ function RecommendationResults({
     <section
       className="recommendation-results"
       aria-live="polite"
+      aria-atomic="true"
       aria-labelledby="recommendations-heading"
     >
       <div className="results-heading">
@@ -220,11 +221,11 @@ function RecommendationCard({
           <dd>{labelForExecution(result.executionMode)}</dd>
         </div>
         <div>
-          <dt>Estimated VRAM</dt>
+          <dt>Estimated VRAM (approx.)</dt>
           <dd>{result.memory.estimatedVramGiB} GiB</dd>
         </div>
         <div>
-          <dt>Estimated system RAM</dt>
+          <dt>Estimated system RAM (approx.)</dt>
           <dd>{result.memory.estimatedSystemRamGiB} GiB</dd>
         </div>
       </dl>
@@ -238,9 +239,14 @@ function RecommendationCard({
           <strong>Note:</strong> {result.warnings[0]}
         </p>
       )}
-      <Link className="details-link" href="/">
-        Evaluate a specific model <span aria-hidden="true">→</span>
-      </Link>
+      <div className="recommendation-links">
+        <Link className="details-link" href={`/models/${entry.model.slug}`}>
+          Read about this model <span aria-hidden="true">→</span>
+        </Link>
+        <Link className="details-link" href="/">
+          Open the calculator <span aria-hidden="true">→</span>
+        </Link>
+      </div>
     </article>
   );
 }

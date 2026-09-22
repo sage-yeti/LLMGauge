@@ -28,6 +28,9 @@ describe("recommendations interface", () => {
       screen.getByRole("heading", { name: "Llama 3.2 1B Instruct" }),
     ).toBeTruthy();
     expect(screen.getAllByText("CPU-only").length).toBeGreaterThan(0);
+    expect(
+      screen.getAllByRole("link", { name: /read about this model/i }).length,
+    ).toBeGreaterThan(0);
   });
 
   it("shows a GPU-capable recommendation", () => {
