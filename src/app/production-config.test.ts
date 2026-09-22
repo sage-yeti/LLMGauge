@@ -4,10 +4,8 @@ import { absoluteUrl, getSiteUrl } from "./site";
 
 describe("production configuration", () => {
   it("uses localhost only outside production", () => {
-    expect(getSiteUrl(undefined, "development").origin).toBe(
-      "http://localhost:3000",
-    );
-    expect(() => getSiteUrl(undefined, "production")).toThrow(
+    expect(getSiteUrl("", "development").origin).toBe("http://localhost:3000");
+    expect(() => getSiteUrl("", "production")).toThrow(
       "NEXT_PUBLIC_SITE_URL is required",
     );
   });
