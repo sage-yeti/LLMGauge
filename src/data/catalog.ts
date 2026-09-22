@@ -1,10 +1,10 @@
 import { gpuDefinitionSchema, modelDefinitionSchema } from "@/domain/schemas";
 import type { GpuDefinition, ModelDefinition } from "@/domain/types";
-import { fixtureGpus, fixtureModels } from "./fixtures";
+import { productionGpus, productionModels } from "./production-catalog";
 
-/** Small local registry; this is intentionally not a complete public catalog. */
-export const modelCatalog: readonly ModelDefinition[] = fixtureModels;
-export const gpuCatalog: readonly GpuDefinition[] = fixtureGpus;
+/** Small curated production registry; this is intentionally not exhaustive. */
+export const modelCatalog: readonly ModelDefinition[] = productionModels;
+export const gpuCatalog: readonly GpuDefinition[] = productionGpus;
 
 export function getModelById(id: string): ModelDefinition | undefined {
   return modelCatalog.find((model) => model.id === id);
@@ -27,13 +27,26 @@ export function validateCatalog(): void {
   validateCatalogEntries("GPU", gpuCatalog, gpuDefinitionSchema);
   for (const model of modelCatalog) {
     validateModelCatalogEntry(model);
+    validateProductionProvenance(model.id, model.provenance.sourceType);
+    for (const quantization of model.quantizations) {
+      validateProductionProvenance(
+        `${model.id}/${quantization.id}`,
+        quantization.provenance.sourceType,
+      );
+    }
   }
   for (const gpu of gpuCatalog) {
     if (gpu.kind === "integrated" && gpu.vramGiB !== 0)
       throw new Error(
         `Integrated GPU ${gpu.id} must have zero dedicated VRAM.`,
       );
+    validateProductionProvenance(gpu.id, gpu.provenance.sourceType);
   }
+}
+
+function validateProductionProvenance(id: string, sourceType: string): void {
+  if (sourceType === "curated-estimate")
+    throw new Error(`Production catalog entry ${id} cannot be a fixture.`);
 }
 
 export function validateCatalogEntries<T extends { id: string }>(
