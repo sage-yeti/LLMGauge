@@ -19,6 +19,7 @@ export function ModelCatalogPage({ model }: { model: ModelDefinition }) {
       <nav className="page-nav" aria-label="Catalog navigation">
         <Link href="/">Calculator</Link>
         <Link href="/recommendations">Recommendations</Link>
+        <Link href="/guides">Guides</Link>
       </nav>
       <header className="catalog-hero">
         <p className="eyebrow">Model catalog</p>
@@ -157,6 +158,7 @@ export function GpuCatalogPage({ gpu }: { gpu: GpuDefinition }) {
       <nav className="page-nav" aria-label="Catalog navigation">
         <Link href="/">Calculator</Link>
         <Link href="/recommendations">Recommendations</Link>
+        <Link href="/guides">Guides</Link>
       </nav>
       <header className="catalog-hero">
         <p className="eyebrow">GPU catalog</p>

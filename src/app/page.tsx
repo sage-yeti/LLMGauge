@@ -13,6 +13,7 @@ export default function HomePage() {
         </p>
         <nav className="page-nav" aria-label="Primary navigation">
           <Link href="/recommendations">What can my PC run?</Link>
+          <Link href="/guides">Learn the basics</Link>
         </nav>
       </header>
       <Calculator models={modelCatalog} gpus={gpuCatalog} />

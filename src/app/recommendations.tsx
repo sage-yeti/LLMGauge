@@ -76,6 +76,7 @@ export function Recommendations({ models, gpus }: RecommendationsProps) {
         </p>
         <nav className="page-nav" aria-label="Primary navigation">
           <Link href="/">Evaluate one model</Link>
+          <Link href="/guides">Learn the basics</Link>
         </nav>
       </header>
       <div className="recommendations-layout">

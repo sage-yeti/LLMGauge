@@ -25,7 +25,13 @@ Results show GPU-capable, partial-offload, CPU-only, or unsupported classificati
 
 ## Public catalog pages and SEO
 
-Curated real entries are available as useful server-rendered pages at `/models/[slug]` and `/gpus/[slug]`. Their slugs, summaries, metadata, provenance, source links, and quantization details come from `src/data/catalog.ts`; route components do not duplicate catalog records. Unknown slugs return a normal 404. The App Router also generates `/sitemap.xml` for the home, recommendations, and real catalog pages, plus `/robots.txt` pointing crawlers at that sitemap.
+Curated real entries are available as useful server-rendered pages at `/models/[slug]` and `/gpus/[slug]`. Their slugs, summaries, metadata, provenance, source links, and quantization details come from `src/data/catalog.ts`; route components do not duplicate catalog records. Unknown slugs return a normal 404. The App Router also generates `/sitemap.xml` for the home, recommendations, real catalog pages, and educational guides, plus `/robots.txt` pointing crawlers at that sitemap.
+
+## Educational guides
+
+The `/guides` index and `/guides/[slug]` pages explain the concepts behind the results, including VRAM, quantization, GPU offloading, context length, and compatibility estimates. Guide content is typed local data in `src/data/guides.ts`; the reusable server-rendered template in `src/app/guide-page.tsx` handles layout, references, related links, and metadata without copying content into route files.
+
+Each guide has a stable slug, a last-reviewed date, and the HTTPS references used for its technical claims. To add or update one, consult authoritative documentation, distinguish documented facts from simplified planning guidance, keep the explanation useful to non-experts, add relevant calculator or catalog links, and extend the guide tests. Run the full validation commands and inspect the generated page before publishing. The initial set is intentionally small: guides are curated educational pages, not mass-generated SEO content.
 
 Set `NEXT_PUBLIC_SITE_URL` to the deployed origin before publishing so canonical URLs and sitemap entries use the public host. Local development falls back to `http://localhost:3000`. Titles and descriptions are derived from catalog fields and are intentionally concise; no benchmark, rating, or compatibility guarantee is implied.
 
@@ -48,10 +54,10 @@ To add a public entry, add a validated curated model or GPU record with a stable
 
 ## Architecture
 
-- `src/app/`: Next.js App Router and presentation code, including server-rendered `/models/[slug]` and `/gpus/[slug]` catalog pages plus sitemap/robots handlers. Future guide routes belong here.
+- `src/app/`: Next.js App Router and presentation code, including server-rendered catalog and `/guides/[slug]` pages plus sitemap/robots handlers.
 - `src/domain/`: framework-independent types and Zod runtime schemas.
 - `src/engine/`: deterministic compatibility calculations and named policies. This layer has no Next.js, UI, network, or AI dependencies and is directly unit-tested.
-- `src/data/`: the curated production catalog, isolated synthetic fixtures, and registry helpers. `catalog.ts` is the access boundary for future model/GPU catalog growth; it is intentionally not exhaustive.
+- `src/data/`: the curated production catalog, educational guide content, isolated synthetic fixtures, and registry helpers. `catalog.ts` is the access boundary for future model/GPU catalog growth; it is intentionally not exhaustive.
 
 ## Domain contract, provenance, and units
 
@@ -67,4 +73,4 @@ The engine currently chooses the highest-bits-per-weight candidate that fits the
 
 ## SEO/page architecture
 
-Public catalog pages use static params from the small curated registry and metadata/canonical paths derived from each entry. They explain approximate memory and provenance, then link to hardware-specific calculators rather than calculating anonymous compatibility at build time. The project intentionally has no mass-generated content, scraping, authentication, advertising, or database. The catalog is curated rather than exhaustive: entries should be added only when their source, freshness, license/context metadata, and local-format relevance can be reviewed manually.
+Public catalog and guide pages use static params from small curated registries and metadata/canonical paths derived from their definitions. They provide useful explanations and provenance, then link to hardware-specific calculators rather than calculating anonymous compatibility at build time. The project intentionally has no mass-generated content, scraping, authentication, advertising, or database. Catalog entries and guides are curated rather than exhaustive: add them only when their sources, freshness, and usefulness can be reviewed manually.
