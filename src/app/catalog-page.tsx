@@ -61,6 +61,12 @@ export function ModelCatalogPage({ model }: { model: ModelDefinition }) {
             <dt>Runtimes</dt>
             <dd>{model.supportedRuntimes.join(", ")}</dd>
           </div>
+          {model.license && (
+            <div>
+              <dt>License</dt>
+              <dd>{model.license}</dd>
+            </div>
+          )}
           <div>
             <dt>Default context</dt>
             <dd>{model.defaultContextLength.toLocaleString()} tokens</dd>
@@ -100,6 +106,18 @@ export function ModelCatalogPage({ model }: { model: ModelDefinition }) {
                     <dd>{formatGiB(quantization.sizeGiB)}</dd>
                   </div>
                 )}
+                <div>
+                  <dt>Source</dt>
+                  <dd>
+                    <a
+                      href={quantization.provenance.sourceUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {quantization.provenance.source}
+                    </a>
+                  </dd>
+                </div>
               </dl>
             </article>
           ))}
@@ -120,7 +138,10 @@ export function ModelCatalogPage({ model }: { model: ModelDefinition }) {
             model.provenance.confidence,
             model.provenance.lastVerified,
           )}
-          {model.provenance.note ? ` ${model.provenance.note}` : ""}
+          {model.provenance.note ? ` ${model.provenance.note}` : ""}{" "}
+          <a href={model.provenance.sourceUrl} target="_blank" rel="noreferrer">
+            View source
+          </a>
         </p>
       </section>
     </main>
@@ -185,6 +206,18 @@ export function GpuCatalogPage({ gpu }: { gpu: GpuDefinition }) {
               </dd>
             </div>
           )}
+          <div>
+            <dt>Specification source</dt>
+            <dd>
+              <a
+                href={gpu.provenance.sourceUrl}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {gpu.provenance.source}
+              </a>
+            </dd>
+          </div>
         </dl>
       </section>
 

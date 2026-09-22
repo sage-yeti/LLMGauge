@@ -24,11 +24,11 @@ describe("compatibility calculator", () => {
     renderCalculator();
 
     expect(
-      screen.getByRole("option", { name: /Example 7B Instruct/ }),
+      screen.getByRole("option", { name: /Llama 3\.2 1B Instruct/ }),
     ).toBeTruthy();
     expect(screen.getByRole("option", { name: /Q4/ })).toBeTruthy();
     expect(
-      screen.getByRole("option", { name: /Example 12 GB GPU/ }),
+      screen.getByRole("option", { name: /GeForce RTX 3060 12GB/ }),
     ).toBeTruthy();
   });
 
@@ -43,19 +43,20 @@ describe("compatibility calculator", () => {
 
   it("shows a GPU-capable result and recommendation", () => {
     renderCalculator();
-    choose("GPU", "gpu-12gb");
+    choose("GPU", "nvidia-rtx-3060-12gb");
     submit();
 
     expect(screen.getByRole("heading", { name: "GPU-capable" })).toBeTruthy();
     expect(screen.getByText("Full GPU execution")).toBeTruthy();
     expect(screen.getByText("Recommended quantization")).toBeTruthy();
-    expect(screen.getByText("Q8")).toBeTruthy();
+    expect(screen.getByText("Q8_0")).toBeTruthy();
   });
 
   it("shows partial offload and its limiting factor", () => {
     renderCalculator();
-    choose("GPU", "gpu-2gb");
-    choose("Quantization", "q8");
+    choose("Model", "mistralai-mistral-7b-instruct-v0-3");
+    choose("GPU", "nvidia-rtx-4060-8gb");
+    choose("Quantization", "q8-0");
     submit();
 
     expect(
@@ -67,8 +68,9 @@ describe("compatibility calculator", () => {
 
   it("shows unsupported when both memory pools are insufficient", () => {
     renderCalculator();
-    choose("GPU", "gpu-2gb");
-    choose("Quantization", "q8");
+    choose("Model", "mistralai-mistral-7b-instruct-v0-3");
+    choose("GPU", "nvidia-rtx-4060-8gb");
+    choose("Quantization", "q8-0");
     fireEvent.change(screen.getByLabelText("System RAM (GiB)"), {
       target: { value: "4" },
     });
@@ -80,7 +82,7 @@ describe("compatibility calculator", () => {
 
   it("keeps integrated GPU behavior aligned with the engine", () => {
     renderCalculator();
-    choose("GPU", "gpu-integrated");
+    choose("GPU", "intel-uhd-graphics-770");
     submit();
 
     expect(screen.getByRole("heading", { name: "CPU-only" })).toBeTruthy();

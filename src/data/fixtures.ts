@@ -8,6 +8,8 @@ import type {
 
 export const fixtureProvenance: CatalogProvenance = {
   source: "LLMGauge curated seed data",
+  sourceUrl: "https://github.com/sage-yeti/LLMGauge",
+  sourceType: "curated-estimate",
   confidence: "approximate",
   lastVerified: "2026-09-22",
   note: "Representative local-LLM fixture; values are approximate and not authoritative specifications.",

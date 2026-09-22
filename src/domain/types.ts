@@ -6,10 +6,18 @@ export type CompatibilityLevel =
 export type GpuKind = "discrete" | "integrated";
 export type Runtime = "llama.cpp" | "ollama" | "other";
 export type ProvenanceConfidence = "verified" | "approximate";
+export type ProvenanceSourceType =
+  | "official-model-card"
+  | "official-documentation"
+  | "manufacturer-specification"
+  | "community-conversion"
+  | "project-documentation"
+  | "curated-estimate";
 
 export interface CatalogProvenance {
   source: string;
-  sourceUrl?: string;
+  sourceUrl: string;
+  sourceType: ProvenanceSourceType;
   confidence: ProvenanceConfidence;
   lastVerified: string;
   note?: string;
@@ -57,6 +65,7 @@ export interface ModelDefinition {
   parameterCountBillions: number;
   supportedFormats: ModelFormat[];
   supportedRuntimes: Runtime[];
+  license?: string;
   defaultContextLength: number;
   maxContextLength: number;
   quantizations: QuantizationDefinition[];

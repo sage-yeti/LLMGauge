@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { fixtureGpus, fixtureModel } from "./fixtures";
+import { productionGpus, productionModels } from "./production-catalog";
 import {
   getGpuById,
   getGpuBySlug,
@@ -15,11 +16,37 @@ import { gpuDefinitionSchema, modelDefinitionSchema } from "@/domain/schemas";
 describe("catalog registry", () => {
   it("validates fixtures and retrieves entries by stable ID", () => {
     expect(() => validateCatalog()).not.toThrow();
-    expect(getModelById(fixtureModel.id)).toEqual(fixtureModel);
-    expect(getGpuById(fixtureGpus[0].id)).toEqual(fixtureGpus[0]);
-    expect(getModelBySlug(fixtureModel.slug)).toEqual(fixtureModel);
-    expect(getGpuBySlug(fixtureGpus[0].slug)).toEqual(fixtureGpus[0]);
+    expect(getModelById(productionModels[0].id)).toEqual(productionModels[0]);
+    expect(getGpuById(productionGpus[0].id)).toEqual(productionGpus[0]);
+    expect(getModelBySlug(productionModels[0].slug)).toEqual(
+      productionModels[0],
+    );
+    expect(getGpuBySlug(productionGpus[0].slug)).toEqual(productionGpus[0]);
     expect(getModelById("missing")).toBeUndefined();
+    expect(getModelBySlug("example-7b-instruct")).toBeUndefined();
+    expect(getGpuBySlug("example-12gb-gpu")).toBeUndefined();
+  });
+
+  it("keeps the production catalog real, sourced, and separate from fixtures", () => {
+    expect(productionModels.length).toBeGreaterThanOrEqual(6);
+    expect(productionGpus.length).toBeGreaterThanOrEqual(8);
+    expect(
+      productionModels.every((model) => !model.id.startsWith("example-")),
+    ).toBe(true);
+    expect(productionGpus.every((gpu) => !gpu.id.startsWith("gpu-"))).toBe(
+      true,
+    );
+    for (const model of productionModels) {
+      expect(model.provenance.sourceUrl).toMatch(/^https:\/\//);
+      expect(model.provenance.sourceType).not.toBe("curated-estimate");
+      for (const quantization of model.quantizations) {
+        expect(quantization.provenance.sourceUrl).toMatch(/^https:\/\//);
+      }
+    }
+    for (const gpu of productionGpus) {
+      expect(gpu.provenance.sourceUrl).toMatch(/^https:\/\//);
+      expect(gpu.provenance.sourceType).toBe("manufacturer-specification");
+    }
   });
 
   it("rejects duplicate IDs", () => {
@@ -40,6 +67,26 @@ describe("catalog registry", () => {
         gpuDefinitionSchema,
       ),
     ).toThrow("Invalid GPU catalog entry");
+  });
+
+  it("rejects non-HTTPS provenance URLs and invalid quantization widths", () => {
+    expect(
+      gpuDefinitionSchema.safeParse({
+        ...fixtureGpus[0],
+        provenance: {
+          ...fixtureGpus[0].provenance,
+          sourceUrl: "http://example.com",
+        },
+      }).success,
+    ).toBe(false);
+    expect(
+      modelDefinitionSchema.safeParse({
+        ...fixtureModel,
+        quantizations: [
+          { ...fixtureModel.quantizations[0], bitsPerWeight: 17 },
+        ],
+      }).success,
+    ).toBe(false);
   });
 
   it("rejects duplicate slugs and duplicate quantizations", () => {

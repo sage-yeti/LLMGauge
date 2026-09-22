@@ -8,20 +8,20 @@ import GpuPage, {
 } from "./gpus/[slug]/page";
 import sitemap from "./sitemap";
 import robots from "./robots";
-import { fixtureGpus, fixtureModel } from "@/data/fixtures";
+import { gpuCatalog, modelCatalog } from "@/data/catalog";
 
 describe("public catalog pages", () => {
   afterEach(cleanup);
 
   it("renders useful model information and calculator links", async () => {
     const page = await ModelPage({
-      params: Promise.resolve({ slug: fixtureModel.slug }),
+      params: Promise.resolve({ slug: modelCatalog[0].slug }),
     });
     render(page);
     expect(
-      screen.getByRole("heading", { name: fixtureModel.displayName }),
+      screen.getByRole("heading", { name: modelCatalog[0].displayName }),
     ).toBeTruthy();
-    expect(screen.getByText(fixtureModel.summary)).toBeTruthy();
+    expect(screen.getByText(modelCatalog[0].summary)).toBeTruthy();
     expect(
       screen
         .getByRole("link", { name: /check this model/i })
@@ -36,7 +36,7 @@ describe("public catalog pages", () => {
   });
 
   it("renders useful GPU information and calculator links", async () => {
-    const gpu = fixtureGpus[0];
+    const gpu = gpuCatalog[0];
     const page = await GpuPage({ params: Promise.resolve({ slug: gpu.slug }) });
     render(page);
     expect(screen.getByRole("heading", { name: gpu.displayName })).toBeTruthy();
@@ -61,21 +61,21 @@ describe("public catalog pages", () => {
 
   it("generates distinct catalog metadata with canonical paths", async () => {
     const modelMetadata = await generateModelMetadata({
-      params: Promise.resolve({ slug: fixtureModel.slug }),
+      params: Promise.resolve({ slug: modelCatalog[0].slug }),
     });
     const gpuMetadata = await generateGpuMetadata({
-      params: Promise.resolve({ slug: fixtureGpus[0].slug }),
+      params: Promise.resolve({ slug: gpuCatalog[0].slug }),
     });
-    expect(modelMetadata.title).toBe(fixtureModel.displayName);
+    expect(modelMetadata.title).toBe(modelCatalog[0].displayName);
     expect(modelMetadata.alternates?.canonical).toBe(
-      `/models/${fixtureModel.slug}`,
+      `/models/${modelCatalog[0].slug}`,
     );
-    expect(modelMetadata.description).toContain(fixtureModel.summary);
-    expect(gpuMetadata.title).toBe(fixtureGpus[0].displayName);
+    expect(modelMetadata.description).toContain(modelCatalog[0].summary);
+    expect(gpuMetadata.title).toBe(gpuCatalog[0].displayName);
     expect(gpuMetadata.alternates?.canonical).toBe(
-      `/gpus/${fixtureGpus[0].slug}`,
+      `/gpus/${gpuCatalog[0].slug}`,
     );
-    expect(gpuMetadata.description).toContain(fixtureGpus[0].vendor);
+    expect(gpuMetadata.description).toContain(gpuCatalog[0].vendor);
     expect(modelMetadata.description).not.toBe(gpuMetadata.description);
   });
 
@@ -83,12 +83,12 @@ describe("public catalog pages", () => {
     const entries = sitemap();
     expect(
       entries.some((entry) =>
-        entry.url.endsWith(`/models/${fixtureModel.slug}`),
+        entry.url.endsWith(`/models/${modelCatalog[0].slug}`),
       ),
     ).toBe(true);
     expect(
       entries.some((entry) =>
-        entry.url.endsWith(`/gpus/${fixtureGpus[0].slug}`),
+        entry.url.endsWith(`/gpus/${gpuCatalog[0].slug}`),
       ),
     ).toBe(true);
     expect(entries.some((entry) => entry.url.includes("missing"))).toBe(false);
