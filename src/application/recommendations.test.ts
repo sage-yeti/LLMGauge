@@ -5,9 +5,25 @@ import {
   fixtureModel,
   fixtureProvenance,
 } from "@/data/fixtures";
+import { productionModels } from "@/data/production-catalog";
 import type { HardwareProfile, ModelDefinition } from "@/domain/types";
 
 describe("recommendModels", () => {
+  it("evaluates the curated production catalog deterministically", () => {
+    const first = recommendModels(fixtureHardware.gpu, productionModels);
+    const second = recommendModels(fixtureHardware.gpu, productionModels);
+    expect(first.recommendations.length).toBeGreaterThan(0);
+    expect(
+      first.recommendations.map(
+        (entry) => `${entry.model.id}/${entry.quantization.id}`,
+      ),
+    ).toEqual(
+      second.recommendations.map(
+        (entry) => `${entry.model.id}/${entry.quantization.id}`,
+      ),
+    );
+  });
+
   it("evaluates valid quantizations and prefers the highest quality usable candidate", () => {
     const result = recommendModels(fixtureHardware.gpu, [fixtureModel]);
     expect(result.recommendations).toHaveLength(1);
