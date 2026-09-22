@@ -25,14 +25,14 @@ describe("recommendations interface", () => {
       screen.getByRole("heading", { name: "Models for your hardware" }),
     ).toBeTruthy();
     expect(
-      screen.getByRole("heading", { name: "Example 7B Instruct" }),
+      screen.getByRole("heading", { name: "Llama 3.2 1B Instruct" }),
     ).toBeTruthy();
     expect(screen.getAllByText("CPU-only").length).toBeGreaterThan(0);
   });
 
   it("shows a GPU-capable recommendation", () => {
     renderRecommendations();
-    choose("GPU", "gpu-12gb");
+    choose("GPU", "nvidia-rtx-3060-12gb");
     submit();
     expect(screen.getAllByText("GPU-capable").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Full GPU execution").length).toBeGreaterThan(0);
@@ -40,7 +40,10 @@ describe("recommendations interface", () => {
 
   it("shows partial offload and warnings when VRAM is limited", () => {
     renderRecommendations();
-    choose("GPU", "gpu-2gb");
+    choose("GPU", "nvidia-rtx-4060-8gb");
+    fireEvent.change(screen.getByLabelText("Dedicated VRAM (GiB)"), {
+      target: { value: "2" },
+    });
     submit();
     expect(screen.getAllByText("Partial offload").length).toBeGreaterThan(0);
     expect(
@@ -50,7 +53,7 @@ describe("recommendations interface", () => {
 
   it("keeps integrated GPU behavior aligned with the engine", () => {
     renderRecommendations();
-    choose("GPU", "gpu-integrated");
+    choose("GPU", "intel-uhd-graphics-770");
     submit();
     expect(screen.getAllByText("CPU-only").length).toBeGreaterThan(0);
   });
@@ -58,7 +61,7 @@ describe("recommendations interface", () => {
   it("shows no suitable model when system RAM is insufficient", () => {
     renderRecommendations();
     fireEvent.change(screen.getByLabelText("System RAM (GiB)"), {
-      target: { value: "4" },
+      target: { value: "1" },
     });
     submit();
     expect(
