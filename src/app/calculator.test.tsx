@@ -30,6 +30,14 @@ describe("compatibility calculator", () => {
     expect(
       screen.getByRole("option", { name: /GeForce RTX 3060 12GB/ }),
     ).toBeTruthy();
+    expect(screen.getByLabelText("System RAM (GiB)").getAttribute("id")).toBe(
+      "system-ram",
+    );
+    expect(
+      screen
+        .getByLabelText("System RAM (GiB)")
+        .getAttribute("aria-describedby"),
+    ).toBe("system-ram-help");
   });
 
   it("shows a CPU-only result for the default no-GPU profile", () => {
@@ -108,5 +116,8 @@ describe("compatibility calculator", () => {
     expect(screen.getByText("Assumptions and warnings")).toBeTruthy();
     expect(screen.getByText(/deterministic memory estimate/)).toBeTruthy();
     expect(screen.getByText(/Weight overhead: 1.12×/)).toBeTruthy();
+    expect(
+      screen.getByRole("link", { name: /interpret this estimate/i }),
+    ).toBeTruthy();
   });
 });
