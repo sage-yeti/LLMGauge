@@ -29,6 +29,21 @@ Curated entries are available as useful server-rendered pages at `/models/[slug]
 
 Set `NEXT_PUBLIC_SITE_URL` to the deployed origin before publishing so canonical URLs and sitemap entries use the public host. Local development falls back to `http://localhost:3000`. Titles and descriptions are derived from catalog fields and are intentionally concise; no benchmark, rating, or compatibility guarantee is implied.
 
+## Production deployment
+
+LLMGauge is a static-friendly Next.js App Router application and can be deployed to a Node-compatible hosting provider. No database, runtime API, or AI service is required. Copy `.env.example` to a local environment file for reference, and set `NEXT_PUBLIC_SITE_URL` to the canonical public HTTPS origin (for example, `https://llmgauge.example`). Production builds reject a missing, malformed, credential-bearing, or non-HTTPS value; development and tests use the localhost fallback when the variable is absent.
+
+Run the production validation with the origin explicitly set:
+
+```bash
+NEXT_PUBLIC_SITE_URL=https://your-production-origin.example npm run build
+NEXT_PUBLIC_SITE_URL=https://your-production-origin.example npm start
+```
+
+On Windows PowerShell, use `$env:NEXT_PUBLIC_SITE_URL = "https://your-production-origin.example"` before the commands. After deployment, verify the page source for an absolute canonical link and Open Graph URL, then check `/sitemap.xml` and `/robots.txt`. The sitemap and robots output must use the same production origin. Preview or staging URLs should be used for testing only; set `NEXT_PUBLIC_SITE_URL` to the real production origin when deploying the canonical site.
+
+The application sends conservative security headers: MIME sniffing protection, strict-origin referrer handling, disabled camera/microphone/geolocation permissions, and `X-Frame-Options: DENY`. No restrictive Content Security Policy is enabled because the current application does not require one and Next.js behavior should remain uncomplicated.
+
 To add a public entry, add a validated curated model or GPU record with a stable URL-safe slug, useful summary, provenance, and freshness date, then run the catalog tests and full validation commands. The project deliberately avoids mass-generated thin pages, scraping, and placeholder catalog records. To inspect pages locally, run `npm run build && npm start`, then open a real slug such as `/models/example-7b-instruct` or `/gpus/example-12gb-gpu`.
 
 ## Architecture
@@ -52,4 +67,4 @@ The engine currently chooses the highest-bits-per-weight candidate that fits the
 
 ## SEO/page architecture
 
-Public catalog pages use static params from the small curated registry and metadata/canonical paths derived from each entry. They explain approximate memory and provenance, then link to hardware-specific calculators rather than calculating anonymous compatibility at build time. The project intentionally has no mass-generated content, scraping, authentication, advertising, or database.
+Public catalog pages use static params from the small curated registry and metadata/canonical paths derived from each entry. They explain approximate memory and provenance, then link to hardware-specific calculators rather than calculating anonymous compatibility at build time. The project intentionally has no mass-generated content, scraping, authentication, advertising, or database. No production hosting provider or custom domain is selected in the repository; deployment requires an explicitly approved provider and origin.
