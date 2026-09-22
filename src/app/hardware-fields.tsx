@@ -21,16 +21,25 @@ export function HardwareFields({
   const selectedGpu = gpus.find((gpu) => gpu.id === values.gpuId);
   return (
     <>
-      <Field label="CPU" error={fieldErrors.cpuName}>
+      <Field
+        id="cpu"
+        label="CPU"
+        help="For example, Intel Core i5 or AMD Ryzen 5."
+        error={fieldErrors.cpuName}
+      >
         <input
-          aria-label="CPU"
+          id="cpu"
           value={values.cpuName}
           onChange={(event) => onChange("cpuName", event.target.value)}
           placeholder="e.g. Intel Core i5"
+          required
+          aria-invalid={Boolean(fieldErrors.cpuName)}
+          aria-describedby={fieldErrors.cpuName ? "cpu-error" : "cpu-help"}
         />
       </Field>
       <div className="field-grid">
         <Field
+          id="gpu"
           label="GPU"
           help={
             selectedGpu?.suitabilitySummary ??
@@ -39,9 +48,12 @@ export function HardwareFields({
           error={fieldErrors.gpuId}
         >
           <select
-            aria-label="GPU"
+            id="gpu"
             value={values.gpuId}
             onChange={(event) => onGpuChange(event.target.value)}
+            required
+            aria-invalid={Boolean(fieldErrors.gpuId)}
+            aria-describedby={fieldErrors.gpuId ? "gpu-error" : "gpu-help"}
           >
             <option value="none">No dedicated GPU</option>
             {gpus.map((gpu) => (
@@ -53,6 +65,7 @@ export function HardwareFields({
           </select>
         </Field>
         <Field
+          id="vram"
           label="Dedicated VRAM (GiB)"
           help={
             selectedGpu?.kind === "integrated"
@@ -60,9 +73,12 @@ export function HardwareFields({
               : "Enter dedicated GPU memory in GiB."
           }
           error={fieldErrors.vramGiB}
+          required={
+            values.gpuId !== "none" && selectedGpu?.kind !== "integrated"
+          }
         >
           <input
-            aria-label="Dedicated VRAM (GiB)"
+            id="vram"
             type="number"
             min="0"
             step="0.1"
@@ -71,26 +87,47 @@ export function HardwareFields({
               values.gpuId === "none" || selectedGpu?.kind === "integrated"
             }
             onChange={(event) => onChange("vramGiB", event.target.value)}
+            aria-invalid={Boolean(fieldErrors.vramGiB)}
+            aria-describedby={fieldErrors.vramGiB ? "vram-error" : "vram-help"}
           />
         </Field>
       </div>
       <div className="field-grid">
-        <Field label="System RAM (GiB)" error={fieldErrors.systemRamGiB}>
+        <Field
+          id="system-ram"
+          label="System RAM (GiB)"
+          help="Total memory available to the operating system, for example 16 GiB."
+          error={fieldErrors.systemRamGiB}
+        >
           <input
-            aria-label="System RAM (GiB)"
+            id="system-ram"
             type="number"
             min="0.1"
             step="0.1"
             value={values.systemRamGiB}
             onChange={(event) => onChange("systemRamGiB", event.target.value)}
+            required
+            aria-invalid={Boolean(fieldErrors.systemRamGiB)}
+            aria-describedby={
+              fieldErrors.systemRamGiB ? "system-ram-error" : "system-ram-help"
+            }
           />
         </Field>
-        <Field label="Operating system" error={fieldErrors.operatingSystem}>
+        <Field
+          id="operating-system"
+          label="Operating system"
+          error={fieldErrors.operatingSystem}
+        >
           <select
-            aria-label="Operating system"
+            id="operating-system"
             value={values.operatingSystem}
             onChange={(event) =>
               onChange("operatingSystem", event.target.value)
+            }
+            required
+            aria-invalid={Boolean(fieldErrors.operatingSystem)}
+            aria-describedby={
+              fieldErrors.operatingSystem ? "operating-system-error" : undefined
             }
           >
             <option value="windows">Windows</option>
@@ -105,28 +142,36 @@ export function HardwareFields({
 }
 
 export function Field({
+  id,
   label,
   help,
   error,
+  required = true,
   children,
 }: {
+  id: string;
   label: string;
   help?: string;
   error?: string;
+  required?: boolean;
   children: React.ReactNode;
 }) {
   return (
     <div className="field">
-      <label>
+      <label className={required ? "required-label" : undefined} htmlFor={id}>
         {label}
-        {children}
       </label>
-      {help && <span className="help-text">{help}</span>}
+      {help && (
+        <span className="help-text" id={`${id}-help`}>
+          {help}
+        </span>
+      )}
       {error && (
-        <span className="field-error" role="alert">
+        <span className="field-error" id={`${id}-error`} role="alert">
           {error}
         </span>
       )}
+      {children}
     </div>
   );
 }
