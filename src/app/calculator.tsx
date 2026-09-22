@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import Link from "next/link";
 import type {
   CalculatorEvaluation,
   CalculatorFormValues,
@@ -95,11 +96,20 @@ export function Calculator({ models, gpus }: CalculatorProps) {
               <p>Select one model and its quantization.</p>
             </div>
           </div>
-          <Field label="Model" error={evaluation.fieldErrors.modelId}>
+          <Field
+            id="model"
+            label="Model"
+            error={evaluation.fieldErrors.modelId}
+          >
             <select
-              aria-label="Model"
+              id="model"
               value={values.modelId}
               onChange={(event) => handleModelChange(event.target.value)}
+              required
+              aria-invalid={Boolean(evaluation.fieldErrors.modelId)}
+              aria-describedby={
+                evaluation.fieldErrors.modelId ? "model-error" : undefined
+              }
             >
               {models.map((model) => (
                 <option key={model.id} value={model.id}>
@@ -109,15 +119,23 @@ export function Calculator({ models, gpus }: CalculatorProps) {
             </select>
           </Field>
           <Field
+            id="quantization"
             label="Quantization"
             help="Quantization changes the model’s memory requirement. Higher-bit options generally preserve more quality."
             error={evaluation.fieldErrors.quantizationId}
           >
             <select
-              aria-label="Quantization"
+              id="quantization"
               value={values.quantizationId}
               onChange={(event) =>
                 updateValue("quantizationId", event.target.value)
+              }
+              required
+              aria-invalid={Boolean(evaluation.fieldErrors.quantizationId)}
+              aria-describedby={
+                evaluation.fieldErrors.quantizationId
+                  ? "quantization-error"
+                  : undefined
               }
             >
               {selectedModel?.quantizations.map((quantization) => (
@@ -192,13 +210,20 @@ function ResultPanel({
     <aside
       className={`result-card result-${result.level}`}
       aria-live="polite"
+      aria-atomic="true"
       aria-labelledby="result-heading"
     >
       <p className="result-kicker">Compatibility result</p>
       <div className="result-title-row">
         <h2 id="result-heading">{levelLabels[result.level]}</h2>
-        <span className="level-badge">{result.level}</span>
+        <span className="level-badge">{levelLabels[result.level]}</span>
       </div>
+      {model && (
+        <p className="result-selection">
+          For <strong>{model.displayName}</strong>. Estimates are approximate
+          planning guidance.
+        </p>
+      )}
       <p className="result-message">{result.messages[0]}</p>
       <dl className="result-stats">
         <div>
@@ -206,11 +231,11 @@ function ResultPanel({
           <dd>{executionLabels[result.executionMode]}</dd>
         </div>
         <div>
-          <dt>Estimated VRAM</dt>
+          <dt>Estimated VRAM (approx.)</dt>
           <dd>{result.memory.estimatedVramGiB} GiB</dd>
         </div>
         <div>
-          <dt>Estimated system RAM</dt>
+          <dt>Estimated system RAM (approx.)</dt>
           <dd>{result.memory.estimatedSystemRamGiB} GiB</dd>
         </div>
       </dl>
@@ -232,6 +257,11 @@ function ResultPanel({
         items={result.limitingFactors}
         empty="No limiting factor was identified by the current estimate."
       />
+      <p className="result-help">
+        <Link href="/guides/compatibility-estimates">
+          Learn how to interpret this estimate
+        </Link>
+      </p>
       <ResultList
         title="Assumptions and warnings"
         items={[
