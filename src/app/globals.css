@@ -58,6 +58,17 @@ h1 {
 .details-link:hover {
   text-decoration: underline;
 }
+.page-nav a:focus-visible,
+.details-link:focus-visible,
+.action-link:focus-visible,
+.secondary-link:focus-visible,
+.guide-link-list a:focus-visible,
+.guide-index-grid a:focus-visible,
+.breadcrumbs a:focus-visible,
+.reference-list a:focus-visible {
+  outline: 3px solid rgba(53, 106, 230, 0.28);
+  outline-offset: 3px;
+}
 .hero {
   margin-bottom: 3rem;
 }
@@ -450,6 +461,95 @@ h1 {
 .catalog-hero h1 {
   margin-bottom: 1rem;
 }
+.breadcrumbs {
+  align-items: center;
+  color: var(--muted);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  margin-top: 2rem;
+}
+.breadcrumbs a {
+  color: var(--accent);
+}
+.guide-hero {
+  margin-bottom: 2.5rem;
+}
+.guide-content {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: 0 10px 24px rgba(23, 32, 42, 0.04);
+  padding: clamp(1.25rem, 4vw, 2.25rem);
+}
+.guide-section + .guide-section {
+  border-top: 1px solid var(--line);
+  margin-top: 2rem;
+  padding-top: 2rem;
+}
+.guide-section h2 {
+  letter-spacing: -0.03em;
+  margin: 0 0 0.8rem;
+}
+.guide-section p,
+.guide-section li,
+.guide-card p {
+  color: var(--muted);
+  line-height: 1.65;
+  max-width: 780px;
+}
+.guide-section p {
+  margin: 0.75rem 0 0;
+}
+.guide-section ul {
+  color: var(--muted);
+  line-height: 1.65;
+  margin: 1rem 0 0;
+  padding-left: 1.25rem;
+}
+.guide-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: 0 10px 24px rgba(23, 32, 42, 0.04);
+  margin-top: 1.25rem;
+  padding: 1.5rem;
+}
+.guide-card h2 {
+  letter-spacing: -0.03em;
+  margin: 0 0 1rem;
+}
+.guide-card h3 {
+  margin: 0.5rem 0;
+}
+.guide-card h3 a {
+  color: var(--ink);
+}
+.guide-link-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+.reference-list {
+  line-height: 1.7;
+  margin: 0;
+  padding-left: 1.25rem;
+}
+.reference-list a {
+  color: var(--accent);
+}
+.guide-index-list > h2 {
+  letter-spacing: -0.03em;
+}
+.guide-index-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.guide-index-grid .guide-card {
+  margin-top: 0;
+}
 .page-actions {
   display: flex;
   flex-wrap: wrap;
@@ -565,6 +665,9 @@ h1 {
     font-size: clamp(2.6rem, 14vw, 4rem);
   }
   .metadata-grid {
+    grid-template-columns: 1fr;
+  }
+  .guide-index-grid {
     grid-template-columns: 1fr;
   }
 }
