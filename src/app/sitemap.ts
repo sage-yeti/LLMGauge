@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { gpuCatalog, modelCatalog } from "@/data/catalog";
+import { guideCatalog } from "@/data/guides";
 import { absoluteUrl } from "./site";
 
 export default function sitemap(): MetadataRoute.Sitemap {
@@ -9,6 +10,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
       url: absoluteUrl("/recommendations"),
       changeFrequency: "monthly",
       priority: 0.9,
+    },
+    {
+      url: absoluteUrl("/guides"),
+      changeFrequency: "monthly",
+      priority: 0.75,
     },
     ...modelCatalog.map((model) => ({
       url: absoluteUrl(`/models/${model.slug}`),
@@ -21,6 +27,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: new Date(gpu.provenance.lastVerified),
       changeFrequency: "monthly" as const,
       priority: 0.6,
+    })),
+    ...guideCatalog.map((guide) => ({
+      url: absoluteUrl(`/guides/${guide.slug}`),
+      lastModified: new Date(guide.lastReviewed),
+      changeFrequency: "monthly" as const,
+      priority: 0.65,
     })),
   ];
 }
