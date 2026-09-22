@@ -16,10 +16,26 @@ const slug = z
   );
 const isoDate = z
   .string()
-  .regex(/^\d{4}-\d{2}-\d{2}$/, "Use an ISO date in YYYY-MM-DD format.");
+  .regex(/^\d{4}-\d{2}-\d{2}$/, "Use an ISO date in YYYY-MM-DD format.")
+  .refine((value) => !Number.isNaN(Date.parse(`${value}T00:00:00Z`)), {
+    message: "Use a real calendar date.",
+  });
 const provenanceSchema = z.object({
   source: z.string().trim().min(1),
-  sourceUrl: z.string().url().optional(),
+  sourceUrl: z
+    .string()
+    .url()
+    .refine((value) => value.startsWith("https://"), {
+      message: "Source URLs must use HTTPS.",
+    }),
+  sourceType: z.enum([
+    "official-model-card",
+    "official-documentation",
+    "manufacturer-specification",
+    "community-conversion",
+    "project-documentation",
+    "curated-estimate",
+  ]),
   confidence: z.enum(["verified", "approximate"]),
   lastVerified: isoDate,
   note: z.string().trim().min(1).optional(),
@@ -46,7 +62,7 @@ export const hardwareProfileSchema: z.ZodType<HardwareProfile> = z.object({
 export const quantizationSchema: z.ZodType<QuantizationDefinition> = z.object({
   id: z.string().min(1),
   displayName: z.string().min(1),
-  bitsPerWeight: z.number().finite().positive(),
+  bitsPerWeight: z.number().finite().positive().max(16),
   sizeGiB: positive.optional(),
   overheadMultiplier: z.number().finite().positive().optional(),
   description: z.string().trim().min(1).optional(),
@@ -64,6 +80,7 @@ export const modelDefinitionSchema: z.ZodType<ModelDefinition> = z.object({
   parameterCountBillions: z.number().finite().positive(),
   supportedFormats: z.array(z.enum(["gguf", "safetensors", "other"])).min(1),
   supportedRuntimes: z.array(z.enum(["llama.cpp", "ollama", "other"])).min(1),
+  license: z.string().trim().min(1).optional(),
   defaultContextLength: z.number().int().positive(),
   maxContextLength: z.number().int().positive(),
   quantizations: z.array(quantizationSchema),
@@ -83,6 +100,7 @@ export const modelMetadataSchema: z.ZodType<
   parameterCountBillions: z.number().finite().positive(),
   supportedFormats: z.array(z.enum(["gguf", "safetensors", "other"])).min(1),
   supportedRuntimes: z.array(z.enum(["llama.cpp", "ollama", "other"])).min(1),
+  license: z.string().trim().min(1).optional(),
   defaultContextLength: z.number().int().positive(),
   maxContextLength: z.number().int().positive(),
   provenance: provenanceSchema,
