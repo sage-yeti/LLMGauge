@@ -50,13 +50,14 @@ function modelProvenance(
   source: string,
   sourceUrl: string,
   note: string,
+  lastVerified = verifiedOn,
 ): CatalogProvenance {
   return {
     source,
     sourceUrl,
     sourceType: "official-model-card",
     confidence: "verified",
-    lastVerified: verifiedOn,
+    lastVerified,
     note,
   };
 }
@@ -129,11 +130,12 @@ export const productionModels: readonly ModelDefinition[] = [
     supportedRuntimes: ["llama.cpp"],
     license: "Gemma Terms of Use",
     defaultContextLength: 4096,
-    maxContextLength: 131072,
+    maxContextLength: 32768,
     provenance: modelProvenance(
       "Google Gemma 3 model card",
       "https://huggingface.co/google/gemma-3-1b-it",
-      "The publisher describes the Gemma 3 family as supporting a 128K context window; runtime and conversion support may impose lower practical limits.",
+      "The publisher specifies 32K input context for the 1B variant; the 128K figure applies to larger Gemma 3 variants. Runtime and conversion support may impose lower practical limits.",
+      "2026-09-23",
     ),
   }),
   model({
