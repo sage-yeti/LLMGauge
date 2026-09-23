@@ -117,4 +117,20 @@ describe("catalog registry", () => {
       }),
     ).toThrow("maximum context");
   });
+
+  it("allows incomplete context metadata for entries with unavailable guidance", () => {
+    expect(() =>
+      validateModelCatalogEntry({
+        ...fixtureModel,
+        defaultContextLength: undefined,
+        maxContextLength: undefined,
+      }),
+    ).not.toThrow();
+    expect(() =>
+      validateModelCatalogEntry({
+        ...fixtureModel,
+        defaultContextLength: undefined,
+      }),
+    ).not.toThrow();
+  });
 });
