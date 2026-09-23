@@ -10,6 +10,7 @@ import {
 } from "@/application/recommendations";
 import type { GpuDefinition, ModelDefinition } from "@/domain/types";
 import { HardwareFields } from "./hardware-fields";
+import { ContextGuidanceView } from "./context-guidance";
 
 interface RecommendationsProps {
   models: readonly ModelDefinition[];
@@ -222,6 +223,10 @@ function RecommendationCard({
       </div>
       <p className="recommendation-summary">{entry.model.summary}</p>
       <p className="recommendation-explanation">{entry.explanation}</p>
+      <ContextGuidanceView
+        guidance={result.contextGuidance}
+        headingId={`context-guidance-${entry.model.id}-${entry.quantization.id}`}
+      />
       <dl className="recommendation-stats">
         <div>
           <dt>Execution</dt>
