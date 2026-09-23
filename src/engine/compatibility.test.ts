@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildContextGuidance,
   evaluateCompatibility,
   estimateMemory,
   recommendQuantization,
@@ -217,7 +218,7 @@ describe("compatibility engine", () => {
       "executionMode",
       "memory",
       "recommendedQuantizationId",
-      "contextLengthGuidance",
+      "contextGuidance",
       "limitingFactors",
       "messages",
       "reasons",
@@ -249,5 +250,107 @@ describe("compatibility engine", () => {
     expect(result.reasons.map((reason) => reason.code)).toContain(
       "safety-margin",
     );
+  });
+
+  it("returns structured conservative context guidance", () => {
+    const result = evaluateCompatibility(
+      fixtureHardware.gpu,
+      fixtureModel,
+      fixtureModel.quantizations[0],
+    );
+    expect(result.contextGuidance).toMatchObject({
+      status: "available",
+      modelMaximumContextLength: 8192,
+      recommendedContextLength: 4096,
+      confidence: "medium",
+    });
+    expect(result.contextGuidance.reasonCodes).toEqual([
+      "model-context-limit",
+      "conservative-context-guidance",
+      "approximate-context-assumption",
+    ]);
+    expect(result.warnings).toEqual(
+      expect.arrayContaining([
+        "Context guidance is conservative and advisory; it does not calculate KV-cache memory.",
+      ]),
+    );
+  });
+
+  it.each([
+    ["gpu-capable", fixtureHardware.gpu],
+    ["partial-offload", fixtureHardware.lowMemory],
+    ["cpu-only", fixtureHardware.cpuOnly],
+    [
+      "integrated-gpu",
+      {
+        ...fixtureHardware.cpuOnly,
+        gpu: {
+          id: "integrated",
+          name: "Integrated",
+          kind: "integrated" as const,
+          vramGiB: 0,
+          sharedMemoryGiB: 8,
+        },
+      },
+    ],
+    ["unsupported", { ...fixtureHardware.gpu, systemRamGiB: 1 }],
+  ])("keeps context guidance stable for %s", (_label, hardware) => {
+    const result = evaluateCompatibility(
+      hardware,
+      fixtureModel,
+      fixtureModel.quantizations[0],
+    );
+    expect(result.contextGuidance.status).toBe("available");
+    expect(result.contextGuidance.recommendedContextLength).toBe(4096);
+  });
+
+  it("reports unavailable context guidance when metadata is missing", () => {
+    const model = {
+      ...fixtureModel,
+      defaultContextLength: undefined,
+      maxContextLength: undefined,
+    };
+    const result = evaluateCompatibility(
+      fixtureHardware.gpu,
+      model,
+      model.quantizations[0],
+    );
+    expect(result.contextGuidance).toMatchObject({
+      status: "unavailable",
+      modelMaximumContextLength: null,
+      recommendedContextLength: null,
+      confidence: "unknown",
+    });
+    expect(result.reasons.map((reason) => reason.code)).toEqual(
+      expect.arrayContaining([
+        "context-estimation-unavailable",
+        "approximate-context-assumption",
+      ]),
+    );
+  });
+
+  it("reports inconsistent context limits without changing classification", () => {
+    const model = {
+      ...fixtureModel,
+      defaultContextLength: 8192,
+      maxContextLength: 4096,
+    };
+    const result = evaluateCompatibility(
+      fixtureHardware.gpu,
+      model,
+      model.quantizations[0],
+    );
+    expect(result.level).toBe("gpu-capable");
+    expect(result.contextGuidance.status).toBe("unavailable");
+    expect(result.contextGuidance.modelMaximumContextLength).toBe(4096);
+  });
+
+  it("caps practical guidance at the configured default", () => {
+    const guidance = buildContextGuidance(fixtureModel, {
+      ...DEFAULT_COMPATIBILITY_POLICY,
+      defaultContextLength: 2048,
+    });
+    expect(guidance.recommendedContextLength).toBe(2048);
+    expect(guidance.modelMaximumContextLength).toBe(8192);
   });
 });
