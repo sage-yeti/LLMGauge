@@ -86,4 +86,18 @@ describe("recommendations interface", () => {
       screen.queryByRole("heading", { name: "Models for your hardware" }),
     ).toBeNull();
   });
+
+  it("shows runtime assumptions without changing recommendation categories", () => {
+    renderRecommendations();
+    choose("Runtime", "llama.cpp");
+    choose("Backend/device path", "vulkan");
+    choose("Execution preference", "partial-offload");
+    submit();
+
+    expect(
+      screen.getAllByRole("heading", { name: "Runtime assumptions" }).length,
+    ).toBeGreaterThan(0);
+    expect(screen.getAllByText("Vulkan").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Partial offload").length).toBeGreaterThan(0);
+  });
 });
