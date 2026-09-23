@@ -96,6 +96,13 @@ export function validateUniqueQuantizationIds(model: ModelDefinition): void {
 }
 
 export function validateModelCatalogEntry(model: ModelDefinition): void {
+  if (
+    model.defaultContextLength === undefined ||
+    model.maxContextLength === undefined
+  )
+    throw new Error(
+      `Model ${model.id} must include default and maximum context metadata.`,
+    );
   if (model.maxContextLength < model.defaultContextLength)
     throw new Error(
       `Model ${model.id} has a maximum context below its default context.`,
