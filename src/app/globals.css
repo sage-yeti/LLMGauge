@@ -125,6 +125,20 @@ h1 {
   margin-top: 2rem;
   padding-top: 2rem;
 }
+.runtime-fields {
+  border-top: 1px solid var(--line);
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+}
+.runtime-fields .section-heading {
+  margin-bottom: 0.5rem;
+}
+.runtime-fields h3 {
+  margin: 0;
+}
+.runtime-fields .section-heading p {
+  max-width: 46rem;
+}
 .section-heading {
   display: flex;
   gap: 1rem;
@@ -435,6 +449,31 @@ h1 {
   color: var(--muted);
   margin: 0;
   padding-left: 1.1rem;
+}
+.runtime-profile-result {
+  background: #f8f9fc;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin-top: 1.25rem;
+  padding: 0.9rem 1rem;
+}
+.runtime-profile-result h3 {
+  font-size: 0.95rem;
+  margin: 0 0 0.75rem;
+}
+.runtime-profile-result .result-stats {
+  border: 0;
+  padding: 0;
+}
+.runtime-profile-result ul {
+  color: var(--muted);
+  margin: 0.75rem 0 0;
+  padding-left: 1.1rem;
+}
+.runtime-profile-result .runtime-profile-warnings {
+  color: var(--warning);
 }
 @media (max-width: 600px) {
   .context-guidance-stats {
