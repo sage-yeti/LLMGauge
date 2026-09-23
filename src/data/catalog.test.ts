@@ -49,6 +49,14 @@ describe("catalog registry", () => {
     }
   });
 
+  it("records the documented Gemma 3 1B context limit", () => {
+    const gemma = productionModels.find(
+      (model) => model.id === "google-gemma-3-1b-it",
+    );
+    expect(gemma?.maxContextLength).toBe(32768);
+    expect(gemma?.provenance.lastVerified).toBe("2026-09-23");
+  });
+
   it("rejects duplicate IDs", () => {
     expect(() =>
       validateCatalogEntries(
