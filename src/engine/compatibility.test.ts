@@ -219,6 +219,7 @@ describe("compatibility engine", () => {
       "memory",
       "recommendedQuantizationId",
       "contextGuidance",
+      "runtimeGuidance",
       "limitingFactors",
       "messages",
       "reasons",
