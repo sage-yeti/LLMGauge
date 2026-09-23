@@ -93,6 +93,8 @@ export interface GpuDefinition {
   vendor: string;
   architecture?: string;
   vramGiB: number;
+  /** Manufacturer-listed dedicated memory technology, when documented. */
+  memoryType?: string;
   sharedMemoryGiB?: number;
   suitabilitySummary: string;
   provenance: CatalogProvenance;
