@@ -8,6 +8,7 @@ import {
   gpuDefinitionSchema,
   hardwareProfileSchema,
   modelDefinitionSchema,
+  runtimeProfileSchema,
 } from "./schemas";
 
 describe("domain schemas", () => {
@@ -73,6 +74,27 @@ describe("domain schemas", () => {
         ...fixtureModel,
         provenance: { ...fixtureModel.provenance, lastVerified: "yesterday" },
       }).success,
+    ).toBe(false);
+  });
+
+  it("accepts optional runtime profiles and rejects invalid values", () => {
+    expect(
+      runtimeProfileSchema.safeParse({
+        runtime: "llama.cpp",
+        backend: "cuda",
+        executionPreference: "full-gpu",
+        targetContextLength: 4096,
+      }).success,
+    ).toBe(true);
+    expect(runtimeProfileSchema.safeParse({}).success).toBe(true);
+    expect(
+      runtimeProfileSchema.safeParse({ backend: "directml" }).success,
+    ).toBe(false);
+    expect(
+      runtimeProfileSchema.safeParse({ targetContextLength: 0 }).success,
+    ).toBe(false);
+    expect(
+      runtimeProfileSchema.safeParse({ targetContextLength: 4096.5 }).success,
     ).toBe(false);
   });
 });
