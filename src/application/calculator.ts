@@ -4,9 +4,15 @@ import {
 } from "@/engine/compatibility";
 import { getModelById } from "@/data/catalog";
 import type { CompatibilityResult } from "@/domain/types";
-import { parseHardwareForm, type HardwareFormValues } from "./hardware";
+import {
+  parseHardwareForm,
+  parseRuntimeProfile,
+  type HardwareFormValues,
+  type RuntimeProfileFormValues,
+} from "./hardware";
 
-export interface CalculatorFormValues extends HardwareFormValues {
+export interface CalculatorFormValues
+  extends HardwareFormValues, RuntimeProfileFormValues {
   modelId: string;
   quantizationId: string;
 }
@@ -40,16 +46,23 @@ export function evaluateCalculator(
 
   const hardwareEvaluation = parseHardwareForm(values);
   if (!hardwareEvaluation.hardware) return hardwareEvaluation;
+  const runtimeEvaluation = parseRuntimeProfile(values);
+  if (Object.keys(runtimeEvaluation.fieldErrors).length > 0)
+    return { fieldErrors: runtimeEvaluation.fieldErrors };
 
   try {
     const result = evaluateCompatibility(
       hardwareEvaluation.hardware,
       model,
       quantization,
+      undefined,
+      runtimeEvaluation.runtimeProfile,
     );
     const recommendation = recommendQuantization(
       hardwareEvaluation.hardware,
       model,
+      undefined,
+      runtimeEvaluation.runtimeProfile,
     );
     return {
       fieldErrors: {},

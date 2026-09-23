@@ -153,4 +153,20 @@ describe("recommendModels", () => {
       skippedModelIds: [],
     });
   });
+
+  it("passes an optional runtime profile through without changing ranking", () => {
+    const result = recommendModels(fixtureHardware.gpu, [fixtureModel], {
+      runtime: "llama.cpp",
+      backend: "cuda",
+      executionPreference: "full-gpu",
+      targetContextLength: 4096,
+    });
+    expect(result.recommendations[0].result.level).toBe("gpu-capable");
+    expect(result.recommendations[0].result.runtimeGuidance.profile).toEqual({
+      runtime: "llama.cpp",
+      backend: "cuda",
+      executionPreference: "full-gpu",
+      targetContextLength: 4096,
+    });
+  });
 });

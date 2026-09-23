@@ -5,6 +5,10 @@ import type {
   GpuDefinition,
   HardwareProfile,
   OperatingSystem,
+  RuntimeBackend,
+  RuntimeProfile,
+  RuntimeProfileRuntime,
+  ExecutionPreference,
 } from "@/domain/types";
 
 export interface HardwareFormValues {
@@ -15,10 +19,22 @@ export interface HardwareFormValues {
   operatingSystem: OperatingSystem;
 }
 
+export interface RuntimeProfileFormValues {
+  runtime: "" | RuntimeProfileRuntime;
+  backend: "" | RuntimeBackend;
+  executionPreference: "" | ExecutionPreference;
+  targetContextLength: string;
+}
+
 export interface HardwareFormEvaluation {
   hardware?: HardwareProfile;
   fieldErrors: Record<string, string>;
   formError?: string;
+}
+
+export interface RuntimeProfileEvaluation {
+  runtimeProfile?: RuntimeProfile;
+  fieldErrors: Record<string, string>;
 }
 
 const positiveNumberText = z
@@ -39,6 +55,48 @@ const hardwareFormSchema = z.object({
   systemRamGiB: positiveNumberText,
   operatingSystem: z.enum(["windows", "linux", "macos", "other"]),
 });
+
+const runtimeProfileFormSchema = z.object({
+  runtime: z.enum(["", "llama.cpp", "unknown"]),
+  backend: z.enum(["", "cpu", "cuda", "vulkan", "metal", "unknown"]),
+  executionPreference: z.enum([
+    "",
+    "automatic",
+    "full-gpu",
+    "partial-offload",
+    "cpu",
+  ]),
+  targetContextLength: z
+    .string()
+    .trim()
+    .refine(
+      (value) => value === "" || isPositiveInteger(value),
+      "Enter a whole number greater than 0.",
+    ),
+});
+
+export function parseRuntimeProfile(
+  values: RuntimeProfileFormValues,
+): RuntimeProfileEvaluation {
+  const parsed = runtimeProfileFormSchema.safeParse(values);
+  if (!parsed.success)
+    return { fieldErrors: issuesToFieldErrors(parsed.error.issues) };
+
+  const profile: RuntimeProfile = {
+    ...(parsed.data.runtime ? { runtime: parsed.data.runtime } : {}),
+    ...(parsed.data.backend ? { backend: parsed.data.backend } : {}),
+    ...(parsed.data.executionPreference
+      ? { executionPreference: parsed.data.executionPreference }
+      : {}),
+    ...(parsed.data.targetContextLength
+      ? { targetContextLength: Number(parsed.data.targetContextLength) }
+      : {}),
+  };
+  return {
+    fieldErrors: {},
+    ...(Object.keys(profile).length ? { runtimeProfile: profile } : {}),
+  };
+}
 
 export function parseHardwareForm(
   values: HardwareFormValues,
@@ -108,6 +166,11 @@ function isPositiveNumber(value: string): boolean {
 function isNonNegativeNumber(value: string): boolean {
   const number = Number(value);
   return Number.isFinite(number) && number >= 0;
+}
+
+function isPositiveInteger(value: string): boolean {
+  const number = Number(value);
+  return Number.isInteger(number) && number > 0;
 }
 
 function issuesToFieldErrors(

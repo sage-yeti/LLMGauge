@@ -5,6 +5,7 @@ import type {
   HardwareProfile,
   ModelDefinition,
   QuantizationDefinition,
+  RuntimeProfile,
 } from "@/domain/types";
 import { evaluateCompatibility } from "@/engine/compatibility";
 
@@ -35,6 +36,7 @@ const levelPriority: Record<CompatibilityLevel, number> = {
 export function recommendModels(
   hardware: HardwareProfile,
   models: readonly ModelDefinition[],
+  runtimeProfile?: RuntimeProfile,
 ): RecommendationSet {
   const validEntries: RecommendationEntry[] = [];
   const skippedModelIds: string[] = [];
@@ -55,7 +57,13 @@ export function recommendModels(
     }
     for (const quantization of model.quantizations) {
       try {
-        const result = evaluateCompatibility(hardware, model, quantization);
+        const result = evaluateCompatibility(
+          hardware,
+          model,
+          quantization,
+          undefined,
+          runtimeProfile,
+        );
         validEntries.push({
           model,
           quantization,

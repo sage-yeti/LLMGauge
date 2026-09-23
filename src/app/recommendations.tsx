@@ -2,8 +2,11 @@
 
 import { FormEvent, useState } from "react";
 import Link from "next/link";
-import type { HardwareFormValues } from "@/application/hardware";
-import { parseHardwareForm } from "@/application/hardware";
+import type {
+  HardwareFormValues,
+  RuntimeProfileFormValues,
+} from "@/application/hardware";
+import { parseHardwareForm, parseRuntimeProfile } from "@/application/hardware";
 import {
   recommendModels,
   type RecommendationSet,
@@ -11,22 +14,30 @@ import {
 import type { GpuDefinition, ModelDefinition } from "@/domain/types";
 import { HardwareFields } from "./hardware-fields";
 import { ContextGuidanceView } from "./context-guidance";
+import { RuntimeFields } from "./runtime-fields";
+import { RuntimeProfileView } from "./runtime-profile-view";
 
 interface RecommendationsProps {
   models: readonly ModelDefinition[];
   gpus: readonly GpuDefinition[];
 }
 
-const defaultValues: HardwareFormValues = {
+const defaultValues: HardwareFormValues & RuntimeProfileFormValues = {
   cpuName: "My CPU",
   gpuId: "none",
   vramGiB: "0",
   systemRamGiB: "16",
   operatingSystem: "windows",
+  runtime: "",
+  backend: "",
+  executionPreference: "",
+  targetContextLength: "",
 };
 
 export function Recommendations({ models, gpus }: RecommendationsProps) {
-  const [values, setValues] = useState<HardwareFormValues>(defaultValues);
+  const [values, setValues] = useState<
+    HardwareFormValues & RuntimeProfileFormValues
+  >(defaultValues);
   const [formState, setFormState] = useState<{
     fieldErrors: Record<string, string>;
     formError?: string;
@@ -34,7 +45,10 @@ export function Recommendations({ models, gpus }: RecommendationsProps) {
   const [recommendationSet, setRecommendationSet] =
     useState<RecommendationSet>();
 
-  function updateValue(field: keyof HardwareFormValues, value: string) {
+  function updateValue(
+    field: keyof (HardwareFormValues & RuntimeProfileFormValues),
+    value: string,
+  ) {
     setValues((current) => ({ ...current, [field]: value }));
     setFormState({ fieldErrors: {} });
     setRecommendationSet(undefined);
@@ -60,16 +74,19 @@ export function Recommendations({ models, gpus }: RecommendationsProps) {
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const parsed = parseHardwareForm(values);
-    if (!parsed.hardware) {
+    const runtime = parseRuntimeProfile(values);
+    if (!parsed.hardware || Object.keys(runtime.fieldErrors).length > 0) {
       setFormState({
-        fieldErrors: parsed.fieldErrors,
+        fieldErrors: { ...parsed.fieldErrors, ...runtime.fieldErrors },
         formError: parsed.formError,
       });
       setRecommendationSet(undefined);
       return;
     }
     setFormState({ fieldErrors: {} });
-    setRecommendationSet(recommendModels(parsed.hardware, models));
+    setRecommendationSet(
+      recommendModels(parsed.hardware, models, runtime.runtimeProfile),
+    );
   }
 
   return (
@@ -110,6 +127,11 @@ export function Recommendations({ models, gpus }: RecommendationsProps) {
               onChange={updateValue}
               onGpuChange={handleGpuChange}
               onApplyDetected={applyDetected}
+            />
+            <RuntimeFields
+              values={values}
+              fieldErrors={formState.fieldErrors}
+              onChange={updateValue}
             />
           </section>
           <button className="evaluate-button" type="submit">
@@ -227,6 +249,7 @@ function RecommendationCard({
         guidance={result.contextGuidance}
         headingId={`context-guidance-${entry.model.id}-${entry.quantization.id}`}
       />
+      <RuntimeProfileView guidance={result.runtimeGuidance} />
       <dl className="recommendation-stats">
         <div>
           <dt>Execution</dt>

@@ -126,4 +126,26 @@ describe("compatibility calculator", () => {
       screen.getByRole("link", { name: /interpret this estimate/i }),
     ).toBeTruthy();
   });
+
+  it("shows optional runtime assumptions and context warnings", () => {
+    renderCalculator();
+    choose("Runtime", "llama.cpp");
+    choose("Backend/device path", "cuda");
+    choose("Execution preference", "full-gpu");
+    fireEvent.change(screen.getByLabelText("Target context length (tokens)"), {
+      target: { value: "8192" },
+    });
+    submit();
+
+    expect(
+      screen.getByRole("heading", { name: "Runtime assumptions" }),
+    ).toBeTruthy();
+    expect(screen.getAllByText("llama.cpp").length).toBeGreaterThan(1);
+    expect(
+      screen.getByText(/above the practical starting guidance/),
+    ).toBeTruthy();
+    expect(
+      screen.getByText(/do not prove local runtime or backend support/),
+    ).toBeTruthy();
+  });
 });

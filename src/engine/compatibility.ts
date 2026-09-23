@@ -12,8 +12,10 @@ import type {
   HardwareProfile,
   ModelDefinition,
   QuantizationDefinition,
+  RuntimeProfile,
 } from "@/domain/types";
 import { DEFAULT_COMPATIBILITY_POLICY } from "./assumptions";
+import { buildRuntimeProfileGuidance } from "./runtime-profile";
 
 export function estimateMemory(
   model: ModelDefinition,
@@ -41,6 +43,7 @@ export function evaluateCompatibility(
   model: ModelDefinition,
   quantization: QuantizationDefinition,
   policy: CompatibilityPolicy = DEFAULT_COMPATIBILITY_POLICY,
+  runtimeProfile?: RuntimeProfile,
 ): CompatibilityResult {
   const validHardware = hardwareProfileSchema.safeParse(hardware);
   const validModel = modelDefinitionSchema.safeParse(model);
@@ -92,6 +95,10 @@ export function evaluateCompatibility(
     },
   ];
   const contextGuidance = buildContextGuidance(model, policy);
+  const runtimeGuidance = buildRuntimeProfileGuidance(
+    runtimeProfile,
+    contextGuidance,
+  );
   reasons.push(...contextGuidanceReasons(contextGuidance));
   if (policy.availableMemorySafetyMarginGiB > 0)
     reasons.push({
@@ -184,6 +191,7 @@ export function evaluateCompatibility(
     memory,
     recommendedQuantizationId: null,
     contextGuidance,
+    runtimeGuidance,
     limitingFactors,
     messages: [
       `${model.displayName} (${quantization.displayName}) is classified as ${level}.`,
@@ -261,6 +269,7 @@ export function recommendQuantization(
   hardware: HardwareProfile,
   model: ModelDefinition,
   policy: CompatibilityPolicy = DEFAULT_COMPATIBILITY_POLICY,
+  runtimeProfile?: RuntimeProfile,
 ): CompatibilityResult | undefined {
   hardwareProfileSchema.parse(hardware);
   const validModelMetadata = modelMetadataSchema.safeParse(model);
@@ -290,6 +299,7 @@ export function recommendQuantization(
       { ...model, quantizations: [candidate] },
       candidate,
       policy,
+      runtimeProfile,
     );
     if (result.level !== "unsupported") {
       return { ...result, recommendedQuantizationId: candidate.id };

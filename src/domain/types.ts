@@ -5,6 +5,10 @@ export type CompatibilityLevel =
   "unsupported" | "cpu-only" | "partial-offload" | "gpu-capable";
 export type GpuKind = "discrete" | "integrated";
 export type Runtime = "llama.cpp" | "ollama" | "other";
+export type RuntimeProfileRuntime = "llama.cpp" | "unknown";
+export type RuntimeBackend = "cpu" | "cuda" | "vulkan" | "metal" | "unknown";
+export type ExecutionPreference =
+  "automatic" | "full-gpu" | "partial-offload" | "cpu";
 export type ProvenanceConfidence = "verified" | "approximate";
 export type ProvenanceSourceType =
   | "official-model-card"
@@ -42,6 +46,14 @@ export interface HardwareProfile {
   gpu?: GpuInfo;
   systemRamGiB: number;
   operatingSystem: OperatingSystem;
+}
+
+/** Optional, user-selected runtime planning inputs. These are advisory only. */
+export interface RuntimeProfile {
+  runtime?: RuntimeProfileRuntime;
+  backend?: RuntimeBackend;
+  executionPreference?: ExecutionPreference;
+  targetContextLength?: number;
 }
 
 export interface QuantizationDefinition {
@@ -101,6 +113,7 @@ export interface CompatibilityResult {
   memory: MemoryEstimate;
   recommendedQuantizationId: string | null;
   contextGuidance: ContextGuidance;
+  runtimeGuidance: RuntimeProfileGuidance;
   limitingFactors: string[];
   messages: string[];
   reasons: CompatibilityReason[];
@@ -147,6 +160,32 @@ export interface ContextGuidance {
     | "context-estimation-unavailable"
     | "approximate-context-assumption"
   >[];
+}
+
+export type RuntimeContextAssessment =
+  | "not-requested"
+  | "within-guidance"
+  | "above-practical-guidance"
+  | "exceeds-model-maximum"
+  | "unavailable";
+
+export type RuntimeProfileReasonCode =
+  | "runtime-profile-applied"
+  | "runtime-profile-unknown"
+  | "runtime-backend-unverified"
+  | "execution-preference-advisory"
+  | "target-context-within-guidance"
+  | "target-context-above-guidance"
+  | "target-context-exceeds-model-maximum"
+  | "target-context-estimation-unavailable";
+
+export interface RuntimeProfileGuidance {
+  profile: RuntimeProfile;
+  contextAssessment: RuntimeContextAssessment;
+  requestedContextLength: number | null;
+  assumptions: string[];
+  warnings: string[];
+  reasonCodes: RuntimeProfileReasonCode[];
 }
 
 export interface CompatibilityAssumptions {
