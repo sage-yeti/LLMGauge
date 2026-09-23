@@ -81,8 +81,8 @@ export const modelDefinitionSchema: z.ZodType<ModelDefinition> = z.object({
   supportedFormats: z.array(z.enum(["gguf", "safetensors", "other"])).min(1),
   supportedRuntimes: z.array(z.enum(["llama.cpp", "ollama", "other"])).min(1),
   license: z.string().trim().min(1).optional(),
-  defaultContextLength: z.number().int().positive(),
-  maxContextLength: z.number().int().positive(),
+  defaultContextLength: z.number().int().positive().optional(),
+  maxContextLength: z.number().int().positive().optional(),
   quantizations: z.array(quantizationSchema),
   provenance: provenanceSchema,
 });
@@ -101,8 +101,8 @@ export const modelMetadataSchema: z.ZodType<
   supportedFormats: z.array(z.enum(["gguf", "safetensors", "other"])).min(1),
   supportedRuntimes: z.array(z.enum(["llama.cpp", "ollama", "other"])).min(1),
   license: z.string().trim().min(1).optional(),
-  defaultContextLength: z.number().int().positive(),
-  maxContextLength: z.number().int().positive(),
+  defaultContextLength: z.number().int().positive().optional(),
+  maxContextLength: z.number().int().positive().optional(),
   provenance: provenanceSchema,
 });
 
