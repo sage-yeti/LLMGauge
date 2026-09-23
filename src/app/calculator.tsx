@@ -14,6 +14,7 @@ import type {
 } from "@/domain/types";
 import type { HardwareFormValues } from "@/application/hardware";
 import { Field, HardwareFields } from "./hardware-fields";
+import { ContextGuidanceView } from "./context-guidance";
 
 interface CalculatorProps {
   models: readonly ModelDefinition[];
@@ -255,9 +256,7 @@ function ResultPanel({
           </small>
         </div>
       )}
-      <p className="context-guidance">
-        <strong>Context guidance:</strong> {result.contextLengthGuidance}
-      </p>
+      <ContextGuidanceView guidance={result.contextGuidance} />
       <ResultList
         title="Limiting factors"
         items={result.limitingFactors}
