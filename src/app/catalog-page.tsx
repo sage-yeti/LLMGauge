@@ -68,14 +68,18 @@ export function ModelCatalogPage({ model }: { model: ModelDefinition }) {
               <dd>{model.license}</dd>
             </div>
           )}
-          <div>
-            <dt>Default context</dt>
-            <dd>{model.defaultContextLength.toLocaleString()} tokens</dd>
-          </div>
-          <div>
-            <dt>Maximum context</dt>
-            <dd>{model.maxContextLength.toLocaleString()} tokens</dd>
-          </div>
+          {model.defaultContextLength !== undefined && (
+            <div>
+              <dt>Default context</dt>
+              <dd>{model.defaultContextLength.toLocaleString()} tokens</dd>
+            </div>
+          )}
+          {model.maxContextLength !== undefined && (
+            <div>
+              <dt>Maximum context</dt>
+              <dd>{model.maxContextLength.toLocaleString()} tokens</dd>
+            </div>
+          )}
         </dl>
       </section>
 
