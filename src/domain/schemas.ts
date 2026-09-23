@@ -124,6 +124,7 @@ export const gpuDefinitionSchema: z.ZodType<GpuDefinition> = z.object({
   vendor: z.string().trim().min(1),
   architecture: z.string().trim().min(1).optional(),
   vramGiB: nonNegative,
+  memoryType: z.string().trim().min(1).optional(),
   sharedMemoryGiB: nonNegative.optional(),
   suitabilitySummary: z.string().trim().min(1),
   provenance: provenanceSchema,

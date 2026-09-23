@@ -203,6 +203,12 @@ export function GpuCatalogPage({ gpu }: { gpu: GpuDefinition }) {
             <dt>Dedicated VRAM</dt>
             <dd>{memory}</dd>
           </div>
+          {gpu.memoryType && (
+            <div>
+              <dt>Memory type</dt>
+              <dd>{gpu.memoryType}</dd>
+            </div>
+          )}
           {gpu.sharedMemoryGiB !== undefined && (
             <div>
               <dt>Shared memory</dt>
