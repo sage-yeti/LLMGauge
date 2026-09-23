@@ -50,6 +50,34 @@ describe("public catalog pages", () => {
     expect(screen.queryByText(/tokens per second/i)).toBeNull();
   });
 
+  it("renders distinct details from newly curated model and GPU records", async () => {
+    const qwen = modelCatalog.find((model) => model.slug === "qwen3-4b");
+    const gpu = gpuCatalog.find((entry) => entry.slug === "arc-b580-12gb");
+    expect(qwen).toBeDefined();
+    expect(gpu).toBeDefined();
+
+    const modelPage = await ModelPage({
+      params: Promise.resolve({ slug: qwen!.slug }),
+    });
+    render(modelPage);
+    expect(screen.getByRole("heading", { name: "Qwen3 4B" })).toBeTruthy();
+    expect(screen.getByText(/memory input is an estimate/i)).toBeTruthy();
+    expect(
+      screen.getAllByRole("link", { name: /qwen\/qwen3-4b-gguf/i }),
+    ).toHaveLength(2);
+
+    cleanup();
+    const gpuPage = await GpuPage({
+      params: Promise.resolve({ slug: gpu!.slug }),
+    });
+    render(gpuPage);
+    expect(
+      screen.getByRole("heading", { name: "Intel Arc B580 12GB" }),
+    ).toBeTruthy();
+    expect(screen.getByText("12 GiB")).toBeTruthy();
+    expect(screen.getByText("GDDR6")).toBeTruthy();
+  });
+
   it("rejects unknown slugs through Next not-found behavior", async () => {
     await expect(
       ModelPage({ params: Promise.resolve({ slug: "missing-model" }) }),
@@ -81,6 +109,16 @@ describe("public catalog pages", () => {
 
   it("includes only catalog entries in the sitemap and exposes robots", () => {
     const entries = sitemap();
+    for (const model of modelCatalog) {
+      expect(
+        entries.some((entry) => entry.url.endsWith(`/models/${model.slug}`)),
+      ).toBe(true);
+    }
+    for (const gpu of gpuCatalog) {
+      expect(
+        entries.some((entry) => entry.url.endsWith(`/gpus/${gpu.slug}`)),
+      ).toBe(true);
+    }
     expect(
       entries.some((entry) =>
         entry.url.endsWith(`/models/${modelCatalog[0].slug}`),
