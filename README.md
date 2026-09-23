@@ -84,6 +84,12 @@ The context policy is reviewed against a small deterministic fixture matrix in `
 
 The engine currently chooses the highest-bits-per-weight candidate that fits the supplied hardware, preserving model input order for ties. It distinguishes dedicated-GPU fit, partial offload, CPU-only, and unsupported results. Each result includes typed reason codes such as `insufficient-vram`, `insufficient-system-ram`, `integrated-shared-memory`, `exact-memory-boundary`, `approximate-estimate`, `model-context-limit`, `conservative-context-guidance`, and `context-estimation-unavailable`; the UI formats the associated messages without recreating the decision logic. Integrated/shared-memory handling is intentionally conservative, and no result promises a tokens-per-second rate.
 
+## Runtime evidence review
+
+The post-deployment accuracy review is recorded in `src/engine/runtime-evidence.ts`. It compares the current policy with primary llama.cpp documentation and publisher model cards without collecting runtime telemetry. The evidence supports the qualitative claims that quantization reduces weight storage, llama.cpp can offload a maximum possible number of layers to supported GPUs, and larger context settings require additional runtime memory. It does not support exact file-size, KV-cache, layer-placement, driver, or performance predictions for this estimator.
+
+One catalog correction came from this review: Google documents 32K input context for Gemma 3 1B, while 128K applies to the larger Gemma 3 variants. The catalog now records 32,768 as that model's maximum. The practical starting point remains the separate configurable 4,096-token policy. Other production context values remain unchanged because the available evidence is either variant-specific, runtime-dependent, or not sufficient to justify a more precise correction. The evidence matrix deliberately labels those cases as approximate, conservative-policy, or currently unknowable.
+
 ## SEO/page architecture
 
 Public catalog and guide pages use static params from small curated registries and metadata/canonical paths derived from their definitions. They provide useful explanations and provenance, then link to hardware-specific calculators rather than calculating anonymous compatibility at build time. The project intentionally has no mass-generated content, scraping, authentication, advertising, or database. Catalog entries and guides are curated rather than exhaustive: add them only when their sources, freshness, and usefulness can be reviewed manually.
