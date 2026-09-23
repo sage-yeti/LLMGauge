@@ -20,6 +20,7 @@ describe("recommendations interface", () => {
 
   it("renders shared hardware controls and produces a CPU-only recommendation", () => {
     renderRecommendations();
+    expect(screen.getByRole("button", { name: "Scan my device" })).toBeTruthy();
     submit();
     expect(
       screen.getByRole("heading", { name: "Models for your hardware" }),

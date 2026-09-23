@@ -38,6 +38,7 @@ describe("compatibility calculator", () => {
         .getByLabelText("System RAM (GiB)")
         .getAttribute("aria-describedby"),
     ).toBe("system-ram-help");
+    expect(screen.getByRole("button", { name: "Scan my device" })).toBeTruthy();
   });
 
   it("shows a CPU-only result for the default no-GPU profile", () => {
