@@ -66,8 +66,9 @@ export interface ModelDefinition {
   supportedFormats: ModelFormat[];
   supportedRuntimes: Runtime[];
   license?: string;
-  defaultContextLength: number;
-  maxContextLength: number;
+  /** Publisher/runtime metadata; incomplete direct inputs produce unavailable guidance. */
+  defaultContextLength?: number;
+  maxContextLength?: number;
   quantizations: QuantizationDefinition[];
   provenance: CatalogProvenance;
 }
@@ -99,7 +100,7 @@ export interface CompatibilityResult {
   executionMode: ExecutionMode;
   memory: MemoryEstimate;
   recommendedQuantizationId: string | null;
-  contextLengthGuidance: string;
+  contextGuidance: ContextGuidance;
   limitingFactors: string[];
   messages: string[];
   reasons: CompatibilityReason[];
@@ -109,6 +110,10 @@ export interface CompatibilityResult {
 
 export type CompatibilityReasonCode =
   | "approximate-estimate"
+  | "approximate-context-assumption"
+  | "model-context-limit"
+  | "conservative-context-guidance"
+  | "context-estimation-unavailable"
   | "insufficient-vram"
   | "partial-offload"
   | "insufficient-system-ram"
@@ -121,6 +126,27 @@ export interface CompatibilityReason {
   code: CompatibilityReasonCode;
   severity: "info" | "warning" | "blocking";
   message: string;
+}
+
+export type ContextGuidanceStatus = "available" | "unavailable";
+export type ContextGuidanceConfidence = "medium" | "unknown";
+
+export interface ContextGuidance {
+  status: ContextGuidanceStatus;
+  /** The model's published/context metadata limit, not a hardware estimate. */
+  modelMaximumContextLength: number | null;
+  /** A conservative starting point; null means the engine cannot calculate one. */
+  recommendedContextLength: number | null;
+  confidence: ContextGuidanceConfidence;
+  message: string;
+  assumptions: string[];
+  reasonCodes: Extract<
+    CompatibilityReasonCode,
+    | "model-context-limit"
+    | "conservative-context-guidance"
+    | "context-estimation-unavailable"
+    | "approximate-context-assumption"
+  >[];
 }
 
 export interface CompatibilityAssumptions {

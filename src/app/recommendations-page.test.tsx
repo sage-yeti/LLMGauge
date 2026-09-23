@@ -30,6 +30,9 @@ describe("recommendations interface", () => {
     ).toBeTruthy();
     expect(screen.getAllByText("CPU-only").length).toBeGreaterThan(0);
     expect(
+      screen.getAllByText("Practical starting point").length,
+    ).toBeGreaterThan(0);
+    expect(
       screen.getAllByRole("link", { name: /read about this model/i }).length,
     ).toBeGreaterThan(0);
   });

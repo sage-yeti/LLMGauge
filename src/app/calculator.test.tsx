@@ -48,6 +48,8 @@ describe("compatibility calculator", () => {
     expect(screen.getByRole("heading", { name: "CPU-only" })).toBeTruthy();
     expect(screen.getByText("CPU execution")).toBeTruthy();
     expect(screen.getByText(/No GPU was supplied/)).toBeTruthy();
+    expect(screen.getByText("Practical starting point")).toBeTruthy();
+    expect(screen.getByText("Model maximum")).toBeTruthy();
   });
 
   it("shows a GPU-capable result and recommendation", () => {
@@ -116,6 +118,9 @@ describe("compatibility calculator", () => {
 
     expect(screen.getByText("Assumptions and warnings")).toBeTruthy();
     expect(screen.getByText(/deterministic memory estimate/)).toBeTruthy();
+    expect(
+      screen.getByText(/Context guidance is conservative and advisory/),
+    ).toBeTruthy();
     expect(screen.getByText(/Weight overhead: 1.12×/)).toBeTruthy();
     expect(
       screen.getByRole("link", { name: /interpret this estimate/i }),
