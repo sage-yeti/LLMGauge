@@ -21,7 +21,13 @@ The home route contains the compatibility calculator. Select one of the curated 
 
 The `/recommendations` route implements the second core workflow: “What can my PC run?”. It reuses the shared hardware controls and `parseHardwareForm` boundary, evaluates every valid catalog quantization through the same compatibility engine, and returns one deterministic representative per model. Usable results are ranked ahead of unsupported results using this policy: compatibility level first (`GPU-capable`, `partial-offload`, `CPU-only`, then `unsupported`), higher bits-per-weight next, lower estimated VRAM next, then stable model and quantization IDs. Unsupported representatives are kept in a separate expandable section rather than mixed into the default recommendations.
 
-Results show GPU-capable, partial-offload, CPU-only, or unsupported classifications, approximate VRAM/RAM estimates, quantization recommendations, limiting factors, context guidance, and the assumptions/warnings used by the engine. The estimates are not performance benchmarks or guarantees. Recommendations rank the small curated production catalog deterministically; model ranking, hardware detection, accounts, and backend/API features are not implemented.
+Results show GPU-capable, partial-offload, CPU-only, or unsupported classifications, approximate VRAM/RAM estimates, quantization recommendations, limiting factors, context guidance, and the assumptions/warnings used by the engine. The estimates are not performance benchmarks or guarantees. Recommendations rank the small curated production catalog deterministically; browser hardware scanning is only an optional best-effort convenience and does not replace manual entry.
+
+## Optional browser hardware scan
+
+Both hardware workflows include a `Scan my device` control. It runs locally in the browser and may report an operating-system hint, logical processor count, coarse `deviceMemory`, and a WebGL/WebGPU renderer hint when those APIs are available. Browser privacy settings and feature support vary, so unavailable values are expected. The scan never sends hardware details to a server, stores them, or records analytics identifiers.
+
+Exact CPU model, exact system RAM, dedicated GPU VRAM, driver details, and reliable integrated/discrete classification are intentionally not inferred. Exact VRAM is always shown as unknown unless a future browser capability exposes it safely. Renderer-based catalog suggestions are low-confidence and require an explicit user selection before values are copied into the editable form. Users can review and edit every applied hint, and scanning never submits a calculation; manual entry remains the reliable path.
 
 ## Public catalog pages and SEO
 
@@ -54,8 +60,9 @@ To add a public entry, add a validated curated model or GPU record with a stable
 
 ## Architecture
 
-- `src/app/`: Next.js App Router and presentation code, including server-rendered catalog and `/guides/[slug]` pages plus sitemap/robots handlers.
+- `src/app/`: Next.js App Router and presentation code, including server-rendered catalog and `/guides/[slug]` pages plus sitemap/robots handlers. The shared `hardware-fields.tsx` mounts the optional local device-scan control for both workflows.
 - `src/domain/`: framework-independent types and Zod runtime schemas.
+- `src/application/browser-detection.ts`: typed, browser-only signal collection and pure parsing helpers. It is separate from compatibility-domain logic and has no server, network, storage, or analytics behavior.
 - `src/engine/`: deterministic compatibility calculations and named policies. This layer has no Next.js, UI, network, or AI dependencies and is directly unit-tested.
 - `src/data/`: the curated production catalog, educational guide content, isolated synthetic fixtures, and registry helpers. `catalog.ts` is the access boundary for future model/GPU catalog growth; it is intentionally not exhaustive.
 
