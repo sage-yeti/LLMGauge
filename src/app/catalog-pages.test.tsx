@@ -8,6 +8,11 @@ import GpuPage, {
 } from "./gpus/[slug]/page";
 import sitemap from "./sitemap";
 import robots from "./robots";
+import ModelsPage, { metadata as modelsMetadata } from "./models/page";
+import GpusPage, { metadata as gpusMetadata } from "./gpus/page";
+import { ModelCatalogIndex, GpuCatalogIndex } from "./catalog-index";
+import HomePage from "./page";
+import { absoluteUrl } from "./site";
 import { gpuCatalog, modelCatalog } from "@/data/catalog";
 
 describe("public catalog pages", () => {
@@ -78,6 +83,86 @@ describe("public catalog pages", () => {
     expect(screen.getByText("GDDR6")).toBeTruthy();
   });
 
+  it("renders every model and GPU in directly browsable catalog indexes", () => {
+    const modelsPage = ModelsPage();
+    render(modelsPage);
+    for (const model of modelCatalog) {
+      expect(
+        screen
+          .getByRole("link", { name: model.displayName })
+          .getAttribute("href"),
+      ).toBe(`/models/${model.slug}`);
+      expect(
+        screen.getAllByText(`${model.parameterCountBillions}B`).length,
+      ).toBeGreaterThan(0);
+    }
+
+    cleanup();
+    const gpusPage = GpusPage();
+    render(gpusPage);
+    for (const gpu of gpuCatalog) {
+      expect(
+        screen
+          .getByRole("link", { name: gpu.displayName })
+          .getAttribute("href"),
+      ).toBe(`/gpus/${gpu.slug}`);
+      expect(screen.getAllByText(gpu.vendor).length).toBeGreaterThan(0);
+    }
+    expect(screen.getAllByText("0 GiB (integrated)").length).toBeGreaterThan(0);
+  });
+
+  it("links to both catalogs from the landing page navigation", () => {
+    render(HomePage());
+    expect(
+      screen.getByRole("link", { name: "Browse models" }).getAttribute("href"),
+    ).toBe("/models");
+    expect(
+      screen.getByRole("link", { name: "Browse GPUs" }).getAttribute("href"),
+    ).toBe("/gpus");
+  });
+
+  it("handles empty indexes and absent optional GPU facts", () => {
+    const gpuWithoutOptionalFacts = {
+      ...gpuCatalog[0],
+      architecture: undefined,
+      memoryType: undefined,
+    };
+    const modelWithoutOptionalFacts = {
+      ...modelCatalog[0],
+      license: undefined,
+      defaultContextLength: undefined,
+      maxContextLength: undefined,
+    };
+    const { rerender } = render(
+      <ModelCatalogIndex models={[modelWithoutOptionalFacts]} />,
+    );
+    expect(
+      screen.getByRole("link", { name: modelCatalog[0].displayName }),
+    ).toBeTruthy();
+    rerender(<GpuCatalogIndex gpus={[gpuWithoutOptionalFacts]} />);
+    expect(
+      screen.getByRole("link", { name: gpuCatalog[0].displayName }),
+    ).toBeTruthy();
+    expect(screen.queryByText("Memory type")).toBeNull();
+    expect(screen.queryByText("Architecture")).toBeNull();
+
+    rerender(<ModelCatalogIndex models={[]} />);
+    expect(screen.getByText("No models are currently listed.")).toBeTruthy();
+    rerender(<GpuCatalogIndex gpus={[]} />);
+    expect(screen.getByText("No GPUs are currently listed.")).toBeTruthy();
+  });
+
+  it("sets descriptive index metadata and canonical Open Graph URLs", () => {
+    expect(modelsMetadata.title).toBe("Browse Local LLM Models");
+    expect(modelsMetadata.description).toContain("curated local model catalog");
+    expect(modelsMetadata.alternates?.canonical).toBe(absoluteUrl("/models"));
+    expect(modelsMetadata.openGraph?.url).toBe(absoluteUrl("/models"));
+    expect(gpusMetadata.title).toBe("Browse GPU Memory Profiles");
+    expect(gpusMetadata.description).toContain("curated GPU catalog");
+    expect(gpusMetadata.alternates?.canonical).toBe(absoluteUrl("/gpus"));
+    expect(gpusMetadata.openGraph?.url).toBe(absoluteUrl("/gpus"));
+  });
+
   it("rejects unknown slugs through Next not-found behavior", async () => {
     await expect(
       ModelPage({ params: Promise.resolve({ slug: "missing-model" }) }),
@@ -131,6 +216,8 @@ describe("public catalog pages", () => {
     ).toBe(true);
     expect(entries.some((entry) => entry.url.includes("missing"))).toBe(false);
     expect(entries.some((entry) => entry.url.endsWith("/guides"))).toBe(true);
+    expect(entries.some((entry) => entry.url.endsWith("/models"))).toBe(true);
+    expect(entries.some((entry) => entry.url.endsWith("/gpus"))).toBe(true);
     expect(
       entries.some((entry) => entry.url.endsWith("/guides/what-is-vram")),
     ).toBe(true);
