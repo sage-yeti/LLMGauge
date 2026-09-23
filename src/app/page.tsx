@@ -1,6 +1,13 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Calculator } from "./calculator";
+import { absoluteUrl } from "./site";
 import { gpuCatalog, modelCatalog } from "@/data/catalog";
+
+export const metadata: Metadata = {
+  alternates: { canonical: absoluteUrl("/") },
+  openGraph: { url: absoluteUrl("/") },
+};
 
 export default function HomePage() {
   return (
