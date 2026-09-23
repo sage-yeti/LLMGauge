@@ -15,6 +15,8 @@ import type {
 import type { HardwareFormValues } from "@/application/hardware";
 import { Field, HardwareFields } from "./hardware-fields";
 import { ContextGuidanceView } from "./context-guidance";
+import { RuntimeFields } from "./runtime-fields";
+import { RuntimeProfileView } from "./runtime-profile-view";
 
 interface CalculatorProps {
   models: readonly ModelDefinition[];
@@ -45,6 +47,10 @@ export function Calculator({ models, gpus }: CalculatorProps) {
     vramGiB: "0",
     systemRamGiB: "16",
     operatingSystem: "windows",
+    runtime: "",
+    backend: "",
+    executionPreference: "",
+    targetContextLength: "",
   });
   const [evaluation, setEvaluation] = useState<CalculatorEvaluation>({
     fieldErrors: {},
@@ -173,6 +179,11 @@ export function Calculator({ models, gpus }: CalculatorProps) {
             onGpuChange={handleGpuChange}
             onApplyDetected={applyDetected}
           />
+          <RuntimeFields
+            values={values}
+            fieldErrors={evaluation.fieldErrors}
+            onChange={updateValue}
+          />
         </section>
 
         <button className="evaluate-button" type="submit">
@@ -257,6 +268,7 @@ function ResultPanel({
         </div>
       )}
       <ContextGuidanceView guidance={result.contextGuidance} />
+      <RuntimeProfileView guidance={result.runtimeGuidance} />
       <ResultList
         title="Limiting factors"
         items={result.limitingFactors}
