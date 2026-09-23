@@ -5,7 +5,7 @@ import type {
   QuantizationDefinition,
 } from "@/domain/types";
 
-const verifiedOn = "2026-09-22";
+const verifiedOn = "2026-09-23";
 
 const ggufQuantizationSource: CatalogProvenance = {
   source: "llama.cpp quantization documentation",
@@ -71,6 +71,42 @@ function model(
     ...definition,
     quantizations: definition.quantizations ?? ggufQuantizations(),
   };
+}
+
+function convertedQuantizations(
+  repository: string,
+  includeQ8 = true,
+): QuantizationDefinition[] {
+  const sourceUrl = `https://huggingface.co/${repository}`;
+  const provenance: CatalogProvenance = {
+    source: `${repository} GGUF repository`,
+    sourceUrl,
+    sourceType: "community-conversion",
+    confidence: "approximate",
+    lastVerified: verifiedOn,
+    note: "The repository confirms available GGUF quantization files. Estimated weight size uses parameter count × bits-per-weight; it is not the downloaded file size and excludes runtime/context memory.",
+  };
+  const candidates: QuantizationDefinition[] = [
+    {
+      id: "q4-k-m",
+      displayName: "Q4_K_M",
+      bitsPerWeight: 4.5,
+      description:
+        "A commonly available lower-memory GGUF variant; the listed memory input is an estimate, not the repository file size.",
+      provenance,
+    },
+  ];
+  if (includeQ8) {
+    candidates.push({
+      id: "q8-0",
+      displayName: "Q8_0",
+      bitsPerWeight: 8,
+      description:
+        "A higher-memory GGUF variant where listed by the conversion repository; the listed memory input remains approximate.",
+      provenance,
+    });
+  }
+  return candidates;
 }
 
 export const productionModels: readonly ModelDefinition[] = [
@@ -243,6 +279,185 @@ export const productionModels: readonly ModelDefinition[] = [
       "The public model card identifies the instruct variant; this catalog uses a conservative 32K maximum for local GGUF planning.",
     ),
   }),
+  model({
+    id: "qwen-qwen3-4b",
+    slug: "qwen3-4b",
+    displayName: "Qwen3 4B",
+    summary:
+      "Qwen's compact 4B general-purpose model; a separate GGUF conversion is listed for llama.cpp workflows.",
+    family: "Qwen3",
+    provider: "Qwen",
+    architecture: "Qwen3",
+    parameterCountBillions: 4,
+    supportedFormats: ["gguf", "safetensors"],
+    supportedRuntimes: ["llama.cpp"],
+    license: "Apache-2.0",
+    maxContextLength: 32768,
+    provenance: modelProvenance(
+      "Qwen3 4B publisher model card",
+      "https://huggingface.co/Qwen/Qwen3-4B",
+      "Publisher model metadata and license; the separate Qwen GGUF repository is community conversion data. The catalog uses the documented native 32K context and does not assume extended-context settings.",
+    ),
+    quantizations: convertedQuantizations("Qwen/Qwen3-4B-GGUF"),
+  }),
+  model({
+    id: "qwen-qwen3-8b",
+    slug: "qwen3-8b",
+    displayName: "Qwen3 8B",
+    summary:
+      "An 8B Qwen3 general-purpose model that adds a mid-sized option beyond the existing Qwen2.5 entries.",
+    family: "Qwen3",
+    provider: "Qwen",
+    architecture: "Qwen3",
+    parameterCountBillions: 8,
+    supportedFormats: ["gguf", "safetensors"],
+    supportedRuntimes: ["llama.cpp"],
+    license: "Apache-2.0",
+    maxContextLength: 32768,
+    provenance: modelProvenance(
+      "Qwen3 8B publisher model card",
+      "https://huggingface.co/Qwen/Qwen3-8B",
+      "Publisher model metadata and license. GGUF candidates come from a separate Qwen conversion repository; extended YaRN context is not represented as the default maximum here.",
+    ),
+    quantizations: convertedQuantizations("ggml-org/Qwen3-8B-GGUF"),
+  }),
+  model({
+    id: "qwen-qwen2-5-coder-7b-instruct",
+    slug: "qwen2-5-coder-7b-instruct",
+    displayName: "Qwen2.5-Coder 7B Instruct",
+    summary:
+      "A code-focused instruction model, adding a distinct software-development use case to the catalog.",
+    family: "Qwen2.5-Coder",
+    provider: "Qwen",
+    architecture: "Qwen2",
+    parameterCountBillions: 7.6,
+    supportedFormats: ["gguf", "safetensors"],
+    supportedRuntimes: ["llama.cpp"],
+    license: "Apache-2.0",
+    maxContextLength: 131072,
+    provenance: modelProvenance(
+      "Qwen2.5-Coder 7B Instruct publisher model card",
+      "https://huggingface.co/Qwen/Qwen2.5-Coder-7B-Instruct",
+      "The publisher describes this as the 7B code-specialized variant. Parameter count is rounded to 7.6B for planning; Qwen separately publishes GGUF conversion files.",
+    ),
+    quantizations: convertedQuantizations(
+      "Qwen/Qwen2.5-Coder-7B-Instruct-GGUF",
+    ),
+  }),
+  model({
+    id: "meta-llama-3-1-8b-instruct",
+    slug: "llama-3-1-8b-instruct",
+    displayName: "Llama 3.1 8B Instruct",
+    summary:
+      "Meta's 8B instruction-tuned Llama 3.1 model with publisher-documented long-context metadata.",
+    family: "Llama 3.1",
+    provider: "Meta",
+    architecture: "Llama",
+    parameterCountBillions: 8,
+    supportedFormats: ["gguf", "safetensors"],
+    supportedRuntimes: ["llama.cpp"],
+    license: "Llama 3.1 Community License",
+    maxContextLength: 131072,
+    provenance: modelProvenance(
+      "Meta Llama 3.1 8B Instruct model card",
+      "https://huggingface.co/meta-llama/Llama-3.1-8B-Instruct",
+      "Publisher card reports 8B parameters and 128K context. GGUF conversion is community-provided and remains subject to the model's community license.",
+    ),
+    quantizations: convertedQuantizations(
+      "mradermacher/Meta-Llama-3.1-8B-GGUF",
+    ),
+  }),
+  model({
+    id: "google-gemma-3-12b-it",
+    slug: "gemma-3-12b-it",
+    displayName: "Gemma 3 12B IT",
+    summary:
+      "The 12B Gemma 3 instruction model adds a larger text-and-image family option; this estimate covers text weights only.",
+    family: "Gemma 3",
+    provider: "Google",
+    architecture: "Gemma",
+    parameterCountBillions: 12,
+    supportedFormats: ["gguf", "safetensors"],
+    supportedRuntimes: ["llama.cpp"],
+    license: "Gemma Terms of Use",
+    maxContextLength: 131072,
+    provenance: modelProvenance(
+      "Google Gemma 3 12B IT model card",
+      "https://huggingface.co/google/gemma-3-12b-it",
+      "Publisher metadata; image encoder, image tokens, and multimodal runtime memory are not modeled. The ggml-org repository provides a separate GGUF conversion.",
+    ),
+    quantizations: convertedQuantizations(
+      "ggml-org/gemma-3-12b-it-GGUF",
+      false,
+    ),
+  }),
+  model({
+    id: "google-gemma-3-27b-it",
+    slug: "gemma-3-27b-it",
+    displayName: "Gemma 3 27B IT",
+    summary:
+      "Google's largest Gemma 3 instruction variant, useful for exploring high-memory local configurations.",
+    family: "Gemma 3",
+    provider: "Google",
+    architecture: "Gemma",
+    parameterCountBillions: 27,
+    supportedFormats: ["gguf", "safetensors"],
+    supportedRuntimes: ["llama.cpp"],
+    license: "Gemma Terms of Use",
+    maxContextLength: 131072,
+    provenance: modelProvenance(
+      "Google Gemma 3 27B IT model card",
+      "https://huggingface.co/google/gemma-3-27b-it",
+      "Publisher metadata; multimodal encoder memory is outside the text-weight estimate. GGUF availability is documented separately by ggml-org.",
+    ),
+    quantizations: convertedQuantizations("ggml-org/gemma-3-27b-it-GGUF"),
+  }),
+  model({
+    id: "microsoft-phi-4-mini-instruct",
+    slug: "phi-4-mini-instruct",
+    displayName: "Phi-4 Mini Instruct",
+    summary:
+      "Microsoft's 3.8B instruction model provides a compact alternative with a publisher-documented 128K context limit.",
+    family: "Phi-4",
+    provider: "Microsoft",
+    architecture: "Phi",
+    parameterCountBillions: 3.8,
+    supportedFormats: ["gguf", "safetensors"],
+    supportedRuntimes: ["llama.cpp"],
+    license: "MIT",
+    maxContextLength: 131072,
+    provenance: modelProvenance(
+      "Microsoft Phi-4 Mini Instruct model card",
+      "https://huggingface.co/microsoft/Phi-4-mini-instruct",
+      "Microsoft reports 3.8B parameters, 128K context, and MIT licensing. GGUF is a community conversion; runtime-specific context memory is not estimated.",
+    ),
+    quantizations: convertedQuantizations(
+      "second-state/Phi-4-mini-instruct-GGUF",
+    ),
+  }),
+  model({
+    id: "mistralai-mistral-nemo-12b-instruct-2407",
+    slug: "mistral-nemo-12b-instruct-2407",
+    displayName: "Mistral Nemo 12B Instruct",
+    summary:
+      "A 12B Mistral and NVIDIA collaboration model, extending the catalog into a larger multilingual instruction tier.",
+    family: "Mistral Nemo",
+    provider: "Mistral AI / NVIDIA",
+    architecture: "Mistral",
+    parameterCountBillions: 12,
+    supportedFormats: ["gguf", "safetensors"],
+    supportedRuntimes: ["llama.cpp"],
+    license: "Apache-2.0",
+    maxContextLength: 131072,
+    provenance: modelProvenance(
+      "Mistral Nemo Instruct 2407 model card",
+      "https://huggingface.co/mistralai/Mistral-Nemo-Instruct-2407",
+      "Publisher model card identifies the 12B model and Apache-2.0 license. Quantization files are a community conversion and the 128K limit is not a hardware-fit claim.",
+    ),
+    quantizations: convertedQuantizations(
+      "QuantFactory/Mistral-Nemo-Instruct-2407-GGUF",
+    ),
+  }),
 ];
 
 function gpuProvenance(source: string, sourceUrl: string): CatalogProvenance {
@@ -406,5 +621,185 @@ export const productionGpus: readonly GpuDefinition[] = [
       "Intel processor graphics documentation",
       "https://www.intel.com/content/www/us/en/products/platforms/details/alder-lake-s.html",
     ),
+  },
+  {
+    id: "nvidia-rtx-2060-6gb",
+    slug: "rtx-2060-6gb",
+    displayName: "GeForce RTX 2060 6GB",
+    kind: "discrete",
+    vendor: "NVIDIA",
+    architecture: "Turing",
+    vramGiB: 6,
+    memoryType: "GDDR6",
+    suitabilitySummary:
+      "An older 6 GiB discrete card; useful for evaluating smaller quantized models, with limited dedicated-memory headroom.",
+    provenance: gpuProvenance(
+      "NVIDIA GeForce RTX 2060 specification announcement",
+      "https://nvidianews.nvidia.com/news/nvidia-geforce-rtx-2060-is-here-next-gen-gaming-takes-off",
+    ),
+  },
+  {
+    id: "nvidia-rtx-4060-ti-16gb",
+    slug: "rtx-4060-ti-16gb",
+    displayName: "GeForce RTX 4060 Ti 16GB",
+    kind: "discrete",
+    vendor: "NVIDIA",
+    architecture: "Ada Lovelace",
+    vramGiB: 16,
+    memoryType: "GDDR6",
+    suitabilitySummary:
+      "The 16 GiB RTX 4060 Ti variant offers more model-memory capacity than the 8 GiB version; the catalog treats capacity separately from speed.",
+    provenance: gpuProvenance(
+      "NVIDIA GeForce RTX 4060 Ti specifications",
+      "https://www.nvidia.com/en-us/geforce/graphics-cards/40-series/rtx-4060-4060ti/",
+    ),
+  },
+  {
+    id: "nvidia-rtx-4070-ti-super-16gb",
+    slug: "rtx-4070-ti-super-16gb",
+    displayName: "GeForce RTX 4070 Ti SUPER 16GB",
+    kind: "discrete",
+    vendor: "NVIDIA",
+    architecture: "Ada Lovelace",
+    vramGiB: 16,
+    memoryType: "GDDR6X",
+    suitabilitySummary:
+      "A 16 GiB discrete GPU that broadens the catalog's mid/high capacity range without implying model speed or guaranteed fit.",
+    provenance: gpuProvenance(
+      "NVIDIA GeForce RTX 4070 family specifications",
+      "https://www.nvidia.com/en-us/geforce/graphics-cards/40-series/rtx-4070-family/",
+    ),
+  },
+  {
+    id: "nvidia-rtx-5080-16gb",
+    slug: "rtx-5080-16gb",
+    displayName: "GeForce RTX 5080 16GB",
+    kind: "discrete",
+    vendor: "NVIDIA",
+    architecture: "Blackwell",
+    vramGiB: 16,
+    memoryType: "GDDR7",
+    suitabilitySummary:
+      "A current 16 GiB discrete option; compatibility uses memory capacity only and does not infer backend availability or performance.",
+    provenance: gpuProvenance(
+      "NVIDIA GeForce RTX 5080 specifications",
+      "https://www.nvidia.com/en-us/geforce/graphics-cards/50-series/rtx-5080/",
+    ),
+  },
+  {
+    id: "amd-radeon-rx-6600-8gb",
+    slug: "radeon-rx-6600-8gb",
+    displayName: "Radeon RX 6600 8GB",
+    kind: "discrete",
+    vendor: "AMD",
+    architecture: "RDNA 2",
+    vramGiB: 8,
+    memoryType: "GDDR6",
+    suitabilitySummary:
+      "An established 8 GiB discrete GPU; actual llama.cpp backend and driver support depend on the user's software stack.",
+    provenance: gpuProvenance(
+      "AMD Radeon RX 6600 specifications",
+      "https://www.amd.com/en/products/graphics/desktops/radeon/6000-series/amd-radeon-rx-6600.html",
+    ),
+  },
+  {
+    id: "amd-radeon-rx-7700-xt-12gb",
+    slug: "radeon-rx-7700-xt-12gb",
+    displayName: "Radeon RX 7700 XT 12GB",
+    kind: "discrete",
+    vendor: "AMD",
+    architecture: "RDNA 3",
+    vramGiB: 12,
+    memoryType: "GDDR6",
+    suitabilitySummary:
+      "A 12 GiB RDNA 3 card that fills the catalog's AMD mid-capacity range; memory fit does not confirm backend support.",
+    provenance: gpuProvenance(
+      "AMD Radeon RX 7700 XT product specifications",
+      "https://www.amd.com/en/newsroom/press-releases/2023-8-25-new-amd-radeon-rx-7800-xt-and-radeon-rx-7700-xt-gr.html",
+    ),
+  },
+  {
+    id: "amd-radeon-rx-9070-16gb",
+    slug: "radeon-rx-9070-16gb",
+    displayName: "Radeon RX 9070 16GB",
+    kind: "discrete",
+    vendor: "AMD",
+    architecture: "RDNA 4",
+    vramGiB: 16,
+    memoryType: "GDDR6",
+    suitabilitySummary:
+      "A newer 16 GiB discrete option; LLMGauge reports its memory class while leaving runtime and driver compatibility to the user's setup.",
+    provenance: gpuProvenance(
+      "AMD Radeon RX 9070 specifications",
+      "https://www.amd.com/en/products/graphics/desktops/radeon/9000-series/amd-radeon-rx-9070.html",
+    ),
+  },
+  {
+    id: "amd-radeon-rx-9070-xt-16gb",
+    slug: "radeon-rx-9070-xt-16gb",
+    displayName: "Radeon RX 9070 XT 16GB",
+    kind: "discrete",
+    vendor: "AMD",
+    architecture: "RDNA 4",
+    vramGiB: 16,
+    memoryType: "GDDR6",
+    suitabilitySummary:
+      "The RX 9070 XT provides a current 16 GiB AMD option; no speed or universal llama.cpp support is inferred.",
+    provenance: gpuProvenance(
+      "AMD Radeon RX 9070 XT specifications",
+      "https://www.amd.com/en/products/graphics/desktops/radeon/9000-series/amd-radeon-rx-9070xt.html",
+    ),
+  },
+  {
+    id: "intel-arc-b570-10gb",
+    slug: "arc-b570-10gb",
+    displayName: "Intel Arc B570 10GB",
+    kind: "discrete",
+    vendor: "Intel",
+    architecture: "Battlemage",
+    vramGiB: 10,
+    memoryType: "GDDR6",
+    suitabilitySummary:
+      "A 10 GiB Intel discrete GPU; check the selected llama.cpp build and driver for backend support before relying on offload.",
+    provenance: gpuProvenance(
+      "Intel Arc B570 specifications",
+      "https://www.intel.com/content/www/us/en/products/sku/241676/intel-arc-b570-graphics/specifications.html",
+    ),
+  },
+  {
+    id: "intel-arc-b580-12gb",
+    slug: "arc-b580-12gb",
+    displayName: "Intel Arc B580 12GB",
+    kind: "discrete",
+    vendor: "Intel",
+    architecture: "Battlemage",
+    vramGiB: 12,
+    memoryType: "GDDR6",
+    suitabilitySummary:
+      "A 12 GiB Intel discrete GPU that expands the memory-capacity range; available runtime paths remain software-dependent.",
+    provenance: gpuProvenance(
+      "Intel Arc B580 specifications",
+      "https://www.intel.com/content/www/us/en/products/sku/241598/intel-arc-b580-graphics/specifications.html",
+    ),
+  },
+  {
+    id: "amd-radeon-780m-integrated",
+    slug: "radeon-780m-integrated",
+    displayName: "AMD Radeon 780M integrated graphics",
+    kind: "integrated",
+    vendor: "AMD",
+    architecture: "RDNA 3",
+    vramGiB: 0,
+    suitabilitySummary:
+      "Integrated graphics use system memory rather than a fixed dedicated VRAM capacity; LLMGauge conservatively classifies this as CPU-only capacity.",
+    provenance: {
+      source: "AMD Ryzen 7 7840U specifications",
+      sourceUrl:
+        "https://www.amd.com/en/products/processors/laptop/ryzen/7000-series/amd-ryzen-7-7840u.html",
+      sourceType: "manufacturer-specification",
+      confidence: "verified",
+      lastVerified: verifiedOn,
+      note: "The processor specification identifies Radeon 780M integrated graphics. No fixed shared-memory allocation is asserted because it is system-configured.",
+    },
   },
 ];
