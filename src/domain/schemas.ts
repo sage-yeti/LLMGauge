@@ -4,6 +4,7 @@ import type {
   HardwareProfile,
   ModelDefinition,
   QuantizationDefinition,
+  RuntimeProfile,
 } from "./types";
 
 const nonNegative = z.number().finite().nonnegative();
@@ -57,6 +58,15 @@ export const hardwareProfileSchema: z.ZodType<HardwareProfile> = z.object({
     .optional(),
   systemRamGiB: positive,
   operatingSystem: z.enum(["windows", "linux", "macos", "other"]),
+});
+
+export const runtimeProfileSchema: z.ZodType<RuntimeProfile> = z.object({
+  runtime: z.enum(["llama.cpp", "unknown"]).optional(),
+  backend: z.enum(["cpu", "cuda", "vulkan", "metal", "unknown"]).optional(),
+  executionPreference: z
+    .enum(["automatic", "full-gpu", "partial-offload", "cpu"])
+    .optional(),
+  targetContextLength: z.number().int().positive().optional(),
 });
 
 export const quantizationSchema: z.ZodType<QuantizationDefinition> = z.object({
