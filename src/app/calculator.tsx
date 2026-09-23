@@ -80,6 +80,11 @@ export function Calculator({ models, gpus }: CalculatorProps) {
     setEvaluation({ fieldErrors: {} });
   }
 
+  function applyDetected(patch: Partial<HardwareFormValues>) {
+    setValues((current) => ({ ...current, ...patch }));
+    setEvaluation({ fieldErrors: {} });
+  }
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setEvaluation(evaluateCalculator(values));
@@ -165,6 +170,7 @@ export function Calculator({ models, gpus }: CalculatorProps) {
             fieldErrors={evaluation.fieldErrors}
             onChange={updateHardwareValue}
             onGpuChange={handleGpuChange}
+            onApplyDetected={applyDetected}
           />
         </section>
 

@@ -2,6 +2,7 @@
 
 import type { HardwareFormValues } from "@/application/hardware";
 import type { GpuDefinition } from "@/domain/types";
+import { DeviceScan } from "./device-scan";
 
 interface HardwareFieldsProps {
   values: HardwareFormValues;
@@ -9,6 +10,7 @@ interface HardwareFieldsProps {
   fieldErrors: Record<string, string>;
   onChange: (field: keyof HardwareFormValues, value: string) => void;
   onGpuChange: (gpuId: string) => void;
+  onApplyDetected: (patch: Partial<HardwareFormValues>) => void;
 }
 
 export function HardwareFields({
@@ -17,10 +19,12 @@ export function HardwareFields({
   fieldErrors,
   onChange,
   onGpuChange,
+  onApplyDetected,
 }: HardwareFieldsProps) {
   const selectedGpu = gpus.find((gpu) => gpu.id === values.gpuId);
   return (
     <>
+      <DeviceScan gpus={gpus} onApply={onApplyDetected} />
       <Field
         id="cpu"
         label="CPU"

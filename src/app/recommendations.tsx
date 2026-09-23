@@ -50,6 +50,12 @@ export function Recommendations({ models, gpus }: RecommendationsProps) {
     setRecommendationSet(undefined);
   }
 
+  function applyDetected(patch: Partial<HardwareFormValues>) {
+    setValues((current) => ({ ...current, ...patch }));
+    setFormState({ fieldErrors: {} });
+    setRecommendationSet(undefined);
+  }
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const parsed = parseHardwareForm(values);
@@ -102,6 +108,7 @@ export function Recommendations({ models, gpus }: RecommendationsProps) {
               fieldErrors={formState.fieldErrors}
               onChange={updateValue}
               onGpuChange={handleGpuChange}
+              onApplyDetected={applyDetected}
             />
           </section>
           <button className="evaluate-button" type="submit">
