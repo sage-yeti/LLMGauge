@@ -402,8 +402,44 @@ h1 {
   line-height: 1.4;
 }
 .context-guidance {
+  background: var(--surface);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 10px 10px 0;
   font-size: 0.9rem;
   line-height: 1.5;
+  margin-top: 1.25rem;
+  padding: 0.9rem 1rem;
+}
+.context-guidance h3 {
+  font-size: 0.95rem;
+  margin: 0 0 0.35rem;
+}
+.context-guidance p {
+  margin: 0;
+}
+.context-guidance-stats {
+  display: grid;
+  gap: 0.35rem 1rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0.8rem 0;
+}
+.context-guidance-stats dt {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+.context-guidance-stats dd {
+  font-weight: 700;
+  margin: 0;
+}
+.context-guidance ul {
+  color: var(--muted);
+  margin: 0;
+  padding-left: 1.1rem;
+}
+@media (max-width: 600px) {
+  .context-guidance-stats {
+    grid-template-columns: 1fr;
+  }
 }
 .result-list {
   border-top: 1px solid var(--line);
