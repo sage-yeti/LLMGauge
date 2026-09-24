@@ -16,6 +16,16 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "monthly",
       priority: 0.75,
     },
+    {
+      url: absoluteUrl("/models"),
+      changeFrequency: "monthly",
+      priority: 0.8,
+    },
+    {
+      url: absoluteUrl("/gpus"),
+      changeFrequency: "monthly",
+      priority: 0.75,
+    },
     ...modelCatalog.map((model) => ({
       url: absoluteUrl(`/models/${model.slug}`),
       lastModified: new Date(model.provenance.lastVerified),

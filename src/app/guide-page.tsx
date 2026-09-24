@@ -12,6 +12,8 @@ export function GuidePage({ guide }: { guide: GuideDefinition }) {
       <nav className="page-nav" aria-label="Guide navigation">
         <Link href="/">Calculator</Link>
         <Link href="/recommendations">Recommendations</Link>
+        <Link href="/models">Model catalog</Link>
+        <Link href="/gpus">GPU catalog</Link>
         <Link href="/guides">Guides</Link>
       </nav>
 

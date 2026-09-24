@@ -34,6 +34,23 @@ describe("educational guides", () => {
     ).toBe(guide.references[0].url);
   });
 
+  it("renders selected links from guides to relevant catalog examples", async () => {
+    const cases = [
+      ["llm-quantization", "Qwen3 4B", "/models/qwen3-4b"],
+      ["context-length-and-memory", "Gemma 3 12B IT", "/models/gemma-3-12b-it"],
+      ["compatibility-estimates", "Intel Arc B580 12GB", "/gpus/arc-b580-12gb"],
+    ] as const;
+    for (const [slug, label, href] of cases) {
+      cleanup();
+      const guide = guideCatalog.find((entry) => entry.slug === slug)!;
+      render(await GuidePage({ params: Promise.resolve({ slug }) }));
+      expect(
+        screen.getByRole("link", { name: label }).getAttribute("href"),
+      ).toBe(href);
+      expect(guide.relatedLinks.some((link) => link.href === href)).toBe(true);
+    }
+  });
+
   it("returns not-found behavior for unknown guide slugs", async () => {
     await expect(
       GuidePage({ params: Promise.resolve({ slug: "missing-guide" }) }),

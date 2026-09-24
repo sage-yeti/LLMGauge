@@ -763,6 +763,56 @@ h1 {
 .guide-index-grid .guide-card {
   margin-top: 0;
 }
+.catalog-index-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.catalog-index-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: 0 10px 24px rgba(23, 32, 42, 0.04);
+  padding: 1.25rem;
+}
+.catalog-index-card h2 {
+  font-size: 1.2rem;
+  letter-spacing: -0.03em;
+  margin: 0 0 0.75rem;
+}
+.catalog-index-card h2 a {
+  color: var(--ink);
+}
+.catalog-index-card > p {
+  color: var(--muted);
+  line-height: 1.5;
+  margin: 0 0 1rem;
+}
+.catalog-index-facts {
+  display: grid;
+  gap: 0.75rem 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+}
+.catalog-index-facts div {
+  border-top: 1px solid var(--line);
+  padding-top: 0.55rem;
+}
+.catalog-index-facts dt {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+.catalog-index-facts dd {
+  font-weight: 700;
+  margin: 0.2rem 0 0;
+}
+.catalog-index-empty {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  color: var(--muted);
+  padding: 1.5rem;
+}
 .page-actions {
   display: flex;
   flex-wrap: wrap;
@@ -881,6 +931,9 @@ h1 {
     grid-template-columns: 1fr;
   }
   .guide-index-grid {
+    grid-template-columns: 1fr;
+  }
+  .catalog-index-grid {
     grid-template-columns: 1fr;
   }
   .workflow-grid {

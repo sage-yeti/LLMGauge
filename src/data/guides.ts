@@ -125,6 +125,7 @@ export const guideCatalog: readonly GuideDefinition[] = [
       { label: "Try the compatibility calculator", href: "/" },
       { label: "Llama 3.2 1B Instruct", href: "/models/llama-3-2-1b-instruct" },
       { label: "Qwen2.5 7B Instruct", href: "/models/qwen-2-5-7b-instruct" },
+      { label: "Qwen3 4B", href: "/models/qwen3-4b" },
     ],
     relatedGuideSlugs: ["what-is-vram", "compatibility-estimates"],
   },
@@ -225,6 +226,7 @@ export const guideCatalog: readonly GuideDefinition[] = [
         label: "Mistral 7B Instruct v0.3",
         href: "/models/mistral-7b-instruct-v0-3",
       },
+      { label: "Gemma 3 12B IT", href: "/models/gemma-3-12b-it" },
     ],
     relatedGuideSlugs: ["what-is-vram", "llm-quantization"],
   },
@@ -279,6 +281,7 @@ export const guideCatalog: readonly GuideDefinition[] = [
     relatedLinks: [
       { label: "Open the compatibility calculator", href: "/" },
       { label: "Get model recommendations", href: "/recommendations" },
+      { label: "Intel Arc B580 12GB", href: "/gpus/arc-b580-12gb" },
       { label: "Read about VRAM", href: "/guides/what-is-vram" },
     ],
     relatedGuideSlugs: [
