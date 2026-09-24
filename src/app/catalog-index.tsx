@@ -9,7 +9,11 @@ function formatGiB(value: number): string {
 }
 
 function uniqueSorted(values: string[]): string[] {
-  return [...new Set(values)].sort((a, b) => a.localeCompare(b));
+  return [...new Set(values)].sort(compareText);
+}
+
+function compareText(a: string, b: string): number {
+  return a.localeCompare(b, "en");
 }
 
 function resultMessage(count: number, noun: string): string {
@@ -30,7 +34,7 @@ export function ModelCatalogIndex({
     models.flatMap((model) => model.supportedFormats),
   );
   const visibleModels = useMemo(() => {
-    const query = search.trim().toLocaleLowerCase();
+    const query = search.trim().toLowerCase();
     return models
       .filter((model) => {
         const matchesSearch =
@@ -41,7 +45,7 @@ export function ModelCatalogIndex({
             model.family,
             model.architecture,
             ...model.supportedFormats,
-          ].some((value) => value.toLocaleLowerCase().includes(query));
+          ].some((value) => value.toLowerCase().includes(query));
         return (
           matchesSearch &&
           (!family || model.family === family) &&
@@ -55,20 +59,20 @@ export function ModelCatalogIndex({
         if (sort === "parameters-asc") {
           return (
             a.parameterCountBillions - b.parameterCountBillions ||
-            a.displayName.localeCompare(b.displayName) ||
-            a.slug.localeCompare(b.slug)
+            compareText(a.displayName, b.displayName) ||
+            compareText(a.slug, b.slug)
           );
         }
         if (sort === "parameters-desc") {
           return (
             b.parameterCountBillions - a.parameterCountBillions ||
-            a.displayName.localeCompare(b.displayName) ||
-            a.slug.localeCompare(b.slug)
+            compareText(a.displayName, b.displayName) ||
+            compareText(a.slug, b.slug)
           );
         }
         return (
-          a.displayName.localeCompare(b.displayName) ||
-          a.slug.localeCompare(b.slug)
+          compareText(a.displayName, b.displayName) ||
+          compareText(a.slug, b.slug)
         );
       });
   }, [family, format, models, search, sort]);
@@ -240,7 +244,7 @@ export function GpuCatalogIndex({ gpus }: { gpus: readonly GpuDefinition[] }) {
   const [sort, setSort] = useState("name");
   const vendors = uniqueSorted(gpus.map((gpu) => gpu.vendor));
   const visibleGpus = useMemo(() => {
-    const query = search.trim().toLocaleLowerCase();
+    const query = search.trim().toLowerCase();
     return gpus
       .filter((gpu) => {
         const matchesSearch =
@@ -251,7 +255,7 @@ export function GpuCatalogIndex({ gpus }: { gpus: readonly GpuDefinition[] }) {
             gpu.architecture ?? "",
             gpu.memoryType ?? "",
             gpu.kind,
-          ].some((value) => value.toLocaleLowerCase().includes(query));
+          ].some((value) => value.toLowerCase().includes(query));
         return (
           matchesSearch &&
           (!vendor || gpu.vendor === vendor) &&
@@ -262,20 +266,20 @@ export function GpuCatalogIndex({ gpus }: { gpus: readonly GpuDefinition[] }) {
         if (sort === "memory-asc") {
           return (
             a.vramGiB - b.vramGiB ||
-            a.displayName.localeCompare(b.displayName) ||
-            a.slug.localeCompare(b.slug)
+            compareText(a.displayName, b.displayName) ||
+            compareText(a.slug, b.slug)
           );
         }
         if (sort === "memory-desc") {
           return (
             b.vramGiB - a.vramGiB ||
-            a.displayName.localeCompare(b.displayName) ||
-            a.slug.localeCompare(b.slug)
+            compareText(a.displayName, b.displayName) ||
+            compareText(a.slug, b.slug)
           );
         }
         return (
-          a.displayName.localeCompare(b.displayName) ||
-          a.slug.localeCompare(b.slug)
+          compareText(a.displayName, b.displayName) ||
+          compareText(a.slug, b.slug)
         );
       });
   }, [gpus, kind, search, sort, vendor]);
