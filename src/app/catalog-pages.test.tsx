@@ -144,7 +144,7 @@ describe("public catalog pages", () => {
       .sort(
         (a, b) =>
           a.parameterCountBillions - b.parameterCountBillions ||
-          a.displayName.localeCompare(b.displayName),
+          a.displayName.localeCompare(b.displayName, "en"),
       )[0];
     expect(modelLinks[0].getAttribute("href")).toBe(
       `/models/${lowestParameterModel.slug}`,
@@ -199,7 +199,8 @@ describe("public catalog pages", () => {
       .filter((link) => link.getAttribute("href")?.startsWith("/gpus/"));
     const highestMemoryGpu = [...gpuCatalog].sort(
       (a, b) =>
-        b.vramGiB - a.vramGiB || a.displayName.localeCompare(b.displayName),
+        b.vramGiB - a.vramGiB ||
+        a.displayName.localeCompare(b.displayName, "en"),
     )[0];
     expect(gpuLinks[0].getAttribute("href")).toBe(
       `/gpus/${highestMemoryGpu.slug}`,
