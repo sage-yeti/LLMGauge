@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import ModelPage, {
   generateMetadata as generateModelMetadata,
@@ -109,6 +109,136 @@ describe("public catalog pages", () => {
       expect(screen.getAllByText(gpu.vendor).length).toBeGreaterThan(0);
     }
     expect(screen.getAllByText("0 GiB (integrated)").length).toBeGreaterThan(0);
+  });
+
+  it("filters and sorts models with catalog fields, and resets to the full list", () => {
+    render(ModelsPage());
+    const search = screen.getByRole("searchbox", { name: "Search models" });
+    const family = screen.getByLabelText("Family");
+    const format = screen.getByLabelText("Format");
+    const sort = screen.getByLabelText("Sort models");
+    search.focus();
+    expect(document.activeElement).toBe(search);
+    fireEvent.change(search, { target: { value: "qwen" } });
+    expect(
+      screen
+        .getAllByRole("link")
+        .filter((link) => link.getAttribute("href")?.startsWith("/models/"))
+        .length,
+    ).toBeGreaterThan(0);
+    expect(screen.getByRole("status").textContent).toMatch(/found\./);
+    expect(screen.queryByRole("link", { name: /Llama 3\.2/ })).toBeNull();
+
+    fireEvent.change(family, { target: { value: "Qwen2.5" } });
+    fireEvent.change(format, { target: { value: "gguf" } });
+    fireEvent.change(search, { target: { value: "" } });
+    fireEvent.change(sort, { target: { value: "parameters-asc" } });
+    const modelLinks = screen
+      .getAllByRole("link")
+      .filter((link) => link.getAttribute("href")?.startsWith("/models/"));
+    const lowestParameterModel = modelCatalog
+      .filter(
+        (model) =>
+          model.family === "Qwen2.5" && model.supportedFormats.includes("gguf"),
+      )
+      .sort(
+        (a, b) =>
+          a.parameterCountBillions - b.parameterCountBillions ||
+          a.displayName.localeCompare(b.displayName),
+      )[0];
+    expect(modelLinks[0].getAttribute("href")).toBe(
+      `/models/${lowestParameterModel.slug}`,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Reset filters" }));
+    expect(
+      screen
+        .getAllByRole("link")
+        .filter((link) => link.getAttribute("href")?.startsWith("/models/"))
+        .length,
+    ).toBe(modelCatalog.length);
+    expect((screen.getByLabelText("Family") as HTMLSelectElement).value).toBe(
+      "",
+    );
+    expect(
+      (screen.getByLabelText("Sort models") as HTMLSelectElement).value,
+    ).toBe("name");
+  });
+
+  it("filters and sorts GPUs, exposes empty results, and resets from that state", () => {
+    render(GpusPage());
+    const search = screen.getByRole("searchbox", { name: "Search GPUs" });
+    fireEvent.change(screen.getByLabelText("GPU type"), {
+      target: { value: "integrated" },
+    });
+    expect(screen.getByRole("status").textContent).toMatch(/found\./);
+    for (const gpu of gpuCatalog.filter(
+      (entry) => entry.kind === "integrated",
+    )) {
+      expect(
+        screen
+          .getByRole("link", { name: gpu.displayName })
+          .getAttribute("href"),
+      ).toBe(`/gpus/${gpu.slug}`);
+    }
+    expect(
+      screen
+        .getAllByRole("link")
+        .filter((link) => link.getAttribute("href")?.startsWith("/gpus/"))
+        .length,
+    ).toBe(gpuCatalog.filter((gpu) => gpu.kind === "integrated").length);
+
+    fireEvent.change(screen.getByLabelText("GPU type"), {
+      target: { value: "" },
+    });
+    fireEvent.change(screen.getByLabelText("Sort GPUs"), {
+      target: { value: "memory-desc" },
+    });
+    const gpuLinks = screen
+      .getAllByRole("link")
+      .filter((link) => link.getAttribute("href")?.startsWith("/gpus/"));
+    const highestMemoryGpu = [...gpuCatalog].sort(
+      (a, b) =>
+        b.vramGiB - a.vramGiB || a.displayName.localeCompare(b.displayName),
+    )[0];
+    expect(gpuLinks[0].getAttribute("href")).toBe(
+      `/gpus/${highestMemoryGpu.slug}`,
+    );
+
+    fireEvent.change(search, { target: { value: "no matching hardware" } });
+    expect(screen.getByText(/No GPUs match these filters/i)).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Reset filters" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Reset filters" }));
+    expect(screen.queryByText(/No GPUs match these filters/i)).toBeNull();
+    expect(
+      screen
+        .getAllByRole("link")
+        .filter((link) => link.getAttribute("href")?.startsWith("/gpus/"))
+        .length,
+    ).toBe(gpuCatalog.length);
+  });
+
+  it("uses associated labels and keyboard-focusable native catalog controls", () => {
+    render(ModelsPage());
+    fireEvent.change(screen.getByRole("searchbox", { name: "Search models" }), {
+      target: { value: "qwen" },
+    });
+    const controls = [
+      screen.getByRole("searchbox", { name: "Search models" }),
+      screen.getByLabelText("Family"),
+      screen.getByLabelText("Format"),
+      screen.getByLabelText("Sort models"),
+      screen.getByRole("button", { name: "Reset filters" }),
+    ];
+    for (const control of controls) {
+      expect(
+        control.getAttribute("id") || control.tagName === "BUTTON",
+      ).toBeTruthy();
+      control.focus();
+      expect(document.activeElement).toBe(control);
+    }
+    expect(screen.getByRole("status").getAttribute("aria-live")).toBe("polite");
+    expect(screen.getByRole("region", { name: "Models" })).toBeTruthy();
   });
 
   it("links to both catalogs from the landing page navigation", () => {
