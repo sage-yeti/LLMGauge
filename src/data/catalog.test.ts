@@ -28,8 +28,8 @@ describe("catalog registry", () => {
   });
 
   it("keeps the production catalog real, sourced, and separate from fixtures", () => {
-    expect(productionModels).toHaveLength(16);
-    expect(productionGpus).toHaveLength(21);
+    expect(productionModels).toHaveLength(20);
+    expect(productionGpus).toHaveLength(26);
     expect(
       productionModels.every((model) => !model.id.startsWith("example-")),
     ).toBe(true);
@@ -91,16 +91,67 @@ describe("catalog registry", () => {
     }
   });
 
+  it("records the Batch 22 model facts, licenses, contexts, and verified conversions", () => {
+    const expected = [
+      ["qwen-qwen3-14b", 14.8, 32768, "Apache-2.0", "Qwen/Qwen3-14B"],
+      ["qwen-qwen3-32b", 32.8, 32768, "Apache-2.0", "Qwen/Qwen3-32B"],
+      [
+        "mistralai-mistral-small-3-2-24b-instruct-2506",
+        24,
+        131072,
+        "Apache-2.0",
+        "https://docs.mistral.ai/models/mistral-small-3-2-25-06",
+      ],
+      [
+        "meta-llama-3-3-70b-instruct",
+        70,
+        131072,
+        "Llama 3.3 Community License",
+        "meta-llama/Llama-3.3-70B-Instruct",
+      ],
+    ] as const;
+
+    for (const [id, parameters, maxContext, license, sourcePath] of expected) {
+      const entry = productionModels.find((model) => model.id === id);
+      expect(entry?.parameterCountBillions).toBe(parameters);
+      expect(entry?.maxContextLength).toBe(maxContext);
+      expect(entry?.defaultContextLength).toBeUndefined();
+      expect(entry?.license).toBe(license);
+      expect(entry?.provenance.sourceUrl).toBe(
+        sourcePath.startsWith("https://")
+          ? sourcePath
+          : `https://huggingface.co/${sourcePath}`,
+      );
+      expect(entry?.provenance.lastVerified).toBe("2026-09-24");
+      expect(
+        entry?.quantizations.map((quantization) => quantization.id),
+      ).toEqual(["q4-k-m", "q8-0"]);
+      for (const quantization of entry?.quantizations ?? []) {
+        expect(quantization.provenance.sourceType).toBe("community-conversion");
+        expect(quantization.provenance.source).toContain("GGUF repository");
+        expect(quantization.provenance.sourceUrl).toContain(
+          "huggingface.co/bartowski/",
+        );
+        expect(quantization.provenance.lastVerified).toBe("2026-09-24");
+      }
+    }
+  });
+
   it("includes sourced newer, established, and integrated GPU classes", () => {
     const expected = [
       ["nvidia-rtx-2060-6gb", 6, "GDDR6"],
       ["nvidia-rtx-4060-ti-16gb", 16, "GDDR6"],
       ["nvidia-rtx-4070-ti-super-16gb", 16, "GDDR6X"],
       ["nvidia-rtx-5080-16gb", 16, "GDDR7"],
+      ["nvidia-rtx-5060-ti-16gb", 16, "GDDR7"],
+      ["nvidia-rtx-5070-12gb", 12, "GDDR7"],
+      ["nvidia-rtx-5070-ti-16gb", 16, "GDDR7"],
+      ["nvidia-rtx-5090-32gb", 32, "GDDR7"],
       ["amd-radeon-rx-6600-8gb", 8, "GDDR6"],
       ["amd-radeon-rx-7700-xt-12gb", 12, "GDDR6"],
       ["amd-radeon-rx-9070-16gb", 16, "GDDR6"],
       ["amd-radeon-rx-9070-xt-16gb", 16, "GDDR6"],
+      ["amd-radeon-rx-9060-xt-16gb", 16, "GDDR6"],
       ["intel-arc-b570-10gb", 10, "GDDR6"],
       ["intel-arc-b580-12gb", 12, "GDDR6"],
     ] as const;
@@ -109,6 +160,22 @@ describe("catalog registry", () => {
       expect(gpu?.vramGiB).toBe(vramGiB);
       expect(gpu?.memoryType).toBe(memoryType);
       expect(gpu?.provenance.sourceType).toBe("manufacturer-specification");
+      if (
+        [
+          "nvidia-rtx-5060-ti-16gb",
+          "nvidia-rtx-5070-12gb",
+          "nvidia-rtx-5070-ti-16gb",
+          "nvidia-rtx-5090-32gb",
+          "amd-radeon-rx-9060-xt-16gb",
+        ].includes(id)
+      ) {
+        expect(gpu?.kind).toBe("discrete");
+        expect(gpu?.sharedMemoryGiB).toBeUndefined();
+        expect(gpu?.provenance.lastVerified).toBe("2026-09-24");
+        expect(gpu?.provenance.sourceUrl).toMatch(
+          /^https:\/\/(?:www\.)?(?:nvidia|amd)\.com\//,
+        );
+      }
     }
     const integrated = productionGpus.find(
       (gpu) => gpu.id === "amd-radeon-780m-integrated",
