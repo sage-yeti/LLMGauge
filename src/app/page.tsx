@@ -5,6 +5,9 @@ import { absoluteUrl } from "./site";
 import { gpuCatalog, modelCatalog } from "@/data/catalog";
 
 export const metadata: Metadata = {
+  title: "Which Local LLMs Fit Your PC? | LLMGauge",
+  description:
+    "Check a local LLM against your PC or discover suitable models for your hardware, with compatibility guidance and approximate memory estimates.",
   alternates: { canonical: absoluteUrl("/") },
   openGraph: { url: absoluteUrl("/") },
 };
