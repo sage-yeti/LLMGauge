@@ -24,6 +24,11 @@ export function HardwareFields({
   const selectedGpu = gpus.find((gpu) => gpu.id === values.gpuId);
   return (
     <>
+      <p className="hardware-example-note">
+        Prefilled values are starter examples, not readings detected from your
+        device. Edit them for your PC. Scanning is optional and starts only when
+        you choose Scan my device.
+      </p>
       <DeviceScan gpus={gpus} onApply={onApplyDetected} />
       <Field
         id="cpu"
