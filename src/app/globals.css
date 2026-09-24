@@ -768,6 +768,70 @@ h1 {
   gap: 1rem;
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
+.catalog-browser {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  margin: 2rem 0;
+  padding: 1.25rem;
+}
+.catalog-browser-controls {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.catalog-browser-field label {
+  display: block;
+  font-weight: 700;
+  margin-bottom: 0.4rem;
+}
+.catalog-browser-field input,
+.catalog-browser-field select {
+  background: #fff;
+  border: 1px solid #b9c5d1;
+  border-radius: 9px;
+  color: var(--ink);
+  font: inherit;
+  min-height: 2.8rem;
+  padding: 0.65rem 0.75rem;
+  width: 100%;
+}
+.catalog-browser-field input:focus-visible,
+.catalog-browser-field select:focus-visible,
+.catalog-reset:focus-visible,
+.catalog-inline-reset:focus-visible {
+  border-color: var(--accent);
+  outline: 3px solid rgba(53, 106, 230, 0.28);
+  outline-offset: 2px;
+}
+.catalog-browser-status {
+  align-items: center;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  margin-top: 1rem;
+}
+.catalog-browser-status p {
+  color: var(--muted);
+  margin: 0;
+}
+.catalog-reset,
+.catalog-inline-reset {
+  background: transparent;
+  border: 0;
+  color: var(--accent);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  padding: 0.35rem;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+.catalog-reset:disabled {
+  color: var(--muted);
+  cursor: default;
+  text-decoration: none;
+}
 .catalog-index-card {
   background: var(--card);
   border: 1px solid var(--line);
@@ -936,6 +1000,9 @@ h1 {
   .catalog-index-grid {
     grid-template-columns: 1fr;
   }
+  .catalog-browser-controls {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
   .workflow-grid {
     grid-template-columns: 1fr;
   }
@@ -954,6 +1021,14 @@ h1 {
     align-items: flex-start;
     flex-direction: column;
     gap: 0.6rem;
+  }
+  .catalog-browser-controls {
+    grid-template-columns: 1fr;
+  }
+  .catalog-browser-status {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.5rem;
   }
   .quantization-item {
     display: block;
