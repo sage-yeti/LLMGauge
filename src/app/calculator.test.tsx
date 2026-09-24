@@ -39,6 +39,23 @@ describe("compatibility calculator", () => {
         .getAttribute("aria-describedby"),
     ).toBe("system-ram-help");
     expect(screen.getByRole("button", { name: "Scan my device" })).toBeTruthy();
+    expect(
+      screen.getByText(
+        /Prefilled values are starter examples, not readings detected/,
+      ),
+    ).toBeTruthy();
+    const summary = screen.getByText("Advanced settings");
+    expect(summary.tagName).toBe("SUMMARY");
+    expect(summary.closest("details")?.hasAttribute("open")).toBe(false);
+    expect(
+      screen.getByLabelText("Runtime").closest("details")?.hasAttribute("open"),
+    ).toBe(false);
+    expect((screen.getByLabelText("CPU") as HTMLInputElement).value).toBe(
+      "My CPU",
+    );
+    expect(
+      (screen.getByLabelText("System RAM (GiB)") as HTMLInputElement).value,
+    ).toBe("16");
   });
 
   it("shows a CPU-only result for the default no-GPU profile", () => {
@@ -129,12 +146,17 @@ describe("compatibility calculator", () => {
 
   it("shows optional runtime assumptions and context warnings", () => {
     renderCalculator();
+    const summary = screen.getByText("Advanced settings");
+    fireEvent.click(summary);
+    expect(screen.getByLabelText("Runtime")).toBeTruthy();
     choose("Runtime", "llama.cpp");
     choose("Backend/device path", "cuda");
     choose("Execution preference", "full-gpu");
     fireEvent.change(screen.getByLabelText("Target context length (tokens)"), {
       target: { value: "8192" },
     });
+    fireEvent.click(summary);
+    expect(summary.closest("details")?.hasAttribute("open")).toBe(false);
     submit();
 
     expect(
@@ -147,5 +169,30 @@ describe("compatibility calculator", () => {
     expect(
       screen.getByText(/do not prove local runtime or backend support/),
     ).toBeTruthy();
+  });
+
+  it("opens advanced settings to expose a hidden runtime validation error", () => {
+    renderCalculator();
+    const summary = screen.getByText("Advanced settings");
+    fireEvent.click(summary);
+    fireEvent.change(screen.getByLabelText("Target context length (tokens)"), {
+      target: { value: "1.5" },
+    });
+    fireEvent.click(summary);
+    expect(summary.closest("details")?.hasAttribute("open")).toBe(false);
+
+    submit();
+
+    const contextLength = screen.getByLabelText(
+      "Target context length (tokens)",
+    );
+    expect(summary.closest("details")?.hasAttribute("open")).toBe(true);
+    expect(contextLength.getAttribute("aria-invalid")).toBe("true");
+    expect(contextLength.getAttribute("aria-describedby")).toBe(
+      "target-context-length-error",
+    );
+    expect(screen.getByRole("alert").textContent).toBe(
+      "Enter a whole number greater than 0.",
+    );
   });
 });
