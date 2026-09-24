@@ -21,6 +21,17 @@ describe("recommendations interface", () => {
   it("renders shared hardware controls and produces a CPU-only recommendation", () => {
     renderRecommendations();
     expect(screen.getByRole("button", { name: "Scan my device" })).toBeTruthy();
+    expect(
+      screen.getByText(
+        /Prefilled values are starter examples, not readings detected/,
+      ),
+    ).toBeTruthy();
+    const summary = screen.getByText("Advanced settings");
+    expect(summary.tagName).toBe("SUMMARY");
+    expect(summary.closest("details")?.hasAttribute("open")).toBe(false);
+    expect(
+      screen.getByLabelText("Runtime").closest("details")?.hasAttribute("open"),
+    ).toBe(false);
     submit();
     expect(
       screen.getByRole("heading", { name: "Models for your hardware" }),
@@ -89,9 +100,14 @@ describe("recommendations interface", () => {
 
   it("shows runtime assumptions without changing recommendation categories", () => {
     renderRecommendations();
+    const summary = screen.getByText("Advanced settings");
+    fireEvent.click(summary);
+    expect(screen.getByLabelText("Runtime")).toBeTruthy();
     choose("Runtime", "llama.cpp");
     choose("Backend/device path", "vulkan");
     choose("Execution preference", "partial-offload");
+    fireEvent.click(summary);
+    expect(summary.closest("details")?.hasAttribute("open")).toBe(false);
     submit();
 
     expect(
@@ -99,5 +115,30 @@ describe("recommendations interface", () => {
     ).toBeGreaterThan(0);
     expect(screen.getAllByText("Vulkan").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Partial offload").length).toBeGreaterThan(0);
+  });
+
+  it("opens advanced settings to expose a hidden runtime validation error", () => {
+    renderRecommendations();
+    const summary = screen.getByText("Advanced settings");
+    fireEvent.click(summary);
+    fireEvent.change(screen.getByLabelText("Target context length (tokens)"), {
+      target: { value: "1.5" },
+    });
+    fireEvent.click(summary);
+    expect(summary.closest("details")?.hasAttribute("open")).toBe(false);
+
+    submit();
+
+    const contextLength = screen.getByLabelText(
+      "Target context length (tokens)",
+    );
+    expect(summary.closest("details")?.hasAttribute("open")).toBe(true);
+    expect(contextLength.getAttribute("aria-invalid")).toBe("true");
+    expect(contextLength.getAttribute("aria-describedby")).toBe(
+      "target-context-length-error",
+    );
+    expect(screen.getByRole("alert").textContent).toBe(
+      "Enter a whole number greater than 0.",
+    );
   });
 });
