@@ -76,6 +76,7 @@ function model(
 function convertedQuantizations(
   repository: string,
   includeQ8 = true,
+  lastVerified = verifiedOn,
 ): QuantizationDefinition[] {
   const sourceUrl = `https://huggingface.co/${repository}`;
   const provenance: CatalogProvenance = {
@@ -83,7 +84,7 @@ function convertedQuantizations(
     sourceUrl,
     sourceType: "community-conversion",
     confidence: "approximate",
-    lastVerified: verifiedOn,
+    lastVerified,
     note: "The repository confirms available GGUF quantization files. Estimated weight size uses parameter count × bits-per-weight; it is not the downloaded file size and excludes runtime/context memory.",
   };
   const candidates: QuantizationDefinition[] = [
@@ -458,15 +459,123 @@ export const productionModels: readonly ModelDefinition[] = [
       "QuantFactory/Mistral-Nemo-Instruct-2407-GGUF",
     ),
   }),
+  model({
+    id: "qwen-qwen3-14b",
+    slug: "qwen3-14b",
+    displayName: "Qwen3 14B",
+    summary:
+      "Qwen's 14.8B general-purpose Qwen3 model, filling the size range between the existing 8B and 27B entries.",
+    family: "Qwen3",
+    provider: "Qwen",
+    architecture: "Qwen3",
+    parameterCountBillions: 14.8,
+    supportedFormats: ["gguf", "safetensors"],
+    supportedRuntimes: ["llama.cpp"],
+    license: "Apache-2.0",
+    maxContextLength: 32768,
+    provenance: modelProvenance(
+      "Qwen3 14B publisher model card",
+      "https://huggingface.co/Qwen/Qwen3-14B",
+      "Parameter count, Apache-2.0 license, and native 32K context come from the publisher. The separate GGUF candidates are from bartowski's community conversion; extended YaRN context is not included.",
+      "2026-09-24",
+    ),
+    quantizations: convertedQuantizations(
+      "bartowski/Qwen_Qwen3-14B-GGUF",
+      true,
+      "2026-09-24",
+    ),
+  }),
+  model({
+    id: "qwen-qwen3-32b",
+    slug: "qwen3-32b",
+    displayName: "Qwen3 32B",
+    summary:
+      "Qwen's 32.8B general-purpose Qwen3 model for users evaluating the larger end of the local model range.",
+    family: "Qwen3",
+    provider: "Qwen",
+    architecture: "Qwen3",
+    parameterCountBillions: 32.8,
+    supportedFormats: ["gguf", "safetensors"],
+    supportedRuntimes: ["llama.cpp"],
+    license: "Apache-2.0",
+    maxContextLength: 32768,
+    provenance: modelProvenance(
+      "Qwen3 32B publisher model card",
+      "https://huggingface.co/Qwen/Qwen3-32B",
+      "Parameter count, Apache-2.0 license, and native 32K context come from the publisher. The separate GGUF candidates are from bartowski's community conversion; extended YaRN context is not included.",
+      "2026-09-24",
+    ),
+    quantizations: convertedQuantizations(
+      "bartowski/Qwen_Qwen3-32B-GGUF",
+      true,
+      "2026-09-24",
+    ),
+  }),
+  model({
+    id: "mistralai-mistral-small-3-2-24b-instruct-2506",
+    slug: "mistral-small-3-2-24b-instruct-2506",
+    displayName: "Mistral Small 3.2 24B Instruct",
+    summary:
+      "Mistral's 24B instruction-tuned model; the memory estimate covers text weights and not its image-processing path.",
+    family: "Mistral Small 3.2",
+    provider: "Mistral AI",
+    architecture: "Mistral",
+    parameterCountBillions: 24,
+    supportedFormats: ["gguf", "safetensors"],
+    supportedRuntimes: ["llama.cpp"],
+    license: "Apache-2.0",
+    maxContextLength: 131072,
+    provenance: modelProvenance(
+      "Mistral Small 3.2 model documentation",
+      "https://docs.mistral.ai/models/mistral-small-3-2-25-06",
+      "Mistral's documentation lists a 128K context and Apache-2.0 license and marks Small 3.2 deprecated for new integrations; the publisher model card identifies the 24B instruct variant. This entry is for local GGUF memory planning, not an API recommendation. Image-processing memory is outside this text-weight estimate. The listed GGUF candidates are a separate bartowski community conversion.",
+      "2026-09-24",
+    ),
+    quantizations: convertedQuantizations(
+      "bartowski/mistralai_Mistral-Small-3.2-24B-Instruct-2506-GGUF",
+      true,
+      "2026-09-24",
+    ),
+  }),
+  model({
+    id: "meta-llama-3-3-70b-instruct",
+    slug: "llama-3-3-70b-instruct",
+    displayName: "Llama 3.3 70B Instruct",
+    summary:
+      "Meta's 70B text-only instruction model, extending the catalog into the high-memory class.",
+    family: "Llama 3.3",
+    provider: "Meta",
+    architecture: "Llama",
+    parameterCountBillions: 70,
+    supportedFormats: ["gguf", "safetensors"],
+    supportedRuntimes: ["llama.cpp"],
+    license: "Llama 3.3 Community License",
+    maxContextLength: 131072,
+    provenance: modelProvenance(
+      "Meta Llama 3.3 70B Instruct model card",
+      "https://huggingface.co/meta-llama/Llama-3.3-70B-Instruct",
+      "Meta documents the text-only 70B variant, 128K context, and Llama 3.3 Community License. The GGUF candidates are from bartowski's separate community conversion and remain subject to the model's license.",
+      "2026-09-24",
+    ),
+    quantizations: convertedQuantizations(
+      "bartowski/Llama-3.3-70B-Instruct-GGUF",
+      true,
+      "2026-09-24",
+    ),
+  }),
 ];
 
-function gpuProvenance(source: string, sourceUrl: string): CatalogProvenance {
+function gpuProvenance(
+  source: string,
+  sourceUrl: string,
+  lastVerified = verifiedOn,
+): CatalogProvenance {
   return {
     source,
     sourceUrl,
     sourceType: "manufacturer-specification",
     confidence: "verified",
-    lastVerified: verifiedOn,
+    lastVerified,
     note: "VRAM is the manufacturer's standard memory configuration; local runtime suitability is a conservative LLMGauge interpretation, not a benchmark.",
   };
 }
@@ -801,5 +910,90 @@ export const productionGpus: readonly GpuDefinition[] = [
       lastVerified: verifiedOn,
       note: "The processor specification identifies Radeon 780M integrated graphics. No fixed shared-memory allocation is asserted because it is system-configured.",
     },
+  },
+  {
+    id: "nvidia-rtx-5060-ti-16gb",
+    slug: "rtx-5060-ti-16gb",
+    displayName: "GeForce RTX 5060 Ti 16GB",
+    kind: "discrete",
+    vendor: "NVIDIA",
+    architecture: "Blackwell",
+    vramGiB: 16,
+    memoryType: "GDDR7",
+    suitabilitySummary:
+      "The 16 GiB RTX 5060 Ti configuration adds a current midrange capacity option; memory capacity does not imply model speed or guaranteed fit.",
+    provenance: gpuProvenance(
+      "NVIDIA GeForce RTX 5060 family specifications",
+      "https://www.nvidia.com/en-us/geforce/graphics-cards/50-series/rtx-5060-family/",
+      "2026-09-24",
+    ),
+  },
+  {
+    id: "nvidia-rtx-5070-12gb",
+    slug: "rtx-5070-12gb",
+    displayName: "GeForce RTX 5070 12GB",
+    kind: "discrete",
+    vendor: "NVIDIA",
+    architecture: "Blackwell",
+    vramGiB: 12,
+    memoryType: "GDDR7",
+    suitabilitySummary:
+      "A 12 GiB Blackwell configuration that adds the non-Ti RTX 5070 capacity class without implying runtime performance.",
+    provenance: gpuProvenance(
+      "NVIDIA GeForce RTX 5070 family specifications",
+      "https://www.nvidia.com/en-us/geforce/graphics-cards/50-series/rtx-5070-family/",
+      "2026-09-24",
+    ),
+  },
+  {
+    id: "nvidia-rtx-5070-ti-16gb",
+    slug: "rtx-5070-ti-16gb",
+    displayName: "GeForce RTX 5070 Ti 16GB",
+    kind: "discrete",
+    vendor: "NVIDIA",
+    architecture: "Blackwell",
+    vramGiB: 16,
+    memoryType: "GDDR7",
+    suitabilitySummary:
+      "A 16 GiB Blackwell configuration that fills the RTX 5070 Ti tier between the catalog's RTX 5080 and lower-capacity cards.",
+    provenance: gpuProvenance(
+      "NVIDIA GeForce RTX 5070 family specifications",
+      "https://www.nvidia.com/en-us/geforce/graphics-cards/50-series/rtx-5070-family/",
+      "2026-09-24",
+    ),
+  },
+  {
+    id: "nvidia-rtx-5090-32gb",
+    slug: "rtx-5090-32gb",
+    displayName: "GeForce RTX 5090 32GB",
+    kind: "discrete",
+    vendor: "NVIDIA",
+    architecture: "Blackwell",
+    vramGiB: 32,
+    memoryType: "GDDR7",
+    suitabilitySummary:
+      "The 32 GiB RTX 5090 adds the catalog's largest documented discrete-memory class; it does not guarantee a model or context will fit.",
+    provenance: gpuProvenance(
+      "NVIDIA GeForce RTX 5090 specifications",
+      "https://www.nvidia.com/en-us/geforce/graphics-cards/50-series/rtx-5090/",
+      "2026-09-24",
+    ),
+  },
+  {
+    id: "amd-radeon-rx-9060-xt-16gb",
+    slug: "radeon-rx-9060-xt-16gb",
+    displayName: "Radeon RX 9060 XT 16GB",
+    kind: "discrete",
+    vendor: "AMD",
+    architecture: "RDNA 4",
+    vramGiB: 16,
+    memoryType: "GDDR6",
+    suitabilitySummary:
+      "AMD's 16 GiB RX 9060 XT adds a more accessible RDNA 4 memory tier; selected-backend and driver support remain user-specific.",
+    provenance: gpuProvenance(
+      "AMD Radeon RX 9060 XT specifications",
+      "https://www.amd.com/en/products/graphics/desktops/radeon/9000-series/amd-radeon-rx-9060xt.html",
+      "2026-09-24",
+    ),
   },
 ];
