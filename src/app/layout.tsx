@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { siteUrl } from "./site";
+import { ThemeControl, themeBootstrapScript } from "./theme-control";
 
 export const metadata: Metadata = {
   metadataBase: siteUrl,
@@ -12,8 +13,14 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
-      <body>{children}</body>
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} />
+      </head>
+      <body>
+        <ThemeControl />
+        {children}
+      </body>
     </html>
   );
 }
