@@ -7,7 +7,10 @@ function renderCalculator() {
   render(<Calculator models={modelCatalog} gpus={gpuCatalog} />);
 }
 
-function submit() {
+function submit(cpuName = "AMD Ryzen 7 7800X3D") {
+  fireEvent.change(screen.getByLabelText("CPU"), {
+    target: { value: cpuName },
+  });
   fireEvent.click(
     screen.getByRole("button", { name: /evaluate compatibility/i }),
   );
@@ -50,12 +53,22 @@ describe("compatibility calculator", () => {
     expect(
       screen.getByLabelText("Runtime").closest("details")?.hasAttribute("open"),
     ).toBe(false);
-    expect((screen.getByLabelText("CPU") as HTMLInputElement).value).toBe(
-      "My CPU",
+    expect((screen.getByLabelText("CPU") as HTMLInputElement).value).toBe("");
+    expect(screen.getByLabelText("CPU").getAttribute("placeholder")).toBe(
+      "e.g. AMD Ryzen 7 7800X3D",
     );
     expect(
       (screen.getByLabelText("System RAM (GiB)") as HTMLInputElement).value,
     ).toBe("16");
+  });
+
+  it("starts with an empty CPU name and accepts a user-entered name", () => {
+    renderCalculator();
+    const cpuInput = screen.getByLabelText("CPU") as HTMLInputElement;
+
+    expect(cpuInput.value).toBe("");
+    fireEvent.change(cpuInput, { target: { value: "AMD Ryzen 7 7800X3D" } });
+    expect(cpuInput.value).toBe("AMD Ryzen 7 7800X3D");
   });
 
   it("shows a CPU-only result for the default no-GPU profile", () => {
@@ -122,7 +135,7 @@ describe("compatibility calculator", () => {
   it("shows concise validation feedback for invalid form input", () => {
     renderCalculator();
     fireEvent.change(screen.getByLabelText("CPU"), { target: { value: "" } });
-    submit();
+    submit("");
 
     expect(screen.getByRole("alert", { name: "" })).toBeTruthy();
     expect(screen.getByText("Enter a CPU name.")).toBeTruthy();
