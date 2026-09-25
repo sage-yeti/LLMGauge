@@ -563,6 +563,58 @@ export const productionModels: readonly ModelDefinition[] = [
       "2026-09-24",
     ),
   }),
+  model({
+    id: "deepseek-r1-distill-qwen-1-5b",
+    slug: "deepseek-r1-distill-qwen-1-5b",
+    displayName: "DeepSeek-R1-Distill-Qwen 1.5B",
+    summary:
+      "DeepSeek's compact reasoning-focused model distilled from Qwen2.5, adding a smaller option for local reasoning experiments.",
+    family: "DeepSeek-R1 Distill",
+    provider: "DeepSeek",
+    architecture: "Qwen2",
+    parameterCountBillions: 1.5,
+    supportedFormats: ["gguf", "safetensors"],
+    supportedRuntimes: ["llama.cpp"],
+    license: "MIT",
+    maxContextLength: 131072,
+    provenance: modelProvenance(
+      "DeepSeek-R1-Distill-Qwen 1.5B model card",
+      "https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B",
+      "The publisher lists this distilled model under MIT and its config allows up to 131,072 tokens; its model card also notes the Qwen2.5 base-model license. GGUF candidates are tracked separately as a community conversion; runtime and long-context memory requirements are not verified.",
+      "2026-09-25",
+    ),
+    quantizations: convertedQuantizations(
+      "bartowski/DeepSeek-R1-Distill-Qwen-1.5B-GGUF",
+      true,
+      "2026-09-25",
+    ),
+  }),
+  model({
+    id: "qwen-qwen3-5-2b",
+    slug: "qwen3-5-2b",
+    displayName: "Qwen3.5 2B",
+    summary:
+      "Qwen's compact multimodal model for text and image input; this estimate covers text weights and not vision processing.",
+    family: "Qwen3.5",
+    provider: "Qwen",
+    architecture: "Qwen3.5",
+    parameterCountBillions: 2,
+    supportedFormats: ["gguf", "safetensors"],
+    supportedRuntimes: ["llama.cpp"],
+    license: "Apache-2.0",
+    maxContextLength: 262144,
+    provenance: modelProvenance(
+      "Qwen3.5 2B publisher model card",
+      "https://huggingface.co/Qwen/Qwen3.5-2B",
+      "Publisher model card lists Apache-2.0 licensing and native 262,144-token context. The parameter count follows the publisher's 2B variant name. GGUF candidates are a separate community conversion; vision-encoder and image-input memory are outside this text-weight estimate.",
+      "2026-09-25",
+    ),
+    quantizations: convertedQuantizations(
+      "unsloth/Qwen3.5-2B-GGUF",
+      true,
+      "2026-09-25",
+    ),
+  }),
 ];
 
 function gpuProvenance(
@@ -994,6 +1046,74 @@ export const productionGpus: readonly GpuDefinition[] = [
       "AMD Radeon RX 9060 XT specifications",
       "https://www.amd.com/en/products/graphics/desktops/radeon/9000-series/amd-radeon-rx-9060xt.html",
       "2026-09-24",
+    ),
+  },
+  {
+    id: "nvidia-rtx-5060-8gb",
+    slug: "rtx-5060-8gb",
+    displayName: "GeForce RTX 5060 8GB",
+    kind: "discrete",
+    vendor: "NVIDIA",
+    architecture: "Blackwell",
+    vramGiB: 8,
+    memoryType: "GDDR7",
+    suitabilitySummary:
+      "An 8 GiB Blackwell configuration for evaluating smaller quantized models; the catalog records capacity and makes no performance or runtime guarantee.",
+    provenance: gpuProvenance(
+      "NVIDIA GeForce RTX 5060 family specifications",
+      "https://www.nvidia.com/en-us/geforce/graphics-cards/50-series/rtx-5060-family/",
+      "2026-09-25",
+    ),
+  },
+  {
+    id: "nvidia-rtx-5060-ti-8gb",
+    slug: "rtx-5060-ti-8gb",
+    displayName: "GeForce RTX 5060 Ti 8GB",
+    kind: "discrete",
+    vendor: "NVIDIA",
+    architecture: "Blackwell",
+    vramGiB: 8,
+    memoryType: "GDDR7",
+    suitabilitySummary:
+      "The 8 GiB RTX 5060 Ti configuration complements the catalog's 16 GiB version; memory capacity does not imply speed or guaranteed fit.",
+    provenance: gpuProvenance(
+      "NVIDIA GeForce RTX 5060 family specifications",
+      "https://www.nvidia.com/en-us/geforce/graphics-cards/50-series/rtx-5060-family/",
+      "2026-09-25",
+    ),
+  },
+  {
+    id: "amd-radeon-rx-7600-xt-16gb",
+    slug: "radeon-rx-7600-xt-16gb",
+    displayName: "Radeon RX 7600 XT 16GB",
+    kind: "discrete",
+    vendor: "AMD",
+    architecture: "RDNA 3",
+    vramGiB: 16,
+    memoryType: "GDDR6",
+    suitabilitySummary:
+      "A 16 GiB RDNA 3 option in AMD's consumer range; LLMGauge reports dedicated memory capacity, not backend support or performance.",
+    provenance: gpuProvenance(
+      "AMD Radeon RX 7600 XT specifications",
+      "https://www.amd.com/en/products/graphics/desktops/radeon/7000-series/amd-radeon-rx-7600-xt.html",
+      "2026-09-25",
+    ),
+  },
+  {
+    id: "amd-radeon-rx-9060-xt-8gb",
+    slug: "radeon-rx-9060-xt-8gb",
+    displayName: "Radeon RX 9060 XT 8GB",
+    kind: "discrete",
+    vendor: "AMD",
+    architecture: "RDNA 4",
+    vramGiB: 8,
+    memoryType: "GDDR6",
+    suitabilitySummary:
+      "The 8 GiB RX 9060 XT configuration complements the catalog's 16 GiB variant; selected-backend and driver support remain user-specific.",
+    provenance: gpuProvenance(
+      "AMD Radeon RX 9060 XT 8GB specifications",
+      "https://www.amd.com/en/products/graphics/desktops/radeon/9000-series/amd-radeon-rx-9060xt-8gb.html",
+      "2026-09-25",
     ),
   },
 ];

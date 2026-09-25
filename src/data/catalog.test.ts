@@ -28,8 +28,8 @@ describe("catalog registry", () => {
   });
 
   it("keeps the production catalog real, sourced, and separate from fixtures", () => {
-    expect(productionModels).toHaveLength(20);
-    expect(productionGpus).toHaveLength(26);
+    expect(productionModels).toHaveLength(22);
+    expect(productionGpus).toHaveLength(30);
     expect(
       productionModels.every((model) => !model.id.startsWith("example-")),
     ).toBe(true);
@@ -60,6 +60,8 @@ describe("catalog registry", () => {
       "google-gemma-3-27b-it",
       "microsoft-phi-4-mini-instruct",
       "mistralai-mistral-nemo-12b-instruct-2407",
+      "deepseek-r1-distill-qwen-1-5b",
+      "qwen-qwen3-5-2b",
     ];
     const addedModels = addedModelIds.map((id) => {
       const entry = productionModels.find((model) => model.id === id);
@@ -137,6 +139,64 @@ describe("catalog registry", () => {
     }
   });
 
+  it("records Batch 24 small-model facts and keeps estimates distinct from files", () => {
+    const expected = [
+      [
+        "deepseek-r1-distill-qwen-1-5b",
+        1.5,
+        131072,
+        "MIT",
+        "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B",
+        "bartowski/DeepSeek-R1-Distill-Qwen-1.5B-GGUF",
+      ],
+      [
+        "qwen-qwen3-5-2b",
+        2,
+        262144,
+        "Apache-2.0",
+        "Qwen/Qwen3.5-2B",
+        "unsloth/Qwen3.5-2B-GGUF",
+      ],
+    ] as const;
+
+    for (const [
+      id,
+      parameters,
+      maxContext,
+      license,
+      publisher,
+      converter,
+    ] of expected) {
+      const entry = productionModels.find((model) => model.id === id);
+      expect(entry?.parameterCountBillions).toBe(parameters);
+      expect(entry?.maxContextLength).toBe(maxContext);
+      expect(entry?.defaultContextLength).toBeUndefined();
+      expect(entry?.license).toBe(license);
+      expect(entry?.provenance.sourceType).toBe("official-model-card");
+      expect(entry?.provenance.sourceUrl).toBe(
+        `https://huggingface.co/${publisher}`,
+      );
+      expect(entry?.provenance.lastVerified).toBe("2026-09-25");
+      if (id === "deepseek-r1-distill-qwen-1-5b") {
+        expect(entry?.provenance.note).toContain("Qwen2.5 base-model license");
+      }
+      expect(
+        entry?.quantizations.map((quantization) => quantization.id),
+      ).toEqual(["q4-k-m", "q8-0"]);
+      for (const quantization of entry?.quantizations ?? []) {
+        expect(quantization.provenance.sourceType).toBe("community-conversion");
+        expect(quantization.provenance.sourceUrl).toBe(
+          `https://huggingface.co/${converter}`,
+        );
+        expect(quantization.provenance.lastVerified).toBe("2026-09-25");
+      }
+    }
+
+    expect(
+      productionModels.find((model) => model.id === "qwen-qwen3-5-2b")?.summary,
+    ).toContain("vision processing");
+  });
+
   it("includes sourced newer, established, and integrated GPU classes", () => {
     const expected = [
       ["nvidia-rtx-2060-6gb", 6, "GDDR6"],
@@ -183,6 +243,27 @@ describe("catalog registry", () => {
     expect(integrated?.kind).toBe("integrated");
     expect(integrated?.vramGiB).toBe(0);
     expect(integrated?.sharedMemoryGiB).toBeUndefined();
+  });
+
+  it("records Batch 24 GPU memory variants from manufacturer specifications", () => {
+    const expected = [
+      ["nvidia-rtx-5060-8gb", 8, "GDDR7", "Blackwell"],
+      ["nvidia-rtx-5060-ti-8gb", 8, "GDDR7", "Blackwell"],
+      ["amd-radeon-rx-7600-xt-16gb", 16, "GDDR6", "RDNA 3"],
+      ["amd-radeon-rx-9060-xt-8gb", 8, "GDDR6", "RDNA 4"],
+    ] as const;
+
+    for (const [id, vramGiB, memoryType, architecture] of expected) {
+      const gpu = productionGpus.find((entry) => entry.id === id);
+      expect(gpu?.kind).toBe("discrete");
+      expect(gpu?.vramGiB).toBe(vramGiB);
+      expect(gpu?.memoryType).toBe(memoryType);
+      expect(gpu?.architecture).toBe(architecture);
+      expect(gpu?.sharedMemoryGiB).toBeUndefined();
+      expect(gpu?.provenance.sourceType).toBe("manufacturer-specification");
+      expect(gpu?.provenance.lastVerified).toBe("2026-09-25");
+      expect(gpu?.provenance.sourceUrl).toMatch(/^https:\/\//);
+    }
   });
 
   it("records the documented Gemma 3 1B context limit", () => {
