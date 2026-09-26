@@ -4,6 +4,7 @@ import type {
   HardwareProfile,
   ModelDefinition,
   QuantizationDefinition,
+  RuntimeRequirement,
   RuntimeProfile,
 } from "./types";
 
@@ -40,6 +41,16 @@ const provenanceSchema = z.object({
   confidence: z.enum(["verified", "approximate"]),
   lastVerified: isoDate,
   note: z.string().trim().min(1).optional(),
+});
+const runtimeRequirementSchema: z.ZodType<RuntimeRequirement> = z.object({
+  description: z.string().trim().min(1),
+  source: z.string().trim().min(1),
+  sourceUrl: z
+    .string()
+    .url()
+    .refine((value) => value.startsWith("https://"), {
+      message: "Source URLs must use HTTPS.",
+    }),
 });
 
 export const hardwareProfileSchema: z.ZodType<HardwareProfile> = z.object({
@@ -93,6 +104,7 @@ export const modelDefinitionSchema: z.ZodType<ModelDefinition> = z.object({
   license: z.string().trim().min(1).optional(),
   defaultContextLength: z.number().int().positive().optional(),
   maxContextLength: z.number().int().positive().optional(),
+  runtimeRequirement: runtimeRequirementSchema.optional(),
   quantizations: z.array(quantizationSchema),
   provenance: provenanceSchema,
 });
@@ -113,6 +125,7 @@ export const modelMetadataSchema: z.ZodType<
   license: z.string().trim().min(1).optional(),
   defaultContextLength: z.number().int().positive().optional(),
   maxContextLength: z.number().int().positive().optional(),
+  runtimeRequirement: runtimeRequirementSchema.optional(),
   provenance: provenanceSchema,
 });
 
