@@ -84,6 +84,32 @@ describe("public catalog pages", () => {
     expect(screen.getByText("GDDR6")).toBeTruthy();
   });
 
+  it("shows Bonsai's runtime prerequisite separately from its memory facts", async () => {
+    const bonsai = modelCatalog.find((model) => model.slug === "bonsai-2-27b");
+    expect(bonsai).toBeDefined();
+    const page = await ModelPage({
+      params: Promise.resolve({ slug: bonsai!.slug }),
+    });
+    render(page);
+
+    expect(screen.getByRole("heading", { name: "Bonsai 2 27B" })).toBeTruthy();
+    expect(screen.getByText("PTQ1_0")).toBeTruthy();
+    expect(screen.getByText("PQ2_0")).toBeTruthy();
+    expect(
+      screen.getByText(
+        /Memory compatibility does not confirm runtime-load compatibility/,
+      ),
+    ).toBeTruthy();
+    expect(
+      screen
+        .getByRole("link", { name: "PrismML Bonsai demo runtime guide" })
+        .getAttribute("href"),
+    ).toBe("https://github.com/PrismML-Eng/Bonsai-demo");
+    expect(
+      screen.getAllByText(/optional vision projector/).length,
+    ).toBeGreaterThan(0);
+  });
+
   it("renders every model and GPU in directly browsable catalog indexes", () => {
     const modelsPage = ModelsPage();
     render(modelsPage);

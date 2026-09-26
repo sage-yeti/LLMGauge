@@ -68,6 +68,21 @@ describe("recommendations interface", () => {
     expect(screen.getAllByText("Full GPU execution").length).toBeGreaterThan(0);
   });
 
+  it("shows Bonsai's runtime prerequisite on its memory recommendation", () => {
+    renderRecommendations();
+    choose("GPU", "nvidia-rtx-5090-32gb");
+    submit();
+
+    expect(
+      screen.getAllByText(/PTQ1_0 and PQ2_0 require PrismML's llama\.cpp fork/)
+        .length,
+    ).toBeGreaterThan(0);
+    expect(
+      screen.getAllByRole("link", { name: "PrismML Bonsai demo runtime guide" })
+        .length,
+    ).toBeGreaterThan(0);
+  });
+
   it("shows partial offload and warnings when VRAM is limited", () => {
     renderRecommendations();
     choose("GPU", "nvidia-rtx-4060-8gb");
