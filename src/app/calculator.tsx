@@ -42,7 +42,7 @@ export function Calculator({ models, gpus }: CalculatorProps) {
   const [values, setValues] = useState<CalculatorFormValues>({
     modelId: firstModel?.id ?? "",
     quantizationId: firstModel?.quantizations[0]?.id ?? "",
-    cpuName: "My CPU",
+    cpuName: "",
     gpuId: "none",
     vramGiB: "0",
     systemRamGiB: "16",

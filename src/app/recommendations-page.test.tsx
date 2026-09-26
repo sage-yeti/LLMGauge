@@ -6,7 +6,10 @@ import { gpuCatalog, modelCatalog } from "@/data/catalog";
 function renderRecommendations() {
   render(<Recommendations models={modelCatalog} gpus={gpuCatalog} />);
 }
-function submit() {
+function submit(cpuName = "AMD Ryzen 7 7800X3D") {
+  fireEvent.change(screen.getByLabelText("CPU"), {
+    target: { value: cpuName },
+  });
   fireEvent.click(
     screen.getByRole("button", { name: /find suitable models/i }),
   );
@@ -17,6 +20,15 @@ function choose(label: string, value: string) {
 
 describe("recommendations interface", () => {
   afterEach(cleanup);
+
+  it("starts with an empty CPU name and accepts a user-entered name", () => {
+    renderRecommendations();
+    const cpuInput = screen.getByLabelText("CPU") as HTMLInputElement;
+
+    expect(cpuInput.value).toBe("");
+    fireEvent.change(cpuInput, { target: { value: "AMD Ryzen 7 7800X3D" } });
+    expect(cpuInput.value).toBe("AMD Ryzen 7 7800X3D");
+  });
 
   it("renders shared hardware controls and produces a CPU-only recommendation", () => {
     renderRecommendations();
@@ -91,7 +103,7 @@ describe("recommendations interface", () => {
   it("shows shared validation feedback for invalid hardware", () => {
     renderRecommendations();
     fireEvent.change(screen.getByLabelText("CPU"), { target: { value: "" } });
-    submit();
+    submit("");
     expect(screen.getByText("Enter a CPU name.")).toBeTruthy();
     expect(
       screen.queryByRole("heading", { name: "Models for your hardware" }),

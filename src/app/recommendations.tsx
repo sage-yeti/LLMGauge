@@ -23,7 +23,7 @@ interface RecommendationsProps {
 }
 
 const defaultValues: HardwareFormValues & RuntimeProfileFormValues = {
-  cpuName: "My CPU",
+  cpuName: "",
   gpuId: "none",
   vramGiB: "0",
   systemRamGiB: "16",

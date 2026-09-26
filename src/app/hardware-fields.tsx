@@ -40,7 +40,7 @@ export function HardwareFields({
           id="cpu"
           value={values.cpuName}
           onChange={(event) => onChange("cpuName", event.target.value)}
-          placeholder="e.g. Intel Core i5"
+          placeholder="e.g. AMD Ryzen 7 7800X3D"
           required
           aria-invalid={Boolean(fieldErrors.cpuName)}
           aria-describedby={fieldErrors.cpuName ? "cpu-error" : "cpu-help"}
