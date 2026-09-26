@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { siteUrl } from "./site";
-import { ThemeControl, themeBootstrapScript } from "./theme-control";
+import { themeBootstrapScript } from "./theme-control";
+import { SiteHeader } from "./site-header";
 
 export const metadata: Metadata = {
   metadataBase: siteUrl,
@@ -18,7 +19,7 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} />
       </head>
       <body>
-        <ThemeControl />
+        <SiteHeader />
         {children}
       </body>
     </html>

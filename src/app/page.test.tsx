@@ -1,12 +1,18 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import HomePage from "./page";
+import { SiteNavigation } from "./site-header";
 
 describe("homepage orientation", () => {
   afterEach(cleanup);
 
   it("explains both workflows and links to recommendations and guides", () => {
-    render(<HomePage />);
+    render(
+      <>
+        <SiteNavigation />
+        <HomePage />
+      </>,
+    );
 
     expect(
       screen.getByRole("heading", {
@@ -29,5 +35,11 @@ describe("homepage orientation", () => {
         .getByRole("link", { name: "Learn the basics" })
         .getAttribute("href"),
     ).toBe("/guides");
+    expect(
+      screen.getByRole("link", { name: "Models" }).getAttribute("href"),
+    ).toBe("/models");
+    expect(
+      screen.getByRole("link", { name: "GPUs" }).getAttribute("href"),
+    ).toBe("/gpus");
   });
 });

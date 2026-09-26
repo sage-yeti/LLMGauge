@@ -16,13 +16,6 @@ function provenanceText(
 export function ModelCatalogPage({ model }: { model: ModelDefinition }) {
   return (
     <main className="shell public-page">
-      <nav className="page-nav" aria-label="Catalog navigation">
-        <Link href="/">Calculator</Link>
-        <Link href="/recommendations">Recommendations</Link>
-        <Link href="/models">Model catalog</Link>
-        <Link href="/gpus">GPU catalog</Link>
-        <Link href="/guides">Guides</Link>
-      </nav>
       <header className="catalog-hero">
         <p className="eyebrow">Model catalog</p>
         <h1>{model.displayName}</h1>
@@ -161,13 +154,6 @@ export function GpuCatalogPage({ gpu }: { gpu: GpuDefinition }) {
 
   return (
     <main className="shell public-page">
-      <nav className="page-nav" aria-label="Catalog navigation">
-        <Link href="/">Calculator</Link>
-        <Link href="/recommendations">Recommendations</Link>
-        <Link href="/models">Model catalog</Link>
-        <Link href="/gpus">GPU catalog</Link>
-        <Link href="/guides">Guides</Link>
-      </nav>
       <header className="catalog-hero">
         <p className="eyebrow">GPU catalog</p>
         <h1>{gpu.displayName}</h1>

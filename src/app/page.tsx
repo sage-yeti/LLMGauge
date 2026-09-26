@@ -22,12 +22,6 @@ export default function HomePage() {
           Choose a model, describe your hardware, and get a transparent
           first-pass compatibility assessment.
         </p>
-        <nav className="page-nav" aria-label="Primary navigation">
-          <Link href="/recommendations">What can my PC run?</Link>
-          <Link href="/models">Browse models</Link>
-          <Link href="/gpus">Browse GPUs</Link>
-          <Link href="/guides">Learn the basics</Link>
-        </nav>
       </header>
       <section className="workflow-choice" aria-labelledby="workflow-heading">
         <div className="section-heading">
