@@ -66,6 +66,12 @@ export interface QuantizationDefinition {
   provenance: CatalogProvenance;
 }
 
+export interface RuntimeRequirement {
+  description: string;
+  source: string;
+  sourceUrl: string;
+}
+
 export interface ModelDefinition {
   id: string;
   slug: string;
@@ -81,6 +87,8 @@ export interface ModelDefinition {
   /** Publisher/runtime metadata; incomplete direct inputs produce unavailable guidance. */
   defaultContextLength?: number;
   maxContextLength?: number;
+  /** Runtime prerequisite for loading the listed model files; separate from memory compatibility. */
+  runtimeRequirement?: RuntimeRequirement;
   quantizations: QuantizationDefinition[];
   provenance: CatalogProvenance;
 }

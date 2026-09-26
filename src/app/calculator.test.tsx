@@ -93,6 +93,27 @@ describe("compatibility calculator", () => {
     expect(screen.getByText("Q8_0")).toBeTruthy();
   });
 
+  it("shows Bonsai's runtime prerequisite with the compatibility result", () => {
+    renderCalculator();
+    choose("Model", "prismml-bonsai-2-27b");
+    choose("GPU", "nvidia-rtx-5090-32gb");
+    submit();
+
+    expect(
+      screen.getByText(/PTQ1_0 and PQ2_0 require PrismML's llama\.cpp fork/),
+    ).toBeTruthy();
+    expect(
+      screen.getByText(
+        /Memory compatibility does not confirm runtime-load compatibility/,
+      ),
+    ).toBeTruthy();
+    expect(
+      screen
+        .getByRole("link", { name: "PrismML Bonsai demo runtime guide" })
+        .getAttribute("href"),
+    ).toBe("https://github.com/PrismML-Eng/Bonsai-demo");
+  });
+
   it("shows partial offload and its limiting factor", () => {
     renderCalculator();
     choose("Model", "mistralai-mistral-7b-instruct-v0-3");

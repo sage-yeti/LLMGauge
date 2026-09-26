@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { GpuDefinition, ModelDefinition } from "@/domain/types";
+import { RuntimeRequirementNote } from "./runtime-requirement-note";
 
 function formatGiB(value: number): string {
   return `${value.toFixed(value % 1 === 0 ? 0 : 2)} GiB`;
@@ -143,6 +144,9 @@ export function ModelCatalogPage({ model }: { model: ModelDefinition }) {
             View source
           </a>
         </p>
+        {model.runtimeRequirement && (
+          <RuntimeRequirementNote requirement={model.runtimeRequirement} />
+        )}
       </section>
     </main>
   );

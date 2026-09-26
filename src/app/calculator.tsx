@@ -17,6 +17,7 @@ import { Field, HardwareFields } from "./hardware-fields";
 import { ContextGuidanceView } from "./context-guidance";
 import { RuntimeFields } from "./runtime-fields";
 import { RuntimeProfileView } from "./runtime-profile-view";
+import { RuntimeRequirementNote } from "./runtime-requirement-note";
 
 interface CalculatorProps {
   models: readonly ModelDefinition[];
@@ -241,6 +242,9 @@ function ResultPanel({
           For <strong>{model.displayName}</strong>. Estimates are approximate
           planning guidance.
         </p>
+      )}
+      {model?.runtimeRequirement && (
+        <RuntimeRequirementNote requirement={model.runtimeRequirement} />
       )}
       <p className="result-message">{result.messages[0]}</p>
       <dl className="result-stats">

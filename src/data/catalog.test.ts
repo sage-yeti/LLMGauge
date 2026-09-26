@@ -28,7 +28,7 @@ describe("catalog registry", () => {
   });
 
   it("keeps the production catalog real, sourced, and separate from fixtures", () => {
-    expect(productionModels).toHaveLength(22);
+    expect(productionModels).toHaveLength(23);
     expect(productionGpus).toHaveLength(30);
     expect(
       productionModels.every((model) => !model.id.startsWith("example-")),
@@ -195,6 +195,47 @@ describe("catalog registry", () => {
     expect(
       productionModels.find((model) => model.id === "qwen-qwen3-5-2b")?.summary,
     ).toContain("vision processing");
+  });
+
+  it("records Bonsai 2 packings, source provenance, and its runtime prerequisite", () => {
+    const entry = productionModels.find(
+      (model) => model.id === "prismml-bonsai-2-27b",
+    );
+    expect(entry).toBeDefined();
+    expect(entry?.parameterCountBillions).toBe(27.36);
+    expect(entry?.maxContextLength).toBe(262144);
+    expect(entry?.license).toBe("Apache-2.0");
+    expect(entry?.provenance.sourceType).toBe("official-model-card");
+    expect(entry?.provenance.sourceUrl).toBe(
+      "https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-gguf",
+    );
+    expect(entry?.runtimeRequirement?.sourceUrl).toBe(
+      "https://github.com/PrismML-Eng/Bonsai-demo",
+    );
+    expect(entry?.runtimeRequirement?.description).toMatch(
+      /PrismML's llama\.cpp fork/,
+    );
+    expect(entry?.runtimeRequirement?.description).toMatch(/Stock llama\.cpp/);
+    expect(
+      entry?.quantizations.map(
+        ({ id, displayName, bitsPerWeight, sizeGiB }) => [
+          id,
+          displayName,
+          bitsPerWeight,
+          sizeGiB,
+        ],
+      ),
+    ).toEqual([
+      ["ptq1-0", "PTQ1_0", 1.75, 5.54],
+      ["pq2-0", "PQ2_0", 2.13, 6.72],
+    ]);
+    for (const quantization of entry?.quantizations ?? []) {
+      expect(quantization.provenance.sourceType).toBe("official-model-card");
+      expect(quantization.provenance.sourceUrl).toBe(
+        entry?.provenance.sourceUrl,
+      );
+      expect(quantization.description).toMatch(/vision projector/);
+    }
   });
 
   it("includes sourced newer, established, and integrated GPU classes", () => {

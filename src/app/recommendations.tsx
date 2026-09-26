@@ -16,6 +16,7 @@ import { HardwareFields } from "./hardware-fields";
 import { ContextGuidanceView } from "./context-guidance";
 import { RuntimeFields } from "./runtime-fields";
 import { RuntimeProfileView } from "./runtime-profile-view";
+import { RuntimeRequirementNote } from "./runtime-requirement-note";
 
 interface RecommendationsProps {
   models: readonly ModelDefinition[];
@@ -241,6 +242,9 @@ function RecommendationCard({
       </div>
       <p className="recommendation-summary">{entry.model.summary}</p>
       <p className="recommendation-explanation">{entry.explanation}</p>
+      {entry.model.runtimeRequirement && (
+        <RuntimeRequirementNote requirement={entry.model.runtimeRequirement} />
+      )}
       <ContextGuidanceView
         guidance={result.contextGuidance}
         headingId={`context-guidance-${entry.model.id}-${entry.quantization.id}`}
