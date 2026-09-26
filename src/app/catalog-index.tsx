@@ -89,12 +89,6 @@ export function ModelCatalogIndex({
 
   return (
     <main className="shell public-page">
-      <nav className="page-nav" aria-label="Catalog navigation">
-        <Link href="/">Calculator</Link>
-        <Link href="/recommendations">Recommendations</Link>
-        <Link href="/gpus">GPU catalog</Link>
-        <Link href="/guides">Guides</Link>
-      </nav>
       <header className="catalog-hero">
         <p className="eyebrow">Curated model catalog</p>
         <h1>Browse local language models</h1>
@@ -294,12 +288,6 @@ export function GpuCatalogIndex({ gpus }: { gpus: readonly GpuDefinition[] }) {
 
   return (
     <main className="shell public-page">
-      <nav className="page-nav" aria-label="Catalog navigation">
-        <Link href="/">Calculator</Link>
-        <Link href="/recommendations">Recommendations</Link>
-        <Link href="/models">Model catalog</Link>
-        <Link href="/guides">Guides</Link>
-      </nav>
       <header className="catalog-hero">
         <p className="eyebrow">Curated GPU catalog</p>
         <h1>Browse graphics hardware</h1>

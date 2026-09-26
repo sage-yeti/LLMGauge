@@ -12,6 +12,7 @@ import ModelsPage, { metadata as modelsMetadata } from "./models/page";
 import GpusPage, { metadata as gpusMetadata } from "./gpus/page";
 import { ModelCatalogIndex, GpuCatalogIndex } from "./catalog-index";
 import HomePage from "./page";
+import { SiteNavigation } from "./site-header";
 import { absoluteUrl } from "./site";
 import { gpuCatalog, modelCatalog } from "@/data/catalog";
 
@@ -243,12 +244,17 @@ describe("public catalog pages", () => {
   });
 
   it("links to both catalogs from the landing page navigation", () => {
-    render(HomePage());
+    render(
+      <>
+        <SiteNavigation />
+        {HomePage()}
+      </>,
+    );
     expect(
-      screen.getByRole("link", { name: "Browse models" }).getAttribute("href"),
+      screen.getByRole("link", { name: "Models" }).getAttribute("href"),
     ).toBe("/models");
     expect(
-      screen.getByRole("link", { name: "Browse GPUs" }).getAttribute("href"),
+      screen.getByRole("link", { name: "GPUs" }).getAttribute("href"),
     ).toBe("/gpus");
   });
 
