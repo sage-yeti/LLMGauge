@@ -19,10 +19,6 @@ export const metadata: Metadata = {
 export default function GuidesIndexPage() {
   return (
     <main className="shell public-page guide-page">
-      <nav className="page-nav" aria-label="Guide navigation">
-        <Link href="/">Calculator</Link>
-        <Link href="/recommendations">Recommendations</Link>
-      </nav>
       <header className="catalog-hero guide-hero">
         <p className="eyebrow">LLMGauge guides</p>
         <h1>Understand local LLM compatibility</h1>
