@@ -615,6 +615,63 @@ export const productionModels: readonly ModelDefinition[] = [
       "2026-09-25",
     ),
   }),
+  model({
+    id: "prismml-bonsai-2-27b",
+    slug: "bonsai-2-27b",
+    displayName: "Bonsai 2 27B",
+    summary:
+      "PrismML's ternary 27B reasoning model derived from Qwen3.8-27B; the memory estimate covers its text model and excludes the optional vision projector.",
+    family: "Bonsai 2",
+    provider: "PrismML",
+    architecture: "Qwen3.8 hybrid attention",
+    parameterCountBillions: 27.36,
+    supportedFormats: ["gguf"],
+    supportedRuntimes: ["llama.cpp"],
+    license: "Apache-2.0",
+    maxContextLength: 262144,
+    runtimeRequirement: {
+      description:
+        "PTQ1_0 and PQ2_0 require PrismML's llama.cpp fork with its custom ternary and Hadamard kernels. Stock llama.cpp is not safe for these packings.",
+      source: "PrismML Bonsai demo runtime guide",
+      sourceUrl: "https://github.com/PrismML-Eng/Bonsai-demo",
+    },
+    provenance: modelProvenance(
+      "PrismML Bonsai 2 27B GGUF model card",
+      "https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-gguf",
+      "Publisher metadata identifies a 27.36B model derived from Qwen3.8-27B, Apache-2.0 licensing, and 262,144-token maximum context. Memory inputs cover text-model packing only; the optional vision projector is excluded. The publisher documents a dedicated compatible runtime requirement separately.",
+      "2026-09-26",
+    ),
+    quantizations: [
+      {
+        id: "ptq1-0",
+        displayName: "PTQ1_0",
+        bitsPerWeight: 1.75,
+        sizeGiB: 5.54,
+        description:
+          "Publisher-documented 5.95 GB packed text-model file, converted to GiB for approximate memory planning; excludes the optional vision projector and runtime/context memory.",
+        provenance: modelProvenance(
+          "PrismML Bonsai 2 27B GGUF model card",
+          "https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-gguf",
+          "Publisher-documented PTQ1_0 packing at 1.75 bits per weight and 5.95 GB. The displayed 5.54 GiB is the decimal file size converted to GiB for the calculator estimate.",
+          "2026-09-26",
+        ),
+      },
+      {
+        id: "pq2-0",
+        displayName: "PQ2_0",
+        bitsPerWeight: 2.13,
+        sizeGiB: 6.72,
+        description:
+          "Publisher-documented 7.21 GB packed text-model file, converted to GiB for approximate memory planning; excludes the optional vision projector and runtime/context memory.",
+        provenance: modelProvenance(
+          "PrismML Bonsai 2 27B GGUF model card",
+          "https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-gguf",
+          "Publisher-documented PQ2_0 packing at 2.13 bits per weight and 7.21 GB. The displayed 6.72 GiB is the decimal file size converted to GiB for the calculator estimate.",
+          "2026-09-26",
+        ),
+      },
+    ],
+  }),
 ];
 
 function gpuProvenance(
