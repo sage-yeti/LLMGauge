@@ -110,6 +110,39 @@ describe("public catalog pages", () => {
     ).toBeGreaterThan(0);
   });
 
+  it("renders the new Qwen detail pages with their quant files and sources", async () => {
+    const models = [
+      ["qwen3-5-0-8b", "Qwen3.5 0.8B", "Q4_0", "0.52 GiB"],
+      ["qwen3-5-4b", "Qwen3.5 4B", "Q4_K_M", "2.80 GiB"],
+      ["qwen3-5-9b", "Qwen3.5 9B", "Q4_K_M", "5.75 GiB"],
+      ["qwen3-8-27b", "Qwen3.8 27B", "Q4_K_M", "17.69 GiB"],
+    ] as const;
+
+    for (const [slug, displayName, quantization, modelSize] of models) {
+      const model = modelCatalog.find((entry) => entry.slug === slug);
+      expect(model).toBeDefined();
+      const page = await ModelPage({ params: Promise.resolve({ slug }) });
+      const { unmount } = render(page);
+      expect(screen.getByRole("heading", { name: displayName })).toBeTruthy();
+      expect(screen.getByText(quantization)).toBeTruthy();
+      expect(screen.getByText(modelSize)).toBeTruthy();
+      expect(screen.getByText("262,144 tokens")).toBeTruthy();
+      expect(screen.getByText("Apache-2.0")).toBeTruthy();
+      const q4 = model!.quantizations.find(
+        (entry) => entry.displayName === quantization,
+      );
+      expect(q4).toBeDefined();
+      expect(
+        screen
+          .getAllByRole("link", { name: q4!.provenance.source })
+          .some(
+            (link) => link.getAttribute("href") === q4!.provenance.sourceUrl,
+          ),
+      ).toBe(true);
+      unmount();
+    }
+  });
+
   it("renders every model and GPU in directly browsable catalog indexes", () => {
     const modelsPage = ModelsPage();
     render(modelsPage);

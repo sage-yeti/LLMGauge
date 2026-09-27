@@ -28,7 +28,7 @@ describe("catalog registry", () => {
   });
 
   it("keeps the production catalog real, sourced, and separate from fixtures", () => {
-    expect(productionModels).toHaveLength(23);
+    expect(productionModels).toHaveLength(27);
     expect(productionGpus).toHaveLength(30);
     expect(
       productionModels.every((model) => !model.id.startsWith("example-")),
@@ -195,6 +195,85 @@ describe("catalog registry", () => {
     expect(
       productionModels.find((model) => model.id === "qwen-qwen3-5-2b")?.summary,
     ).toContain("vision processing");
+  });
+
+  it("records Batch 28 publisher facts and verified GGUF file-size candidates", () => {
+    const expected = [
+      {
+        id: "qwen-qwen3-5-0-8b",
+        parameters: 0.8,
+        publisher: "Qwen/Qwen3.5-0.8B",
+        converter: "ggml-org/Qwen3.5-0.8B-GGUF",
+        quants: [
+          ["Q4_0", "Qwen3.5-0.8B-Q4_0.gguf", 0.52, 4.5, "563 MB"],
+          ["Q8_0", "Qwen3.5-0.8B-Q8_0.gguf", 0.78, 8, "834 MB"],
+        ],
+      },
+      {
+        id: "qwen-qwen3-5-4b",
+        parameters: 4,
+        publisher: "Qwen/Qwen3.5-4B",
+        converter: "bartowski/Qwen_Qwen3.5-4B-GGUF",
+        quants: [
+          ["Q4_K_M", "Qwen3.5-4B-Q4_K_M.gguf", 2.8, 4.5, "3.01 GB"],
+          ["Q8_0", "Qwen3.5-4B-Q8_0.gguf", 4.3, 8, "4.62 GB"],
+        ],
+      },
+      {
+        id: "qwen-qwen3-5-9b",
+        parameters: 9,
+        publisher: "Qwen/Qwen3.5-9B",
+        converter: "bartowski/Qwen_Qwen3.5-9B-GGUF",
+        quants: [
+          ["Q4_K_M", "Qwen3.5-9B-Q4_K_M.gguf", 5.75, 4.5, "6.17 GB"],
+          ["Q8_0", "Qwen3.5-9B-Q8_0.gguf", 9.13, 8, "9.80 GB"],
+        ],
+      },
+      {
+        id: "qwen-qwen3-8-27b",
+        parameters: 27,
+        publisher: "Qwen/Qwen3.8-27B",
+        converter: "ggml-org/Qwen3.8-27B-GGUF",
+        quants: [
+          ["Q4_K_M", "Qwen3.8-27B-Q4_K_M.gguf", 17.69, 4.5, "19 GB"],
+          ["Q8_0", "Qwen3.8-27B-Q8_0.gguf", 26.64, 8, "28.6 GB"],
+        ],
+      },
+    ] as const;
+
+    for (const modelFacts of expected) {
+      const entry = productionModels.find(
+        (model) => model.id === modelFacts.id,
+      );
+      expect(entry?.parameterCountBillions).toBe(modelFacts.parameters);
+      expect(entry?.maxContextLength).toBe(262144);
+      expect(entry?.defaultContextLength).toBeUndefined();
+      expect(entry?.license).toBe("Apache-2.0");
+      expect(entry?.provenance.sourceType).toBe("official-model-card");
+      expect(entry?.provenance.sourceUrl).toBe(
+        `https://huggingface.co/${modelFacts.publisher}`,
+      );
+      expect(entry?.provenance.lastVerified).toBe("2026-09-27");
+      expect(entry?.quantizations.map((quant) => quant.displayName)).toEqual(
+        modelFacts.quants.map(([name]) => name),
+      );
+      for (const [
+        index,
+        [, file, sizeGiB, bitsPerWeight, listedFileSize],
+      ] of modelFacts.quants.entries()) {
+        const quant = entry?.quantizations[index];
+        expect(quant?.bitsPerWeight).toBe(bitsPerWeight);
+        expect(quant?.sizeGiB).toBe(sizeGiB);
+        expect(quant?.provenance.sourceType).toBe("community-conversion");
+        expect(quant?.provenance.sourceUrl).toBe(
+          `https://huggingface.co/${modelFacts.converter}/blob/main/${file}`,
+        );
+        expect(quant?.provenance.confidence).toBe("approximate");
+        expect(quant?.provenance.lastVerified).toBe("2026-09-27");
+        expect(quant?.description).toContain(file);
+        expect(quant?.description).toContain(listedFileSize);
+      }
+    }
   });
 
   it("records Bonsai 2 packings, source provenance, and its runtime prerequisite", () => {
