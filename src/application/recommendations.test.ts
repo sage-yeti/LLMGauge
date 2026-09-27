@@ -24,6 +24,32 @@ describe("recommendModels", () => {
     );
   });
 
+  it("includes the new Qwen models in hardware-specific recommendations", () => {
+    const hardware: HardwareProfile = {
+      cpu: { name: "Example CPU" },
+      gpu: {
+        id: "example-24gb-gpu",
+        name: "Example 24 GiB GPU",
+        kind: "discrete",
+        vramGiB: 24,
+      },
+      systemRamGiB: 64,
+      operatingSystem: "linux",
+    };
+    const result = recommendModels(hardware, productionModels);
+    const recommendedIds = result.recommendations.map(
+      (entry) => entry.model.id,
+    );
+    expect(recommendedIds).toEqual(
+      expect.arrayContaining([
+        "qwen-qwen3-5-0-8b",
+        "qwen-qwen3-5-4b",
+        "qwen-qwen3-5-9b",
+        "qwen-qwen3-8-27b",
+      ]),
+    );
+  });
+
   it("evaluates valid quantizations and prefers the highest quality usable candidate", () => {
     const result = recommendModels(fixtureHardware.gpu, [fixtureModel]);
     expect(result.recommendations).toHaveLength(1);
