@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { GpuDefinition, ModelDefinition } from "@/domain/types";
 import { RuntimeRequirementNote } from "./runtime-requirement-note";
+import { MemoryEstimateScopeNote } from "./memory-estimate-scope-note";
 
 function formatGiB(value: number): string {
   return `${value.toFixed(value % 1 === 0 ? 0 : 2)} GiB`;
@@ -128,10 +129,12 @@ export function ModelCatalogPage({ model }: { model: ModelDefinition }) {
       <section className="catalog-card" aria-labelledby="model-limitations">
         <h2 id="model-limitations">Compatibility notes</h2>
         <p className="catalog-copy">
-          Weight estimates are approximate and include a runtime overhead. Real
-          requirements vary with context length, runtime, drivers, and other
-          system use. A model page cannot determine compatibility without your
-          hardware profile; use the calculator for that assessment.
+          Estimates use the cataloged model-weight size (or a parameter-based
+          estimate), apply weight overhead, and include standard runtime
+          overhead. They do not include context/KV-cache memory. Real
+          requirements vary with runtime, drivers, and other system use. A model
+          page cannot determine compatibility without your hardware profile; use
+          the calculator for that assessment.
         </p>
         <p className="provenance-note">
           {provenanceText(
@@ -146,6 +149,9 @@ export function ModelCatalogPage({ model }: { model: ModelDefinition }) {
         </p>
         {model.runtimeRequirement && (
           <RuntimeRequirementNote requirement={model.runtimeRequirement} />
+        )}
+        {model.memoryEstimateScope && (
+          <MemoryEstimateScopeNote scope={model.memoryEstimateScope} />
         )}
       </section>
     </main>

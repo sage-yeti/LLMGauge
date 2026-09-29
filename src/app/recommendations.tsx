@@ -17,6 +17,7 @@ import { ContextGuidanceView } from "./context-guidance";
 import { RuntimeFields } from "./runtime-fields";
 import { RuntimeProfileView } from "./runtime-profile-view";
 import { RuntimeRequirementNote } from "./runtime-requirement-note";
+import { MemoryEstimateScopeNote } from "./memory-estimate-scope-note";
 
 interface RecommendationsProps {
   models: readonly ModelDefinition[];
@@ -244,6 +245,9 @@ function RecommendationCard({
       <p className="recommendation-explanation">{entry.explanation}</p>
       {entry.model.runtimeRequirement && (
         <RuntimeRequirementNote requirement={entry.model.runtimeRequirement} />
+      )}
+      {entry.model.memoryEstimateScope && (
+        <MemoryEstimateScopeNote scope={entry.model.memoryEstimateScope} />
       )}
       <ContextGuidanceView
         guidance={result.contextGuidance}

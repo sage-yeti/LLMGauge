@@ -93,6 +93,18 @@ describe("compatibility calculator", () => {
     expect(screen.getByText("Q8_0")).toBeTruthy();
   });
 
+  it("shows multimodal scope for affected estimates and keeps text-only results clear", () => {
+    renderCalculator();
+    submit();
+    expect(screen.queryByText(/Multimodal memory scope/)).toBeNull();
+
+    choose("Model", "qwen-qwen3-5-0-8b");
+    submit();
+    expect(
+      screen.getByText(/has not verified whether the selected GGUF weights/),
+    ).toBeTruthy();
+  });
+
   it("shows Bonsai's runtime prerequisite with the compatibility result", () => {
     renderCalculator();
     choose("Model", "prismml-bonsai-2-27b");

@@ -18,6 +18,7 @@ import { ContextGuidanceView } from "./context-guidance";
 import { RuntimeFields } from "./runtime-fields";
 import { RuntimeProfileView } from "./runtime-profile-view";
 import { RuntimeRequirementNote } from "./runtime-requirement-note";
+import { MemoryEstimateScopeNote } from "./memory-estimate-scope-note";
 
 interface CalculatorProps {
   models: readonly ModelDefinition[];
@@ -245,6 +246,9 @@ function ResultPanel({
       )}
       {model?.runtimeRequirement && (
         <RuntimeRequirementNote requirement={model.runtimeRequirement} />
+      )}
+      {model?.memoryEstimateScope && (
+        <MemoryEstimateScopeNote scope={model.memoryEstimateScope} />
       )}
       <p className="result-message">{result.messages[0]}</p>
       <dl className="result-stats">
