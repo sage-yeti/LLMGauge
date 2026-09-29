@@ -29,7 +29,7 @@ describe("catalog registry", () => {
 
   it("keeps the production catalog real, sourced, and separate from fixtures", () => {
     expect(productionModels).toHaveLength(36);
-    expect(productionGpus).toHaveLength(43);
+    expect(productionGpus).toHaveLength(49);
     expect(
       productionModels.every((model) => !model.id.startsWith("example-")),
     ).toBe(true);
@@ -597,6 +597,93 @@ describe("catalog registry", () => {
     expect(
       byId.get("nvidia-geforce-rtx-3060-ti-8gb")?.provenance.note,
     ).toContain("8 GB GDDR6 and 8 GB GDDR6X");
+  });
+
+  it("records distinct laptop GPU variants with NVIDIA specifications and provenance", () => {
+    const expected = [
+      [
+        "nvidia-geforce-rtx-3060-laptop-gpu-6gb",
+        "rtx-3060-laptop-gpu-6gb",
+        "GeForce RTX 3060 Laptop GPU 6GB",
+        6,
+        "Ampere",
+        "https://www.nvidia.com/en-us/geforce/laptops/compare/30-series/",
+      ],
+      [
+        "nvidia-geforce-rtx-4050-laptop-gpu-6gb",
+        "rtx-4050-laptop-gpu-6gb",
+        "GeForce RTX 4050 Laptop GPU 6GB",
+        6,
+        "Ada Lovelace",
+        "https://www.nvidia.com/en-us/geforce/laptops/40-series/",
+      ],
+      [
+        "nvidia-geforce-rtx-4060-laptop-gpu-8gb",
+        "rtx-4060-laptop-gpu-8gb",
+        "GeForce RTX 4060 Laptop GPU 8GB",
+        8,
+        "Ada Lovelace",
+        "https://www.nvidia.com/en-us/geforce/laptops/40-series/",
+      ],
+      [
+        "nvidia-geforce-rtx-4070-laptop-gpu-8gb",
+        "rtx-4070-laptop-gpu-8gb",
+        "GeForce RTX 4070 Laptop GPU 8GB",
+        8,
+        "Ada Lovelace",
+        "https://www.nvidia.com/en-us/geforce/laptops/40-series/",
+      ],
+      [
+        "nvidia-geforce-rtx-4080-laptop-gpu-12gb",
+        "rtx-4080-laptop-gpu-12gb",
+        "GeForce RTX 4080 Laptop GPU 12GB",
+        12,
+        "Ada Lovelace",
+        "https://www.nvidia.com/en-us/geforce/laptops/40-series/",
+      ],
+      [
+        "nvidia-geforce-rtx-4090-laptop-gpu-16gb",
+        "rtx-4090-laptop-gpu-16gb",
+        "GeForce RTX 4090 Laptop GPU 16GB",
+        16,
+        "Ada Lovelace",
+        "https://www.nvidia.com/en-us/geforce/laptops/40-series/",
+      ],
+    ] as const;
+    const byId = new Map(productionGpus.map((gpu) => [gpu.id, gpu]));
+
+    for (const [
+      id,
+      slug,
+      displayName,
+      vramGiB,
+      architecture,
+      sourceUrl,
+    ] of expected) {
+      const gpu = byId.get(id);
+      expect(gpu).toBeDefined();
+      expect(gpu?.slug).toBe(slug);
+      expect(gpu?.displayName).toBe(displayName);
+      expect(gpu?.kind).toBe("discrete");
+      expect(gpu?.vendor).toBe("NVIDIA");
+      expect(gpu?.vramGiB).toBe(vramGiB);
+      expect(gpu?.memoryType).toBe("GDDR6");
+      expect(gpu?.architecture).toBe(architecture);
+      expect(gpu?.sharedMemoryGiB).toBeUndefined();
+      expect(gpu?.provenance.sourceType).toBe("manufacturer-specification");
+      expect(gpu?.provenance.confidence).toBe("verified");
+      expect(gpu?.provenance.sourceUrl).toBe(sourceUrl);
+      expect(gpu?.provenance.lastVerified).toBe("2026-09-29");
+      expect(gpu?.suitabilitySummary).toContain("power and cooling");
+    }
+
+    expect(
+      productionGpus.filter((gpu) => gpu.id.includes("laptop-gpu")),
+    ).toHaveLength(6);
+    expect(byId.get("nvidia-rtx-3060-12gb")?.vramGiB).toBe(12);
+    expect(byId.get("nvidia-rtx-4060-8gb")?.slug).toBe("rtx-4060-8gb");
+    expect(byId.get("nvidia-geforce-rtx-4070-12gb")?.vramGiB).toBe(12);
+    expect(byId.get("nvidia-rtx-4090-24gb")?.vramGiB).toBe(24);
   });
 
   it("records the documented Gemma 3 1B context limit", () => {
