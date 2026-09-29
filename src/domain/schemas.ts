@@ -3,6 +3,7 @@ import type {
   GpuDefinition,
   HardwareProfile,
   ModelDefinition,
+  MemoryEstimateScope,
   QuantizationDefinition,
   RuntimeRequirement,
   RuntimeProfile,
@@ -44,6 +45,16 @@ const provenanceSchema = z.object({
 });
 const runtimeRequirementSchema: z.ZodType<RuntimeRequirement> = z.object({
   description: z.string().trim().min(1),
+  source: z.string().trim().min(1),
+  sourceUrl: z
+    .string()
+    .url()
+    .refine((value) => value.startsWith("https://"), {
+      message: "Source URLs must use HTTPS.",
+    }),
+});
+const memoryEstimateScopeSchema: z.ZodType<MemoryEstimateScope> = z.object({
+  auxiliaryVisionFiles: z.enum(["excluded", "unverified"]),
   source: z.string().trim().min(1),
   sourceUrl: z
     .string()
@@ -105,6 +116,7 @@ export const modelDefinitionSchema: z.ZodType<ModelDefinition> = z.object({
   defaultContextLength: z.number().int().positive().optional(),
   maxContextLength: z.number().int().positive().optional(),
   runtimeRequirement: runtimeRequirementSchema.optional(),
+  memoryEstimateScope: memoryEstimateScopeSchema.optional(),
   quantizations: z.array(quantizationSchema),
   provenance: provenanceSchema,
 });
@@ -126,6 +138,7 @@ export const modelMetadataSchema: z.ZodType<
   defaultContextLength: z.number().int().positive().optional(),
   maxContextLength: z.number().int().positive().optional(),
   runtimeRequirement: runtimeRequirementSchema.optional(),
+  memoryEstimateScope: memoryEstimateScopeSchema.optional(),
   provenance: provenanceSchema,
 });
 
