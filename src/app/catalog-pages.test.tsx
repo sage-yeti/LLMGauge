@@ -174,6 +174,63 @@ describe("public catalog pages", () => {
     }
   });
 
+  it("renders each NVIDIA laptop GPU detail page with laptop-specific sourced specs", async () => {
+    const expected = [
+      [
+        "rtx-3060-laptop-gpu-6gb",
+        "GeForce RTX 3060 Laptop GPU 6GB",
+        "6 GiB",
+        "Ampere",
+      ],
+      [
+        "rtx-4050-laptop-gpu-6gb",
+        "GeForce RTX 4050 Laptop GPU 6GB",
+        "6 GiB",
+        "Ada Lovelace",
+      ],
+      [
+        "rtx-4060-laptop-gpu-8gb",
+        "GeForce RTX 4060 Laptop GPU 8GB",
+        "8 GiB",
+        "Ada Lovelace",
+      ],
+      [
+        "rtx-4070-laptop-gpu-8gb",
+        "GeForce RTX 4070 Laptop GPU 8GB",
+        "8 GiB",
+        "Ada Lovelace",
+      ],
+      [
+        "rtx-4080-laptop-gpu-12gb",
+        "GeForce RTX 4080 Laptop GPU 12GB",
+        "12 GiB",
+        "Ada Lovelace",
+      ],
+      [
+        "rtx-4090-laptop-gpu-16gb",
+        "GeForce RTX 4090 Laptop GPU 16GB",
+        "16 GiB",
+        "Ada Lovelace",
+      ],
+    ] as const;
+
+    for (const [slug, displayName, capacity, architecture] of expected) {
+      const gpu = gpuCatalog.find((entry) => entry.slug === slug);
+      expect(gpu).toBeDefined();
+      const page = await GpuPage({ params: Promise.resolve({ slug }) });
+      const { unmount } = render(page);
+      expect(screen.getByRole("heading", { name: displayName })).toBeTruthy();
+      expect(screen.getByText(capacity)).toBeTruthy();
+      expect(screen.getByText("GDDR6")).toBeTruthy();
+      expect(screen.getByText(architecture)).toBeTruthy();
+      const sourceLink = screen.getByRole("link", {
+        name: gpu!.provenance.source,
+      });
+      expect(sourceLink.getAttribute("href")).toBe(gpu!.provenance.sourceUrl);
+      unmount();
+    }
+  });
+
   it("shows Bonsai's runtime prerequisite separately from its memory facts", async () => {
     const bonsai = modelCatalog.find((model) => model.slug === "bonsai-2-27b");
     expect(bonsai).toBeDefined();
