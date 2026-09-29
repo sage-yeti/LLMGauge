@@ -34,6 +34,7 @@ const provenanceSchema = z.object({
   sourceType: z.enum([
     "official-model-card",
     "official-documentation",
+    "publisher-conversion",
     "manufacturer-specification",
     "community-conversion",
     "project-documentation",

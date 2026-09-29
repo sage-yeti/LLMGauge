@@ -13,6 +13,7 @@ export type ProvenanceConfidence = "verified" | "approximate";
 export type ProvenanceSourceType =
   | "official-model-card"
   | "official-documentation"
+  | "publisher-conversion"
   | "manufacturer-specification"
   | "community-conversion"
   | "project-documentation"

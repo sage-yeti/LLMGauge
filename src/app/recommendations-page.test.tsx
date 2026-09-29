@@ -68,6 +68,23 @@ describe("recommendations interface", () => {
     expect(screen.getAllByText("Full GPU execution").length).toBeGreaterThan(0);
   });
 
+  it("includes the new model records in the recommendation workflow", () => {
+    renderRecommendations();
+    choose("GPU", "nvidia-rtx-5090-32gb");
+    submit();
+
+    const lfmCard = screen
+      .getByRole("heading", { name: "LFM2.5 2.6B" })
+      .closest("article");
+    expect(lfmCard).toBeTruthy();
+    expect(
+      lfmCard?.querySelector('a[href="/models/lfm2-5-2-6b"]'),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole("heading", { name: "Gemma 4 E4B IT" }),
+    ).toBeTruthy();
+  });
+
   it("shows multimodal scope on affected recommendation cards only", () => {
     renderRecommendations();
     choose("GPU", "nvidia-rtx-5090-32gb");

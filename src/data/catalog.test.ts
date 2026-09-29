@@ -28,7 +28,7 @@ describe("catalog registry", () => {
   });
 
   it("keeps the production catalog real, sourced, and separate from fixtures", () => {
-    expect(productionModels).toHaveLength(27);
+    expect(productionModels).toHaveLength(36);
     expect(productionGpus).toHaveLength(30);
     expect(
       productionModels.every((model) => !model.id.startsWith("example-")),
@@ -48,6 +48,111 @@ describe("catalog registry", () => {
       expect(gpu.provenance.sourceType).toBe("manufacturer-specification");
       if (gpu.memoryType) expect(gpu.kind).toBe("discrete");
     }
+  });
+
+  it("records the verified Batch 31 model facts, GGUF files, sizes, and separate provenance", () => {
+    const expected = [
+      [
+        "google-gemma-4-12b-it",
+        11.95,
+        "7.22 GB",
+        6.72,
+        "gemma-4-12B-it-Q4_0.gguf",
+      ],
+      ["qwen-qwen3-6-27b", 27, "19.1 GB", 17.79, "Qwen3.6-27B-Q4_K_M.gguf"],
+      [
+        "google-gemma-4-26b-a4b-it",
+        25.2,
+        "16.8 GB",
+        15.65,
+        "gemma-4-26B-A4B-it-Q4_K_M.gguf",
+      ],
+      [
+        "qwen-qwen3-6-35b-a3b",
+        35,
+        "20.4 GB",
+        19.01,
+        "Qwen3.6-35B-A3B-Q4_K_M.gguf",
+      ],
+      ["liquidai-lfm2-5-2-6b", 2.6, "1.59 GB", 1.48, "LFM2.5-2.6B-Q4_0.gguf"],
+      ["google-gemma-4-e4b-it", 8, "4.59 GB", 4.28, "gemma-4-E4B-it-Q4_0.gguf"],
+      [
+        "meta-muse-glimmer-30b",
+        30,
+        "16.8 GB",
+        15.65,
+        "Muse-Glimmer-30B-KQuant-17GB-Q4_K_M.gguf",
+      ],
+      ["deepseek-v4-flash-0731", 284, "155 GB", 144.35, "00001-of-00005.gguf"],
+      [
+        "google-gemma-4-31b-it",
+        31,
+        "19.60 GB",
+        18.25,
+        "google_gemma-4-31B-it-Q4_K_M.gguf",
+      ],
+    ] as const;
+    const byId = new Map(productionModels.map((entry) => [entry.id, entry]));
+
+    for (const [id, parameters, listedSize, sizeGiB, fileName] of expected) {
+      const entry = byId.get(id);
+      expect(entry).toBeDefined();
+      expect(entry?.parameterCountBillions).toBe(parameters);
+      expect(entry?.provenance.sourceType).toBe("official-model-card");
+      expect(entry?.provenance.sourceUrl).toMatch(
+        /^https:\/\/huggingface\.co\//,
+      );
+      expect(entry?.license).toBeTruthy();
+      expect(entry?.defaultContextLength).toBeUndefined();
+      expect(entry?.quantizations).toHaveLength(1);
+      const quantization = entry!.quantizations[0];
+      expect(quantization.sizeGiB).toBe(sizeGiB);
+      expect(quantization.description).toContain(listedSize);
+      expect(quantization.description).toContain(fileName);
+      expect(quantization.provenance.sourceUrl).toMatch(
+        id === "deepseek-v4-flash-0731" ? /\/tree\/main\// : /\/blob\/main\//,
+      );
+      expect(quantization.provenance.sourceType).toMatch(
+        /^(community|publisher)-conversion$/,
+      );
+      expect(quantization.provenance.lastVerified).toBe("2026-09-29");
+      expect(quantization.provenance.sourceUrl).not.toBe(
+        entry?.provenance.sourceUrl,
+      );
+    }
+
+    expect(byId.get("google-gemma-4-26b-a4b-it")?.parameterCountBillions).toBe(
+      25.2,
+    );
+    expect(byId.get("qwen-qwen3-6-35b-a3b")?.parameterCountBillions).toBe(35);
+    expect(byId.get("google-gemma-4-e4b-it")?.parameterCountBillions).toBe(8);
+    for (const id of [
+      "google-gemma-4-12b-it",
+      "qwen-qwen3-6-27b",
+      "google-gemma-4-26b-a4b-it",
+      "qwen-qwen3-6-35b-a3b",
+      "google-gemma-4-e4b-it",
+      "meta-muse-glimmer-30b",
+      "google-gemma-4-31b-it",
+    ]) {
+      expect(byId.get(id)?.memoryEstimateScope?.auxiliaryVisionFiles).toBe(
+        "excluded",
+      );
+    }
+    expect(
+      byId.get("liquidai-lfm2-5-2-6b")?.memoryEstimateScope,
+    ).toBeUndefined();
+    expect(
+      byId.get("liquidai-lfm2-5-2-6b")?.quantizations[0].provenance.sourceType,
+    ).toBe("publisher-conversion");
+    expect(
+      byId.get("meta-muse-glimmer-30b")?.quantizations[0].provenance.sourceType,
+    ).toBe("publisher-conversion");
+    expect(byId.has("qwen-qwen3-8-27b")).toBe(true);
+    expect(byId.has("qwen-qwen3-6-27b")).toBe(true);
+    expect(
+      byId.get("deepseek-v4-flash-0731")?.quantizations[0].description,
+    ).toContain("00005-of-00005.gguf");
   });
 
   it("curates the additional models with separate publisher and GGUF provenance", () => {
