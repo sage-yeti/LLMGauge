@@ -184,7 +184,7 @@ export const productionModels: readonly ModelDefinition[] = [
     slug: "gemma-3-1b-it",
     displayName: "Gemma 3 1B IT",
     summary:
-      "Google's compact instruction-tuned Gemma 3 text model for constrained local systems.",
+      "Google's compact instruction-tuned Gemma 3 model for constrained local systems.",
     family: "Gemma 3",
     provider: "Google",
     architecture: "Gemma",
@@ -197,9 +197,14 @@ export const productionModels: readonly ModelDefinition[] = [
     provenance: modelProvenance(
       "Google Gemma 3 model card",
       "https://huggingface.co/google/gemma-3-1b-it",
-      "The publisher specifies 32K input context for the 1B variant; the 128K figure applies to larger Gemma 3 variants. Runtime and conversion support may impose lower practical limits.",
+      "The publisher specifies text and image input and 32K context for the 1B variant; the 128K figure applies to larger Gemma 3 variants. The current catalog does not verify whether its generic GGUF planning candidates include the vision components.",
       "2026-09-23",
     ),
+    memoryEstimateScope: {
+      auxiliaryVisionFiles: "unverified",
+      source: "Google Gemma 3 1B model card",
+      sourceUrl: "https://huggingface.co/google/gemma-3-1b-it",
+    },
   }),
   model({
     id: "google-gemma-3-4b-it",
@@ -221,6 +226,11 @@ export const productionModels: readonly ModelDefinition[] = [
       "https://huggingface.co/google/gemma-3-4b-it",
       "The calculator models text-generation memory only; it does not estimate image-encoder memory or multimodal runtime behavior.",
     ),
+    memoryEstimateScope: {
+      auxiliaryVisionFiles: "excluded",
+      source: "ggml-org Gemma 3 4B GGUF repository",
+      sourceUrl: "https://huggingface.co/ggml-org/gemma-3-4b-it-GGUF",
+    },
   }),
   model({
     id: "qwen-2-5-3b-instruct",
@@ -413,6 +423,11 @@ export const productionModels: readonly ModelDefinition[] = [
       "https://huggingface.co/google/gemma-3-12b-it",
       "Publisher metadata; image encoder, image tokens, and multimodal runtime memory are not modeled. The ggml-org repository provides a separate GGUF conversion.",
     ),
+    memoryEstimateScope: {
+      auxiliaryVisionFiles: "excluded",
+      source: "ggml-org Gemma 3 12B GGUF repository",
+      sourceUrl: "https://huggingface.co/ggml-org/gemma-3-12b-it-GGUF",
+    },
     quantizations: convertedQuantizations(
       "ggml-org/gemma-3-12b-it-GGUF",
       false,
@@ -437,6 +452,11 @@ export const productionModels: readonly ModelDefinition[] = [
       "https://huggingface.co/google/gemma-3-27b-it",
       "Publisher metadata; multimodal encoder memory is outside the text-weight estimate. GGUF availability is documented separately by ggml-org.",
     ),
+    memoryEstimateScope: {
+      auxiliaryVisionFiles: "excluded",
+      source: "ggml-org Gemma 3 27B GGUF repository",
+      sourceUrl: "https://huggingface.co/ggml-org/gemma-3-27b-it-GGUF",
+    },
     quantizations: convertedQuantizations("ggml-org/gemma-3-27b-it-GGUF"),
   }),
   model({
@@ -557,6 +577,12 @@ export const productionModels: readonly ModelDefinition[] = [
       "Mistral's documentation lists a 128K context and Apache-2.0 license and marks Small 3.2 deprecated for new integrations; the publisher model card identifies the 24B instruct variant. This entry is for local GGUF memory planning, not an API recommendation. Image-processing memory is outside this text-weight estimate. The listed GGUF candidates are a separate bartowski community conversion.",
       "2026-09-24",
     ),
+    memoryEstimateScope: {
+      auxiliaryVisionFiles: "excluded",
+      source: "bartowski Mistral Small 3.2 GGUF repository",
+      sourceUrl:
+        "https://huggingface.co/bartowski/mistralai_Mistral-Small-3.2-24B-Instruct-2506-GGUF",
+    },
     quantizations: convertedQuantizations(
       "bartowski/mistralai_Mistral-Small-3.2-24B-Instruct-2506-GGUF",
       true,
@@ -635,6 +661,11 @@ export const productionModels: readonly ModelDefinition[] = [
       "Publisher model card lists Apache-2.0 licensing and native 262,144-token context. The parameter count follows the publisher's 2B variant name. GGUF candidates are a separate community conversion; vision-encoder and image-input memory are outside this text-weight estimate.",
       "2026-09-25",
     ),
+    memoryEstimateScope: {
+      auxiliaryVisionFiles: "excluded",
+      source: "unsloth Qwen3.5 2B GGUF repository",
+      sourceUrl: "https://huggingface.co/unsloth/Qwen3.5-2B-GGUF",
+    },
     quantizations: convertedQuantizations(
       "unsloth/Qwen3.5-2B-GGUF",
       true,
@@ -661,6 +692,11 @@ export const productionModels: readonly ModelDefinition[] = [
       "The publisher identifies the 0.8B multimodal model, Apache-2.0 license, and native 262,144-token context. GGUF files and listed sizes are attributed separately to the ggml-org conversion; vision-processing memory is not estimated.",
       "2026-09-27",
     ),
+    memoryEstimateScope: {
+      auxiliaryVisionFiles: "unverified",
+      source: "ggml-org Qwen3.5 0.8B GGUF repository",
+      sourceUrl: "https://huggingface.co/ggml-org/Qwen3.5-0.8B-GGUF",
+    },
     quantizations: [
       fileSizedQuantization(
         "q4-0",
@@ -702,6 +738,11 @@ export const productionModels: readonly ModelDefinition[] = [
       "The publisher identifies the 4B multimodal model, Apache-2.0 license, and native 262,144-token context. GGUF files and listed sizes are attributed separately to the bartowski conversion; vision-processing memory is not estimated.",
       "2026-09-27",
     ),
+    memoryEstimateScope: {
+      auxiliaryVisionFiles: "excluded",
+      source: "bartowski Qwen3.5 4B GGUF repository",
+      sourceUrl: "https://huggingface.co/bartowski/Qwen_Qwen3.5-4B-GGUF",
+    },
     quantizations: [
       fileSizedQuantization(
         "q4-k-m",
@@ -743,6 +784,11 @@ export const productionModels: readonly ModelDefinition[] = [
       "The publisher identifies the 9B multimodal model, Apache-2.0 license, and native 262,144-token context. GGUF files and listed sizes are attributed separately to the bartowski conversion; vision-processing memory is not estimated.",
       "2026-09-27",
     ),
+    memoryEstimateScope: {
+      auxiliaryVisionFiles: "excluded",
+      source: "bartowski Qwen3.5 9B GGUF repository",
+      sourceUrl: "https://huggingface.co/bartowski/Qwen_Qwen3.5-9B-GGUF",
+    },
     quantizations: [
       fileSizedQuantization(
         "q4-k-m",
@@ -784,6 +830,11 @@ export const productionModels: readonly ModelDefinition[] = [
       "The publisher identifies Qwen3.8-27B as a dense vision-language model, lists Apache-2.0 licensing, and documents 262,144 native context. GGUF file names and sizes are separately attributed to ggml-org's llama.cpp conversion; vision-processing memory is not estimated.",
       "2026-09-27",
     ),
+    memoryEstimateScope: {
+      auxiliaryVisionFiles: "excluded",
+      source: "ggml-org Qwen3.8 27B GGUF repository",
+      sourceUrl: "https://huggingface.co/ggml-org/Qwen3.8-27B-GGUF",
+    },
     quantizations: [
       fileSizedQuantization(
         "q4-k-m",
@@ -831,6 +882,11 @@ export const productionModels: readonly ModelDefinition[] = [
       "Publisher metadata identifies a 27.36B model derived from Qwen3.8-27B, Apache-2.0 licensing, and 262,144-token maximum context. Memory inputs cover text-model packing only; the optional vision projector is excluded. The publisher documents a dedicated compatible runtime requirement separately.",
       "2026-09-26",
     ),
+    memoryEstimateScope: {
+      auxiliaryVisionFiles: "excluded",
+      source: "PrismML Bonsai 2 27B GGUF model card",
+      sourceUrl: "https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-gguf",
+    },
     quantizations: [
       {
         id: "ptq1-0",
