@@ -110,6 +110,39 @@ describe("public catalog pages", () => {
     ).toBeGreaterThan(0);
   });
 
+  it("explains excluded and unverified vision memory without flagging text-only models", async () => {
+    const unverifiedPage = await ModelPage({
+      params: Promise.resolve({ slug: "qwen3-5-0-8b" }),
+    });
+    render(unverifiedPage);
+    expect(
+      screen.getByText(/has not verified whether the selected GGUF weights/),
+    ).toBeTruthy();
+    expect(
+      screen
+        .getByRole("link", {
+          name: "ggml-org Qwen3.5 0.8B GGUF repository",
+        })
+        .getAttribute("href"),
+    ).toBe("https://huggingface.co/ggml-org/Qwen3.5-0.8B-GGUF");
+
+    cleanup();
+    const excludedPage = await ModelPage({
+      params: Promise.resolve({ slug: "qwen3-5-4b" }),
+    });
+    render(excludedPage);
+    expect(
+      screen.getByText(/excludes the separate vision\/projector file/),
+    ).toBeTruthy();
+
+    cleanup();
+    const textOnlyPage = await ModelPage({
+      params: Promise.resolve({ slug: "llama-3-2-1b-instruct" }),
+    });
+    render(textOnlyPage);
+    expect(screen.queryByText(/Multimodal memory scope/)).toBeNull();
+  });
+
   it("renders the new Qwen detail pages with their quant files and sources", async () => {
     const models = [
       ["qwen3-5-0-8b", "Qwen3.5 0.8B", "Q4_0", "0.52 GiB"],

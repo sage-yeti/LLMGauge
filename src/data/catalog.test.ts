@@ -394,6 +394,34 @@ describe("catalog registry", () => {
     expect(gemma?.provenance.lastVerified).toBe("2026-09-23");
   });
 
+  it("records excluded or unverified auxiliary vision files only for affected models", () => {
+    const expected: Record<string, "excluded" | "unverified"> = {
+      "google-gemma-3-1b-it": "unverified",
+      "google-gemma-3-4b-it": "excluded",
+      "google-gemma-3-12b-it": "excluded",
+      "google-gemma-3-27b-it": "excluded",
+      "mistralai-mistral-small-3-2-24b-instruct-2506": "excluded",
+      "qwen-qwen3-5-2b": "excluded",
+      "qwen-qwen3-5-0-8b": "unverified",
+      "qwen-qwen3-5-4b": "excluded",
+      "qwen-qwen3-5-9b": "excluded",
+      "qwen-qwen3-8-27b": "excluded",
+      "prismml-bonsai-2-27b": "excluded",
+    };
+
+    for (const [id, status] of Object.entries(expected)) {
+      const entry = productionModels.find((model) => model.id === id);
+      expect(entry?.memoryEstimateScope?.auxiliaryVisionFiles).toBe(status);
+      expect(entry?.memoryEstimateScope?.sourceUrl).toMatch(/^https:\/\//);
+      expect(entry?.memoryEstimateScope?.source).toBeTruthy();
+    }
+
+    const textOnly = productionModels.find(
+      (model) => model.id === "meta-llama-3-2-1b-instruct",
+    );
+    expect(textOnly?.memoryEstimateScope).toBeUndefined();
+  });
+
   it("rejects duplicate IDs", () => {
     expect(() =>
       validateCatalogEntries(

@@ -68,6 +68,24 @@ describe("recommendations interface", () => {
     expect(screen.getAllByText("Full GPU execution").length).toBeGreaterThan(0);
   });
 
+  it("shows multimodal scope on affected recommendation cards only", () => {
+    renderRecommendations();
+    choose("GPU", "nvidia-rtx-5090-32gb");
+    submit();
+
+    const multimodalCard = screen
+      .getByRole("heading", { name: "Qwen3.5 4B" })
+      .closest("article");
+    expect(multimodalCard?.textContent).toMatch(
+      /excludes the separate vision\/projector file/,
+    );
+
+    const textOnlyCard = screen
+      .getByRole("heading", { name: "Llama 3.2 1B Instruct" })
+      .closest("article");
+    expect(textOnlyCard?.textContent).not.toMatch(/Multimodal memory scope/);
+  });
+
   it("shows Bonsai's runtime prerequisite on its memory recommendation", () => {
     renderRecommendations();
     choose("GPU", "nvidia-rtx-5090-32gb");

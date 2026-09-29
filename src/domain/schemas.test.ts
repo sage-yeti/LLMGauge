@@ -62,6 +62,40 @@ describe("domain schemas", () => {
     ).toBe(false);
   });
 
+  it("validates optional auxiliary vision-file estimate scope metadata", () => {
+    expect(
+      modelDefinitionSchema.safeParse({
+        ...fixtureModel,
+        memoryEstimateScope: {
+          auxiliaryVisionFiles: "unverified",
+          source: "Model card",
+          sourceUrl: "https://example.com/model-card",
+        },
+      }).success,
+    ).toBe(true);
+    expect(
+      modelDefinitionSchema.safeParse({
+        ...fixtureModel,
+        memoryEstimateScope: {
+          auxiliaryVisionFiles: "included",
+          source: "Model card",
+          sourceUrl: "https://example.com/model-card",
+        },
+      }).success,
+    ).toBe(false);
+    expect(
+      modelDefinitionSchema.safeParse({
+        ...fixtureModel,
+        memoryEstimateScope: {
+          auxiliaryVisionFiles: "excluded",
+          source: "Model card",
+          sourceUrl: "http://example.com/model-card",
+        },
+      }).success,
+    ).toBe(false);
+    expect(modelDefinitionSchema.safeParse(fixtureModel).success).toBe(true);
+  });
+
   it("requires URL-safe slugs and well-formed provenance", () => {
     expect(
       modelDefinitionSchema.safeParse({

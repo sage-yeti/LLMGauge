@@ -72,6 +72,12 @@ export interface RuntimeRequirement {
   sourceUrl: string;
 }
 
+export interface MemoryEstimateScope {
+  auxiliaryVisionFiles: "excluded" | "unverified";
+  source: string;
+  sourceUrl: string;
+}
+
 export interface ModelDefinition {
   id: string;
   slug: string;
@@ -89,6 +95,8 @@ export interface ModelDefinition {
   maxContextLength?: number;
   /** Runtime prerequisite for loading the listed model files; separate from memory compatibility. */
   runtimeRequirement?: RuntimeRequirement;
+  /** Records whether auxiliary vision files are outside, or unverified in, the listed weight estimate. */
+  memoryEstimateScope?: MemoryEstimateScope;
   quantizations: QuantizationDefinition[];
   provenance: CatalogProvenance;
 }
