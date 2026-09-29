@@ -1,24 +1,24 @@
 :root {
   color-scheme: light;
-  --ink: #27242a;
-  --muted: #625d64;
+  --ink: #262523;
+  --muted: #5f5c57;
   --surface: #f3f0eb;
   --card: #fbf9f5;
-  --line: #d8d1d5;
-  --accent: #795d70;
-  --action-bg: #584753;
-  --action-hover: #40323d;
+  --line: #d5d2cd;
+  --accent: #56534e;
+  --action-bg: #484744;
+  --action-hover: #363533;
   --control-bg: #fffdfa;
-  --control-border: #aaa1a8;
+  --control-border: #a8a49d;
   --disabled-bg: #e8e3df;
-  --disabled-ink: #625d64;
+  --disabled-ink: #5f5c57;
   --subtle-panel: #f0ece8;
   --scan-panel: #f7f4ef;
   --runtime-panel: #f7f4ef;
   --success-panel: #e9f0e9;
   --success-panel-ink: #405c49;
-  --cpu-color: #615d63;
-  --focus-ring: #795d70;
+  --cpu-color: #5c5a56;
+  --focus-ring: #484744;
   --success: #3d7451;
   --warning: #855c19;
   --danger: #9a4545;
@@ -30,25 +30,25 @@
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --ink: #f1edf0;
-  --muted: #b8b0b8;
-  --surface: #171619;
-  --card: #211f23;
-  --line: #403b42;
-  --accent: #c3aabd;
-  --action-bg: #80677a;
-  --action-hover: #967c90;
-  --control-bg: #1b191d;
-  --control-border: #706774;
-  --disabled-bg: #302d32;
-  --disabled-ink: #bab2ba;
-  --subtle-panel: #1d1b20;
-  --scan-panel: #1d1b20;
-  --runtime-panel: #1d1b20;
+  --ink: #f0efec;
+  --muted: #b8b6b0;
+  --surface: #171716;
+  --card: #222220;
+  --line: #403f3b;
+  --accent: #d2d0ca;
+  --action-bg: #4b4a46;
+  --action-hover: #63625d;
+  --control-bg: #1b1a18;
+  --control-border: #77756f;
+  --disabled-bg: #302f2c;
+  --disabled-ink: #bab8b2;
+  --subtle-panel: #1d1c1a;
+  --scan-panel: #1d1c1a;
+  --runtime-panel: #1d1c1a;
   --success-panel: #202c24;
   --success-panel-ink: #c0d4c4;
-  --cpu-color: #b8b0b8;
-  --focus-ring: #c3aabd;
+  --cpu-color: #b9b7b0;
+  --focus-ring: #efeee9;
   --success: #9cc5a5;
   --warning: #e5bf7b;
   --danger: #eea1a1;
@@ -56,25 +56,25 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme]) {
     color-scheme: dark;
-    --ink: #f1edf0;
-    --muted: #b8b0b8;
-    --surface: #171619;
-    --card: #211f23;
-    --line: #403b42;
-    --accent: #c3aabd;
-    --action-bg: #80677a;
-    --action-hover: #967c90;
-    --control-bg: #1b191d;
-    --control-border: #706774;
-    --disabled-bg: #302d32;
-    --disabled-ink: #bab2ba;
-    --subtle-panel: #1d1b20;
-    --scan-panel: #1d1b20;
-    --runtime-panel: #1d1b20;
+    --ink: #f0efec;
+    --muted: #b8b6b0;
+    --surface: #171716;
+    --card: #222220;
+    --line: #403f3b;
+    --accent: #d2d0ca;
+    --action-bg: #4b4a46;
+    --action-hover: #63625d;
+    --control-bg: #1b1a18;
+    --control-border: #77756f;
+    --disabled-bg: #302f2c;
+    --disabled-ink: #bab8b2;
+    --subtle-panel: #1d1c1a;
+    --scan-panel: #1d1c1a;
+    --runtime-panel: #1d1c1a;
     --success-panel: #202c24;
     --success-panel-ink: #c0d4c4;
-    --cpu-color: #b8b0b8;
-    --focus-ring: rgba(195, 170, 189, 0.78);
+    --cpu-color: #b9b7b0;
+    --focus-ring: rgba(239, 238, 233, 0.82);
     --success: #9cc5a5;
     --warning: #e5bf7b;
     --danger: #eea1a1;
@@ -192,7 +192,7 @@ h1 {
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: 18px;
-  box-shadow: 0 14px 36px rgba(23, 32, 42, 0.06);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.06);
 }
 .calculator-card {
   padding: 2rem;
@@ -646,7 +646,7 @@ h1 {
   border: 1px solid var(--line);
   border-left: 5px solid var(--cpu-color);
   border-radius: 14px;
-  box-shadow: 0 10px 24px rgba(23, 32, 42, 0.05);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.05);
   padding: 1.25rem;
 }
 .recommendation-card.result-gpu-capable {
@@ -789,7 +789,7 @@ h1 {
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: 14px;
-  box-shadow: 0 10px 24px rgba(23, 32, 42, 0.04);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.04);
   padding: clamp(1.25rem, 4vw, 2.25rem);
 }
 .guide-section + .guide-section {
@@ -821,7 +821,7 @@ h1 {
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: 14px;
-  box-shadow: 0 10px 24px rgba(23, 32, 42, 0.04);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.04);
   margin-top: 1.25rem;
   padding: 1.5rem;
 }
@@ -932,7 +932,7 @@ h1 {
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: 14px;
-  box-shadow: 0 10px 24px rgba(23, 32, 42, 0.04);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.04);
   padding: 1.25rem;
 }
 .catalog-index-card h2 {
@@ -1002,7 +1002,7 @@ h1 {
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: 14px;
-  box-shadow: 0 10px 24px rgba(23, 32, 42, 0.04);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.04);
   margin-top: 1.25rem;
   padding: 1.5rem;
 }
