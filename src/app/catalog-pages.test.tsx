@@ -90,6 +90,90 @@ describe("public catalog pages", () => {
     expect(screen.getByText("GDDR6")).toBeTruthy();
   });
 
+  it("renders every Batch 32 GPU detail page with sourced capacity and specs", async () => {
+    const expected = [
+      ["rtx-3090-24gb", "GeForce RTX 3090 24GB", "24 GiB", "GDDR6X", "Ampere"],
+      [
+        "rtx-4070-12gb",
+        "GeForce RTX 4070 12GB",
+        "12 GiB",
+        undefined,
+        "Ada Lovelace",
+      ],
+      ["rtx-3070-8gb", "GeForce RTX 3070 8GB", "8 GiB", "GDDR6", "Ampere"],
+      ["rtx-3080-10gb", "GeForce RTX 3080 10GB", "10 GiB", "GDDR6X", "Ampere"],
+      ["rtx-3080-12gb", "GeForce RTX 3080 12GB", "12 GiB", "GDDR6X", "Ampere"],
+      [
+        "rtx-3060-ti-8gb",
+        "GeForce RTX 3060 Ti 8GB",
+        "8 GiB",
+        undefined,
+        "Ampere",
+      ],
+      [
+        "rtx-4080-super-16gb",
+        "GeForce RTX 4080 SUPER 16GB",
+        "16 GiB",
+        "GDDR6X",
+        "Ada Lovelace",
+      ],
+      [
+        "radeon-rx-7900-xt-20gb",
+        "Radeon RX 7900 XT 20GB",
+        "20 GiB",
+        "GDDR6",
+        "RDNA 3",
+      ],
+      [
+        "radeon-rx-6800-16gb",
+        "Radeon RX 6800 16GB",
+        "16 GiB",
+        "GDDR6",
+        "RDNA 2",
+      ],
+      [
+        "radeon-rx-6800-xt-16gb",
+        "Radeon RX 6800 XT 16GB",
+        "16 GiB",
+        "GDDR6",
+        "RDNA 2",
+      ],
+      [
+        "radeon-rx-6700-xt-12gb",
+        "Radeon RX 6700 XT 12GB",
+        "12 GiB",
+        "GDDR6",
+        "RDNA 2",
+      ],
+      ["tesla-p40-24gb", "NVIDIA Tesla P40 24GB", "24 GiB", "GDDR5", "Pascal"],
+      ["rtx-a6000-48gb", "NVIDIA RTX A6000 48GB", "48 GiB", "GDDR6", "Ampere"],
+    ] as const;
+
+    for (const [
+      slug,
+      displayName,
+      capacity,
+      memoryType,
+      architecture,
+    ] of expected) {
+      const gpu = gpuCatalog.find((entry) => entry.slug === slug);
+      expect(gpu).toBeDefined();
+      const page = await GpuPage({ params: Promise.resolve({ slug }) });
+      const { unmount } = render(page);
+      expect(screen.getByRole("heading", { name: displayName })).toBeTruthy();
+      expect(screen.getByText(capacity)).toBeTruthy();
+      if (memoryType) expect(screen.getByText(memoryType)).toBeTruthy();
+      else
+        expect(screen.queryByText("Memory type", { exact: true })).toBeNull();
+      expect(screen.getByText(architecture)).toBeTruthy();
+      const sourceLink = screen.getByRole("link", {
+        name: gpu!.provenance.source,
+      });
+      expect(sourceLink.getAttribute("href")).toBe(gpu!.provenance.sourceUrl);
+      unmount();
+    }
+  });
+
   it("shows Bonsai's runtime prerequisite separately from its memory facts", async () => {
     const bonsai = modelCatalog.find((model) => model.slug === "bonsai-2-27b");
     expect(bonsai).toBeDefined();

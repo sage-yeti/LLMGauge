@@ -29,7 +29,7 @@ describe("catalog registry", () => {
 
   it("keeps the production catalog real, sourced, and separate from fixtures", () => {
     expect(productionModels).toHaveLength(36);
-    expect(productionGpus).toHaveLength(30);
+    expect(productionGpus).toHaveLength(43);
     expect(
       productionModels.every((model) => !model.id.startsWith("example-")),
     ).toBe(true);
@@ -489,6 +489,114 @@ describe("catalog registry", () => {
       expect(gpu?.provenance.lastVerified).toBe("2026-09-25");
       expect(gpu?.provenance.sourceUrl).toMatch(/^https:\/\//);
     }
+  });
+
+  it("records Batch 32 GPU identities and manufacturer-documented specifications", () => {
+    const expected = [
+      [
+        "nvidia-geforce-rtx-3090-24gb",
+        "GeForce RTX 3090 24GB",
+        24,
+        "GDDR6X",
+        "Ampere",
+      ],
+      [
+        "nvidia-geforce-rtx-4070-12gb",
+        "GeForce RTX 4070 12GB",
+        12,
+        undefined,
+        "Ada Lovelace",
+      ],
+      [
+        "nvidia-geforce-rtx-3070-8gb",
+        "GeForce RTX 3070 8GB",
+        8,
+        "GDDR6",
+        "Ampere",
+      ],
+      [
+        "nvidia-geforce-rtx-3080-10gb",
+        "GeForce RTX 3080 10GB",
+        10,
+        "GDDR6X",
+        "Ampere",
+      ],
+      [
+        "nvidia-geforce-rtx-3080-12gb",
+        "GeForce RTX 3080 12GB",
+        12,
+        "GDDR6X",
+        "Ampere",
+      ],
+      [
+        "nvidia-geforce-rtx-3060-ti-8gb",
+        "GeForce RTX 3060 Ti 8GB",
+        8,
+        undefined,
+        "Ampere",
+      ],
+      [
+        "nvidia-geforce-rtx-4080-super-16gb",
+        "GeForce RTX 4080 SUPER 16GB",
+        16,
+        "GDDR6X",
+        "Ada Lovelace",
+      ],
+      [
+        "amd-radeon-rx-7900-xt-20gb",
+        "Radeon RX 7900 XT 20GB",
+        20,
+        "GDDR6",
+        "RDNA 3",
+      ],
+      ["amd-radeon-rx-6800-16gb", "Radeon RX 6800 16GB", 16, "GDDR6", "RDNA 2"],
+      [
+        "amd-radeon-rx-6800-xt-16gb",
+        "Radeon RX 6800 XT 16GB",
+        16,
+        "GDDR6",
+        "RDNA 2",
+      ],
+      [
+        "amd-radeon-rx-6700-xt-12gb",
+        "Radeon RX 6700 XT 12GB",
+        12,
+        "GDDR6",
+        "RDNA 2",
+      ],
+      ["nvidia-tesla-p40-24gb", "NVIDIA Tesla P40 24GB", 24, "GDDR5", "Pascal"],
+      ["nvidia-rtx-a6000-48gb", "NVIDIA RTX A6000 48GB", 48, "GDDR6", "Ampere"],
+    ] as const;
+    const byId = new Map(productionGpus.map((gpu) => [gpu.id, gpu]));
+
+    for (const [
+      id,
+      displayName,
+      vramGiB,
+      memoryType,
+      architecture,
+    ] of expected) {
+      const gpu = byId.get(id);
+      expect(gpu).toBeDefined();
+      expect(gpu?.displayName).toBe(displayName);
+      expect(gpu?.kind).toBe("discrete");
+      expect(gpu?.vendor).toMatch(/^(NVIDIA|AMD)$/);
+      expect(gpu?.vramGiB).toBe(vramGiB);
+      expect(gpu?.memoryType).toBe(memoryType);
+      expect(gpu?.architecture).toBe(architecture);
+      expect(gpu?.sharedMemoryGiB).toBeUndefined();
+      expect(gpu?.provenance.sourceType).toBe("manufacturer-specification");
+      expect(gpu?.provenance.confidence).toBe("verified");
+      expect(gpu?.provenance.lastVerified).toBe("2026-09-29");
+      expect(gpu?.provenance.sourceUrl).toMatch(/^https:\/\//);
+    }
+
+    expect(byId.get("nvidia-geforce-rtx-4070-12gb")?.provenance.note).toContain(
+      "GDDR6 or 12 GB GDDR6X",
+    );
+    expect(
+      byId.get("nvidia-geforce-rtx-3060-ti-8gb")?.provenance.note,
+    ).toContain("8 GB GDDR6 and 8 GB GDDR6X");
   });
 
   it("records the documented Gemma 3 1B context limit", () => {

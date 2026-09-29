@@ -40,13 +40,13 @@ describe("browser hardware detection", () => {
     ).toContain("RTX 3060");
   });
 
-  it("suggests a unique catalog GPU without inventing VRAM", () => {
+  it("does not suggest a GPU from an ambiguous catalog renderer hint", () => {
     const suggestion = suggestCatalogGpu(
       "ANGLE (NVIDIA, GeForce RTX 3060)",
       gpuCatalog,
     );
-    expect(suggestion.value?.gpuId).toBe("nvidia-rtx-3060-12gb");
-    expect(suggestion.confidence).toBe("low");
+    expect(suggestion.value).toBeNull();
+    expect(suggestion.confidence).toBe("unknown");
     expect(suggestion.safeToApply).toBe(false);
   });
 
