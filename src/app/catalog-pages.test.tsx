@@ -41,6 +41,12 @@ describe("public catalog pages", () => {
     expect(screen.getByText(/performance guarantee/i)).toBeTruthy();
   });
 
+  it("keeps invalid model slugs on the not-found route", async () => {
+    await expect(
+      ModelPage({ params: Promise.resolve({ slug: "not-a-real-model" }) }),
+    ).rejects.toThrow("NEXT_HTTP_ERROR_FALLBACK;404");
+  });
+
   it("renders useful GPU information and calculator links", async () => {
     const gpu = gpuCatalog[0];
     const page = await GpuPage({ params: Promise.resolve({ slug: gpu.slug }) });
@@ -172,6 +178,46 @@ describe("public catalog pages", () => {
             (link) => link.getAttribute("href") === q4!.provenance.sourceUrl,
           ),
       ).toBe(true);
+      unmount();
+    }
+  });
+
+  it("renders each Batch 31 model page with its sourced weight size and multimodal scope", async () => {
+    const slugs = [
+      "gemma-4-12b-it",
+      "qwen3-6-27b",
+      "gemma-4-26b-a4b-it",
+      "qwen3-6-35b-a3b",
+      "lfm2-5-2-6b",
+      "gemma-4-e4b-it",
+      "muse-glimmer-30b",
+      "deepseek-v4-flash-0731",
+      "gemma-4-31b-it",
+    ];
+
+    for (const slug of slugs) {
+      const model = modelCatalog.find((entry) => entry.slug === slug);
+      expect(model).toBeDefined();
+      const page = await ModelPage({ params: Promise.resolve({ slug }) });
+      const { unmount } = render(page);
+      expect(
+        screen.getByRole("heading", { name: model!.displayName }),
+      ).toBeTruthy();
+      expect(
+        screen.getByText(model!.quantizations[0].displayName),
+      ).toBeTruthy();
+      expect(
+        screen.getByRole("link", {
+          name: model!.quantizations[0].provenance.source,
+        }),
+      ).toBeTruthy();
+      if (model!.memoryEstimateScope) {
+        expect(
+          screen.getByText(/excludes the separate vision\/projector file/),
+        ).toBeTruthy();
+      } else {
+        expect(screen.queryByText(/Multimodal memory scope/)).toBeNull();
+      }
       unmount();
     }
   });
