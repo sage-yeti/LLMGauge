@@ -19,6 +19,7 @@ import { RuntimeFields } from "./runtime-fields";
 import { RuntimeProfileView } from "./runtime-profile-view";
 import { RuntimeRequirementNote } from "./runtime-requirement-note";
 import { MemoryEstimateScopeNote } from "./memory-estimate-scope-note";
+import { SearchableCombobox } from "./searchable-combobox";
 
 interface CalculatorProps {
   models: readonly ModelDefinition[];
@@ -115,22 +116,23 @@ export function Calculator({ models, gpus }: CalculatorProps) {
             label="Model"
             error={evaluation.fieldErrors.modelId}
           >
-            <select
+            <SearchableCombobox
               id="model"
               value={values.modelId}
-              onChange={(event) => handleModelChange(event.target.value)}
+              onChange={handleModelChange}
+              options={models.map((model) => ({
+                value: model.id,
+                label: model.displayName,
+                searchText: `${model.id} ${model.family} ${model.provider} ${model.architecture}`,
+              }))}
+              placeholder="Type to search models…"
+              emptyMessage="No models match that search."
               required
-              aria-invalid={Boolean(evaluation.fieldErrors.modelId)}
-              aria-describedby={
+              invalid={Boolean(evaluation.fieldErrors.modelId)}
+              describedBy={
                 evaluation.fieldErrors.modelId ? "model-error" : undefined
               }
-            >
-              {models.map((model) => (
-                <option key={model.id} value={model.id}>
-                  {model.displayName}
-                </option>
-              ))}
-            </select>
+            />
           </Field>
           <Field
             id="quantization"
