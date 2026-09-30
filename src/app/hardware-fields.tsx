@@ -3,6 +3,7 @@
 import type { HardwareFormValues } from "@/application/hardware";
 import type { GpuDefinition } from "@/domain/types";
 import { DeviceScan } from "./device-scan";
+import { SearchableCombobox } from "./searchable-combobox";
 
 interface HardwareFieldsProps {
   values: HardwareFormValues;
@@ -56,22 +57,28 @@ export function HardwareFields({
           }
           error={fieldErrors.gpuId}
         >
-          <select
+          <SearchableCombobox
             id="gpu"
             value={values.gpuId}
-            onChange={(event) => onGpuChange(event.target.value)}
+            onChange={onGpuChange}
+            options={[
+              {
+                value: "none",
+                label: "No dedicated GPU",
+                searchText: "none cpu-only no gpu",
+              },
+              ...gpus.map((gpu) => ({
+                value: gpu.id,
+                label: `${gpu.displayName}${gpu.kind === "integrated" ? " · integrated" : ""}`,
+                searchText: `${gpu.id} ${gpu.vendor} ${gpu.architecture ?? ""} ${gpu.vramGiB} GiB ${gpu.memoryType ?? ""} ${gpu.kind}`,
+              })),
+            ]}
+            placeholder="Type to search GPUs…"
+            emptyMessage="No GPUs match that search."
             required
-            aria-invalid={Boolean(fieldErrors.gpuId)}
-            aria-describedby={fieldErrors.gpuId ? "gpu-error" : "gpu-help"}
-          >
-            <option value="none">No dedicated GPU</option>
-            {gpus.map((gpu) => (
-              <option key={gpu.id} value={gpu.id}>
-                {gpu.displayName}
-                {gpu.kind === "integrated" ? " · integrated" : ""}
-              </option>
-            ))}
-          </select>
+            invalid={Boolean(fieldErrors.gpuId)}
+            describedBy={fieldErrors.gpuId ? "gpu-error" : "gpu-help"}
+          />
         </Field>
         <Field
           id="vram"
