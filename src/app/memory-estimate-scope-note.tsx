@@ -8,7 +8,7 @@ export function MemoryEstimateScopeNote({
   const description =
     scope.auxiliaryVisionFiles === "excluded"
       ? "This estimate excludes the separate vision/projector file and its runtime memory."
-      : "The catalog has not verified whether the selected GGUF weights include the model's vision components or require a separate file, so related memory may be missing from this estimate.";
+      : "The catalog has not verified whether the selected GGUF weights include all multimodal components or require separate files. Multimodal runtime memory is not estimated and may be missing from this result.";
 
   return (
     <p className="provenance-note memory-estimate-scope-note">

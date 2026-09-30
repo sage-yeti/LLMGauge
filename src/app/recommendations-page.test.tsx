@@ -136,6 +136,27 @@ describe("recommendations interface", () => {
     ).toBeTruthy();
   });
 
+  it("includes the verified Batch 35 models when system RAM is sufficient", () => {
+    renderRecommendations();
+    fireEvent.change(screen.getByLabelText("System RAM (GiB)"), {
+      target: { value: "512" },
+    });
+    choose("GPU", "nvidia-rtx-5090-32gb");
+    submit();
+
+    for (const name of [
+      "Qwen3-Coder-30B-A3B-Instruct",
+      "Qwen3-30B-A3B-Instruct-2507",
+      "GLM-4.7-Flash",
+      "Qwen3-Coder-Next",
+      "Qwen3.5-122B-A10B",
+      "Gemma 3n E2B IT",
+      "Gemma 3n E4B IT",
+    ]) {
+      expect(screen.getByRole("heading", { name })).toBeTruthy();
+    }
+  });
+
   it("shows multimodal scope on affected recommendation cards only", () => {
     renderRecommendations();
     choose("GPU", "nvidia-rtx-5090-32gb");

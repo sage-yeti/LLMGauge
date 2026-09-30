@@ -353,11 +353,48 @@ describe("public catalog pages", () => {
         }),
       ).toBeTruthy();
       if (model!.memoryEstimateScope) {
-        expect(
-          screen.getByText(/excludes the separate vision\/projector file/),
-        ).toBeTruthy();
+        expect(screen.getByText(/Multimodal memory scope/)).toBeTruthy();
       } else {
         expect(screen.queryByText(/Multimodal memory scope/)).toBeNull();
+      }
+      unmount();
+    }
+  });
+
+  it("renders each Batch 35 model detail page with its selected GGUF candidate", async () => {
+    const slugs = [
+      "qwen3-coder-30b-a3b-instruct",
+      "qwen3-30b-a3b-instruct-2507",
+      "glm-4-7-flash",
+      "qwen3-coder-next",
+      "qwen3-5-122b-a10b",
+      "gemma-3n-e2b-it",
+      "gemma-3n-e4b-it",
+    ];
+
+    for (const slug of slugs) {
+      const model = modelCatalog.find((entry) => entry.slug === slug);
+      expect(model).toBeDefined();
+      const page = await ModelPage({ params: Promise.resolve({ slug }) });
+      const { unmount } = render(page);
+      expect(
+        screen.getByRole("heading", { name: model!.displayName }),
+      ).toBeTruthy();
+      expect(
+        screen.getByText(model!.quantizations[0].displayName),
+      ).toBeTruthy();
+      expect(
+        screen
+          .getByRole("link", {
+            name: model!.quantizations[0].provenance.source,
+          })
+          .getAttribute("href"),
+      ).toBe(model!.quantizations[0].provenance.sourceUrl);
+      if (model!.memoryEstimateScope) {
+        expect(screen.getByText(/Multimodal memory scope/)).toBeTruthy();
+        expect(
+          screen.getByText(/Multimodal runtime memory is not estimated/),
+        ).toBeTruthy();
       }
       unmount();
     }
@@ -408,6 +445,13 @@ describe("public catalog pages", () => {
     ).toBeGreaterThan(0);
     expect(screen.getByRole("status").textContent).toMatch(/found\./);
     expect(screen.queryByRole("link", { name: /Llama 3\.2/ })).toBeNull();
+
+    fireEvent.change(search, { target: { value: "Qwen3-Coder-Next" } });
+    expect(
+      screen
+        .getByRole("link", { name: "Qwen3-Coder-Next" })
+        .getAttribute("href"),
+    ).toBe("/models/qwen3-coder-next");
 
     fireEvent.change(family, { target: { value: "Qwen2.5" } });
     fireEvent.change(format, { target: { value: "gguf" } });
