@@ -15,6 +15,20 @@ function submit(cpuName = "AMD Ryzen 7 7800X3D") {
   );
 }
 function choose(label: string, value: string) {
+  if (label === "GPU") {
+    const gpu = gpuCatalog.find((entry) => entry.id === value);
+    const input = screen.getByLabelText(label);
+    fireEvent.focus(input);
+    fireEvent.change(input, { target: { value } });
+    fireEvent.click(
+      screen.getByRole("option", {
+        name: new RegExp(
+          gpu?.displayName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") ?? value,
+        ),
+      }),
+    );
+    return;
+  }
   fireEvent.change(screen.getByLabelText(label), { target: { value } });
 }
 
@@ -66,6 +80,43 @@ describe("recommendations interface", () => {
     submit();
     expect(screen.getAllByText("GPU-capable").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Full GPU execution").length).toBeGreaterThan(0);
+  });
+
+  it("keeps the searchable no-GPU choice available for CPU-only results", () => {
+    renderRecommendations();
+    const gpuInput = screen.getByRole("combobox", { name: "GPU" });
+    fireEvent.focus(gpuInput);
+    fireEvent.change(gpuInput, { target: { value: "CPU-only" } });
+    fireEvent.click(screen.getByRole("option", { name: /No dedicated GPU/ }));
+
+    expect((gpuInput as HTMLInputElement).value).toBe("No dedicated GPU");
+    expect(
+      (screen.getByLabelText("Dedicated VRAM (GiB)") as HTMLInputElement)
+        .disabled,
+    ).toBe(true);
+    submit();
+    expect(screen.getAllByText("CPU-only").length).toBeGreaterThan(0);
+  });
+
+  it("searches shared GPU choices by name and memory and submits the chosen ID", () => {
+    renderRecommendations();
+    const gpuInput = screen.getByRole("combobox", { name: "GPU" });
+    fireEvent.focus(gpuInput);
+    fireEvent.change(gpuInput, { target: { value: "RTX 4090 Laptop" } });
+    fireEvent.click(
+      screen.getByRole("option", {
+        name: /GeForce RTX 4090 Laptop GPU 16GB/,
+      }),
+    );
+
+    expect((gpuInput as HTMLInputElement).value).toBe(
+      "GeForce RTX 4090 Laptop GPU 16GB",
+    );
+    expect(
+      (screen.getByLabelText("Dedicated VRAM (GiB)") as HTMLInputElement).value,
+    ).toBe("16");
+    submit();
+    expect(screen.getAllByText("GPU-capable").length).toBeGreaterThan(0);
   });
 
   it("includes the new model records in the recommendation workflow", () => {
