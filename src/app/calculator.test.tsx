@@ -17,6 +17,23 @@ function submit(cpuName = "AMD Ryzen 7 7800X3D") {
 }
 
 function choose(label: string, value: string) {
+  if (label === "Model" || label === "GPU") {
+    const entry =
+      label === "Model"
+        ? modelCatalog.find((model) => model.id === value)
+        : gpuCatalog.find((gpu) => gpu.id === value);
+    const input = screen.getByLabelText(label);
+    fireEvent.focus(input);
+    fireEvent.change(input, { target: { value } });
+    fireEvent.click(
+      screen.getByRole("option", {
+        name: new RegExp(
+          entry?.displayName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") ?? value,
+        ),
+      }),
+    );
+    return;
+  }
   fireEvent.change(screen.getByLabelText(label), { target: { value } });
 }
 
@@ -26,13 +43,9 @@ describe("compatibility calculator", () => {
   it("renders the registry model, quantizations, and GPU options", () => {
     renderCalculator();
 
-    expect(
-      screen.getByRole("option", { name: /Llama 3\.2 1B Instruct/ }),
-    ).toBeTruthy();
+    expect(screen.getByRole("combobox", { name: "Model" })).toBeTruthy();
     expect(screen.getByRole("option", { name: /Q4/ })).toBeTruthy();
-    expect(
-      screen.getByRole("option", { name: /GeForce RTX 3060 12GB/ }),
-    ).toBeTruthy();
+    expect(screen.getByRole("combobox", { name: "GPU" })).toBeTruthy();
     expect(screen.getByLabelText("System RAM (GiB)").getAttribute("id")).toBe(
       "system-ram",
     );
@@ -69,6 +82,19 @@ describe("compatibility calculator", () => {
     expect(cpuInput.value).toBe("");
     fireEvent.change(cpuInput, { target: { value: "AMD Ryzen 7 7800X3D" } });
     expect(cpuInput.value).toBe("AMD Ryzen 7 7800X3D");
+  });
+
+  it("searches models by family and submits the selected model ID", () => {
+    renderCalculator();
+    const modelInput = screen.getByRole("combobox", { name: "Model" });
+    fireEvent.focus(modelInput);
+    fireEvent.change(modelInput, { target: { value: "Qwen3.5" } });
+
+    fireEvent.click(screen.getByRole("option", { name: /Qwen3\.5 4B/ }));
+    expect((modelInput as HTMLInputElement).value).toBe("Qwen3.5 4B");
+    submit();
+
+    expect(screen.getByText("Qwen3.5 4B", { selector: "strong" })).toBeTruthy();
   });
 
   it("shows a CPU-only result for the default no-GPU profile", () => {
