@@ -28,7 +28,7 @@ describe("catalog registry", () => {
   });
 
   it("keeps the production catalog real, sourced, and separate from fixtures", () => {
-    expect(productionModels).toHaveLength(36);
+    expect(productionModels).toHaveLength(43);
     expect(productionGpus).toHaveLength(49);
     expect(
       productionModels.every((model) => !model.id.startsWith("example-")),
@@ -420,6 +420,169 @@ describe("catalog registry", () => {
       );
       expect(quantization.description).toMatch(/vision projector/);
     }
+  });
+
+  it("records the verified Batch 35 model facts and GGUF files in priority order", () => {
+    const expected = [
+      [
+        "qwen-qwen3-coder-30b-a3b-instruct",
+        30.5,
+        "Apache-2.0",
+        "Qwen/Qwen3-Coder-30B-A3B-Instruct",
+        "lmstudio-community/Qwen3-Coder-30B-A3B-Instruct-GGUF",
+        "Qwen3-Coder-30B-A3B-Instruct-Q4_K_M.gguf",
+        "18.6 GB",
+        17.32,
+      ],
+      [
+        "qwen-qwen3-30b-a3b-instruct-2507",
+        30.5,
+        "Apache-2.0",
+        "Qwen/Qwen3-30B-A3B-Instruct-2507",
+        "bartowski/Qwen_Qwen3-30B-A3B-Instruct-2507-GGUF",
+        "Qwen_Qwen3-30B-A3B-Instruct-2507-Q4_K_M.gguf",
+        "18.6 GB",
+        17.32,
+      ],
+      [
+        "zai-glm-4-7-flash",
+        30,
+        "MIT",
+        "zai-org/GLM-4.7-Flash",
+        "lmstudio-community/GLM-4.7-Flash-GGUF",
+        "GLM-4.7-Flash-Q4_K_M.gguf",
+        "18.1 GB",
+        16.86,
+      ],
+      [
+        "qwen-qwen3-coder-next",
+        80,
+        "Apache-2.0",
+        "Qwen/Qwen3-Coder-Next",
+        "Qwen/Qwen3-Coder-Next-GGUF",
+        "Qwen3-Coder-Next-Q4_K_M-00001-of-00004.gguf",
+        "48.4 GB",
+        45.08,
+      ],
+      [
+        "qwen-qwen3-5-122b-a10b",
+        122,
+        "Apache-2.0",
+        "Qwen/Qwen3.5-122B-A10B",
+        "bartowski/Qwen_Qwen3.5-122B-A10B-GGUF",
+        "Qwen_Qwen3.5-122B-A10B-Q4_K_M-00001-of-00002.gguf",
+        "77.62 GB",
+        72.29,
+      ],
+      [
+        "google-gemma-3n-e2b-it",
+        5,
+        "Gemma Terms of Use",
+        "ai.google.dev/gemma/docs/gemma-3n/model_card",
+        "ggml-org/gemma-3n-E2B-it-GGUF",
+        "gemma-3n-E2B-it-Q8_0.gguf",
+        "4.79 GB",
+        4.46,
+      ],
+      [
+        "google-gemma-3n-e4b-it",
+        8,
+        "Gemma Terms of Use",
+        "ai.google.dev/gemma/docs/gemma-3n/model_card",
+        "ggml-org/gemma-3n-E4B-it-GGUF",
+        "gemma-3n-E4B-it-Q8_0.gguf",
+        "7.35 GB",
+        6.85,
+      ],
+    ] as const;
+
+    const entries = expected.map(([id]) =>
+      productionModels.find((m) => m.id === id),
+    );
+    expect(entries.every(Boolean)).toBe(true);
+    expect(entries.map((entry) => entry?.id)).toEqual(
+      expected.map(([id]) => id),
+    );
+
+    for (const [index, facts] of expected.entries()) {
+      const [
+        id,
+        parameters,
+        license,
+        publisher,
+        converter,
+        file,
+        listedSize,
+        sizeGiB,
+      ] = facts;
+      const entry = entries[index]!;
+      const quantization = entry.quantizations[0];
+      expect(entry.parameterCountBillions).toBe(parameters);
+      expect(entry.license).toBe(license);
+      expect(entry.provenance.sourceUrl).toBe(
+        publisher.startsWith("https://")
+          ? publisher
+          : publisher.startsWith("ai.")
+            ? `https://${publisher}`
+            : `https://huggingface.co/${publisher}`,
+      );
+      expect(entry.provenance.sourceType).toBe("official-model-card");
+      expect(entry.provenance.confidence).toBe("verified");
+      expect(entry.provenance.lastVerified).toBe("2026-09-30");
+      expect(quantization.displayName).toBe(
+        id.startsWith("google-gemma-3n") ? "Q8_0" : "Q4_K_M",
+      );
+      expect(quantization.sizeGiB).toBe(sizeGiB);
+      expect(quantization.description).toContain(file);
+      expect(quantization.description).toContain(listedSize);
+      expect(quantization.provenance.sourceUrl).toContain(converter);
+      expect(quantization.provenance.sourceType).toMatch(
+        /^(community|publisher)-conversion$/,
+      );
+      expect(quantization.provenance.confidence).toBe("approximate");
+      expect(quantization.provenance.lastVerified).toBe("2026-09-30");
+      expect(entry.defaultContextLength).toBeUndefined();
+    }
+
+    expect(entries[0]?.maxContextLength).toBe(262144);
+    expect(entries[1]?.maxContextLength).toBe(262144);
+    expect(entries[2]?.maxContextLength).toBeUndefined();
+    expect(entries[3]?.maxContextLength).toBe(262144);
+    expect(entries[4]?.maxContextLength).toBe(262144);
+    for (const entry of entries.slice(0, 4)) {
+      expect(entry?.memoryEstimateScope).toBeUndefined();
+    }
+    expect(entries[4]?.memoryEstimateScope?.auxiliaryVisionFiles).toBe(
+      "unverified",
+    );
+    expect(entries[0]?.summary).toContain("3.3B active per token");
+    expect(entries[1]?.summary).toContain("3.3B active per token");
+    expect(entries[2]?.summary).toContain("activates 3B parameters per token");
+    expect(entries[3]?.summary).toContain("3B active per token");
+    expect(entries[4]?.summary).toContain("10B active parameters");
+    for (const [index, effectiveLabel] of [
+      [5, "E2B"],
+      [6, "E4B"],
+    ] as const) {
+      const entry = entries[index]!;
+      expect(entry.summary).toContain(effectiveLabel);
+      expect(entry.summary).toContain(
+        "multimodal runtime memory is not separately estimated",
+      );
+      expect(entry.parameterCountBillions).toBe(index === 5 ? 5 : 8);
+      expect(entry.memoryEstimateScope?.auxiliaryVisionFiles).toBe(
+        "unverified",
+      );
+      expect(entry.memoryEstimateScope?.sourceUrl).toBe(
+        `https://huggingface.co/${expected[index][4]}`,
+      );
+    }
+
+    // gpt-oss GGUFs are real, but the current schema requires a numeric bpw
+    // value that the MXFP4 source does not provide; do not force them into Q4_K_M.
+    expect(
+      productionModels.some((entry) => entry.id.startsWith("openai-gpt-oss")),
+    ).toBe(false);
   });
 
   it("includes sourced newer, established, and integrated GPU classes", () => {

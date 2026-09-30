@@ -97,6 +97,20 @@ describe("compatibility calculator", () => {
     expect(screen.getByText("Qwen3.5 4B", { selector: "strong" })).toBeTruthy();
   });
 
+  it("searches for a Batch 35 model and submits its catalog ID", () => {
+    renderCalculator();
+    choose("Model", "qwen-qwen3-coder-30b-a3b-instruct");
+    expect(
+      (screen.getByRole("combobox", { name: "Model" }) as HTMLInputElement)
+        .value,
+    ).toBe("Qwen3-Coder-30B-A3B-Instruct");
+    submit();
+
+    expect(
+      screen.getByText("Qwen3-Coder-30B-A3B-Instruct", { selector: "strong" }),
+    ).toBeTruthy();
+  });
+
   it("shows a CPU-only result for the default no-GPU profile", () => {
     renderCalculator();
     submit();
