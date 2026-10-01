@@ -8,10 +8,62 @@ import {
   gpuDefinitionSchema,
   hardwareProfileSchema,
   modelDefinitionSchema,
+  quantizationSchema,
   runtimeProfileSchema,
 } from "./schemas";
 
 describe("domain schemas", () => {
+  it.each([
+    { bitsPerWeight: 4 },
+    { sizeGiB: 5 },
+    { bitsPerWeight: 8, sizeGiB: 5 },
+  ])("accepts quantization sizing inputs %j", (sizing) => {
+    expect(
+      quantizationSchema.safeParse({
+        ...fixtureModel.quantizations[0],
+        bitsPerWeight: undefined,
+        ...sizing,
+      }).success,
+    ).toBe(true);
+  });
+
+  it.each([0, -1, NaN, Infinity, -Infinity, 16.01])(
+    "rejects invalid supplied bits per weight %s even with a valid file size",
+    (bitsPerWeight) => {
+      for (const sizeGiB of [undefined, 5]) {
+        expect(
+          quantizationSchema.safeParse({
+            ...fixtureModel.quantizations[0],
+            bitsPerWeight,
+            sizeGiB,
+          }).success,
+        ).toBe(false);
+      }
+    },
+  );
+
+  it.each([0, -1, NaN, Infinity, -Infinity])(
+    "rejects invalid supplied file size %s even with valid bits per weight",
+    (sizeGiB) => {
+      expect(
+        quantizationSchema.safeParse({
+          ...fixtureModel.quantizations[0],
+          sizeGiB,
+        }).success,
+      ).toBe(false);
+    },
+  );
+
+  it("requires at least one usable quantization sizing input", () => {
+    expect(
+      quantizationSchema.safeParse({
+        ...fixtureModel.quantizations[0],
+        bitsPerWeight: undefined,
+        sizeGiB: undefined,
+      }).success,
+    ).toBe(false);
+  });
+
   it("accept the representative valid contracts", () => {
     expect(hardwareProfileSchema.safeParse(fixtureHardware.gpu).success).toBe(
       true,

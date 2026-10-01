@@ -92,15 +92,21 @@ export const runtimeProfileSchema: z.ZodType<RuntimeProfile> = z.object({
   targetContextLength: z.number().int().positive().optional(),
 });
 
-export const quantizationSchema: z.ZodType<QuantizationDefinition> = z.object({
-  id: z.string().min(1),
-  displayName: z.string().min(1),
-  bitsPerWeight: z.number().finite().positive().max(16),
-  sizeGiB: positive.optional(),
-  overheadMultiplier: z.number().finite().positive().optional(),
-  description: z.string().trim().min(1).optional(),
-  provenance: provenanceSchema,
-});
+const bitsPerWeight = z.number().finite().positive().max(16);
+export const quantizationSchema: z.ZodType<QuantizationDefinition> = z
+  .object({
+    id: z.string().min(1),
+    displayName: z.string().min(1),
+    overheadMultiplier: z.number().finite().positive().optional(),
+    description: z.string().trim().min(1).optional(),
+    provenance: provenanceSchema,
+  })
+  .and(
+    z.union([
+      z.object({ bitsPerWeight, sizeGiB: positive.optional() }),
+      z.object({ bitsPerWeight: bitsPerWeight.optional(), sizeGiB: positive }),
+    ]),
+  );
 
 export const modelDefinitionSchema: z.ZodType<ModelDefinition> = z.object({
   id: z.string().min(1),
