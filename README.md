@@ -133,3 +133,17 @@ One catalog correction came from this review: Google documents 32K input context
 ## SEO/page architecture
 
 Public model and GPU catalog indexes (`/models` and `/gpus`) link to the existing detail pages and summarize selected curated facts. Catalog detail and guide pages use static params from small reviewed registries and metadata/canonical paths derived from their definitions. They provide useful explanations and provenance, then link to hardware-specific calculators rather than calculating anonymous compatibility at build time. The project intentionally has no mass-generated content, scraping, authentication, advertising, or database. Catalog entries and guides are curated rather than exhaustive: add them only when their sources, freshness, and usefulness can be reviewed manually.
+
+### Explicit Apple Silicon unified-memory planning
+
+Both workflows offer an explicit `apple-unified` hardware mode, alongside the existing PC mode. Omitted `memoryMode` retains legacy PC behavior; macOS, generic integrated graphics, and browser scanning never enable Apple mode. Apple profiles require macOS, an editable chip/CPU name, and a positive finite `systemRamGiB` representing the **one total physical unified-memory pool**. Direct domain inputs with any separate GPU allocation are rejected. The shared form retains PC GPU/VRAM values for switching back, but excludes them from Apple submissions. Scanning remains local, optional, and explicitly applied; it cannot switch modes or replace Apple's macOS or GPU allocation fields.
+
+The engine reuses sourced `sizeGiB` precedence and corrected fallback GiB weights. Required pooled memory is `weights × existing overhead multiplier + runtime overhead + system RAM reserve`. The fit check is inclusive against `required pooled memory + existing safety margin`, using unrounded values. Weights, reserve, and margin are each counted once. A passing result is **Fits estimated unified memory** (`unified-memory-fit`), with execution **Unverified (advisory)**; failure remains unsupported. Dedicated VRAM is null/not applicable, and `estimatedUnifiedMemoryGiB` records the pooled estimate. No GPU-accessible RAM percentage or Metal allocation limit is inferred.
+
+Apple recommendations put fitting entries ahead of unsupported entries, then retain the known-before-unavailable bits-per-weight metadata policy, higher documented bits-per-weight, lower unrounded pooled memory, and stable model/quantization IDs. Existing PC ordering and classifications are unchanged. Context/KV-cache, multimodal auxiliary-file, model runtime-prerequisite, and optional runtime-profile caveats still apply. Total-memory fit does not establish CPU/Metal execution, backend availability, full GPU offload, or performance.
+
+Policy evidence reviewed 2026-10-01:
+
+- [Apple WWDC20 unified-memory architecture](https://developer.apple.com/videos/play/wwdc2020/10686/): CPU and GPU operate over the same memory pool.
+- [Metal recommendedMaxWorkingSetSize](https://developer.apple.com/documentation/metal/mtldevice/recommendedmaxworkingsetsize): an approximate device working-set recommendation in bytes, distinct from total physical RAM; this planner does not query or predict it.
+- [llama.cpp build documentation](https://github.com/ggml-org/llama.cpp/blob/master/docs/build.md): Metal is enabled by default in macOS builds but can be disabled, and GPU inference can be disabled separately. A platform or total-memory fit therefore cannot verify the user's actual runtime/build or allocation behavior.

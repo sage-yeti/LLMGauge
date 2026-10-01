@@ -25,6 +25,7 @@ export interface RecommendationSet {
 
 const levelPriority: Record<CompatibilityLevel, number> = {
   "gpu-capable": 3,
+  "unified-memory-fit": 1,
   "partial-offload": 2,
   "cpu-only": 1,
   unsupported: 0,
@@ -112,13 +113,20 @@ function compareEntries(
   );
   if (metadataDifference) return metadataDifference;
   const memoryDifference =
-    a.result.memory.estimatedVramGiB - b.result.memory.estimatedVramGiB;
+    (a.result.memory.estimatedUnifiedMemoryGiB ??
+      a.result.memory.estimatedVramGiB ??
+      a.result.memory.estimatedSystemRamGiB) -
+    (b.result.memory.estimatedUnifiedMemoryGiB ??
+      b.result.memory.estimatedVramGiB ??
+      b.result.memory.estimatedSystemRamGiB);
   if (memoryDifference) return memoryDifference;
   const modelDifference = a.model.id.localeCompare(b.model.id);
   return modelDifference || a.quantization.id.localeCompare(b.quantization.id);
 }
 
 function makeExplanation(result: CompatibilityResult): string {
+  if (result.level === "unified-memory-fit")
+    return "Fits the estimated single unified-memory pool, including the RAM reserve. CPU/Metal execution and GPU allocation remain unverified.";
   if (result.level === "gpu-capable")
     return "Fits within the estimated dedicated VRAM and system RAM requirements.";
   if (result.level === "partial-offload")

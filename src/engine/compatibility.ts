@@ -98,6 +98,7 @@ export function evaluateCompatibility(
     throw new Error("Quantization is not available for this model");
   validatePolicy(policy);
   const memory = estimateMemory(model, quantization, policy);
+  const appleUnified = hardware.memoryMode === "apple-unified";
   const vram = hardware.gpu?.vramGiB ?? 0;
   const requiredVramGiB =
     memory.estimatedVramGiB + policy.availableMemorySafetyMarginGiB;
@@ -127,7 +128,23 @@ export function evaluateCompatibility(
       severity: "warning",
       message: `A conservative ${policy.availableMemorySafetyMarginGiB} GiB safety margin is included in the fit check.`,
     });
-  if (vramCanHoldModel && ramCanHoldModel) {
+  if (appleUnified) {
+    level = ramCanHoldModel ? "unified-memory-fit" : "unsupported";
+    executionMode = ramCanHoldModel ? "unverified" : "unsupported";
+    reasons.push({
+      code: "unified-execution-unverified",
+      severity: "warning",
+      message:
+        "Actual CPU/Metal execution and GPU allocation depend on the runtime and macOS. Total unified-memory fit does not guarantee full GPU offload; Metal working-set limits and backend availability are unverified.",
+    });
+    if (!ramCanHoldModel)
+      reasons.push({
+        code: "insufficient-unified-memory",
+        severity: "blocking",
+        message:
+          "Total unified memory is below the estimated pooled requirement, including the RAM reserve and safety margin.",
+      });
+  } else if (vramCanHoldModel && ramCanHoldModel) {
     level = "gpu-capable";
     executionMode = "gpu";
   } else if (ramCanHoldModel) {
@@ -162,7 +179,7 @@ export function evaluateCompatibility(
         message: "Available VRAM is below the estimated requirement.",
       });
   }
-  if (!hardware.gpu)
+  if (!appleUnified && !hardware.gpu)
     reasons.push({
       code: "no-discrete-gpu",
       severity: "info",
@@ -175,7 +192,7 @@ export function evaluateCompatibility(
       message: "Integrated GPU shared memory is not counted as dedicated VRAM.",
     });
   if (
-    vram === requiredVramGiB ||
+    (!appleUnified && vram === requiredVramGiB) ||
     hardware.systemRamGiB === requiredSystemRamGiB
   )
     reasons.push({
@@ -190,6 +207,7 @@ export function evaluateCompatibility(
         reason.code === "insufficient-vram" ||
         reason.code === "partial-offload" ||
         reason.code === "insufficient-system-ram" ||
+        reason.code === "insufficient-unified-memory" ||
         reason.code === "no-discrete-gpu",
     )
     .map((reason) => reason.message);
@@ -201,7 +219,8 @@ export function evaluateCompatibility(
         reason.code === "conservative-context-guidance" ||
         reason.code === "context-estimation-unavailable" ||
         reason.code === "safety-margin" ||
-        reason.code === "integrated-shared-memory",
+        reason.code === "integrated-shared-memory" ||
+        reason.code === "unified-execution-unverified",
     )
     .map((reason) => reason.message);
   return {
@@ -209,7 +228,13 @@ export function evaluateCompatibility(
     quantizationId: quantization.id,
     level,
     executionMode,
-    memory,
+    memory: appleUnified
+      ? {
+          ...memory,
+          estimatedVramGiB: null,
+          estimatedUnifiedMemoryGiB: memory.estimatedSystemRamGiB,
+        }
+      : memory,
     recommendedQuantizationId: null,
     contextGuidance,
     runtimeGuidance,
@@ -314,6 +339,31 @@ export function recommendQuantization(
       const metadata = compareQuantizationMetadata(a.candidate, b.candidate);
       return metadata || a.index - b.index;
     });
+  if (hardware.memoryMode === "apple-unified") {
+    const results = candidates
+      .map(({ candidate }) => ({
+        candidate,
+        result: evaluateCompatibility(
+          hardware,
+          { ...model, quantizations: [candidate] },
+          candidate,
+          policy,
+          runtimeProfile,
+        ),
+      }))
+      .filter(({ result }) => result.level !== "unsupported")
+      .sort(
+        (a, b) =>
+          compareQuantizationMetadata(a.candidate, b.candidate) ||
+          a.result.memory.estimatedSystemRamGiB -
+            b.result.memory.estimatedSystemRamGiB ||
+          a.candidate.id.localeCompare(b.candidate.id),
+      );
+    const best = results[0];
+    return best
+      ? { ...best.result, recommendedQuantizationId: best.candidate.id }
+      : undefined;
+  }
   for (const { candidate } of candidates) {
     const result = evaluateCompatibility(
       hardware,

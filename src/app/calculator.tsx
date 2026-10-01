@@ -1,6 +1,8 @@
 "use client";
 
 import { formatMemoryGiB } from "./format-memory";
+import { UnifiedMemoryNote } from "./unified-memory-note";
+import { applyDetectedHardware } from "@/application/hardware";
 import { FormEvent, useState } from "react";
 import Link from "next/link";
 import type {
@@ -30,6 +32,7 @@ interface CalculatorProps {
 
 const levelLabels: Record<CompatibilityLevel, string> = {
   "gpu-capable": "GPU-capable",
+  "unified-memory-fit": "Fits estimated unified memory",
   "partial-offload": "Partial offload",
   "cpu-only": "CPU-only",
   unsupported: "Unsupported",
@@ -37,6 +40,7 @@ const levelLabels: Record<CompatibilityLevel, string> = {
 
 const executionLabels: Record<string, string> = {
   gpu: "Full GPU execution",
+  unverified: "Unverified (advisory)",
   "partial-offload": "Partial GPU offload",
   cpu: "CPU execution",
   unsupported: "Not recommended for this hardware",
@@ -64,7 +68,13 @@ export function Calculator({ models, gpus }: CalculatorProps) {
   const selectedModel =
     models.find((model) => model.id === values.modelId) ?? firstModel;
   function updateValue(field: keyof CalculatorFormValues, value: string) {
-    setValues((current) => ({ ...current, [field]: value }));
+    setValues((current) => ({
+      ...current,
+      [field]: value,
+      ...(field === "memoryMode" && value === "apple-unified"
+        ? { operatingSystem: "macos" as const }
+        : {}),
+    }));
     setEvaluation({ fieldErrors: {} });
   }
 
@@ -93,7 +103,7 @@ export function Calculator({ models, gpus }: CalculatorProps) {
   }
 
   function applyDetected(patch: Partial<HardwareFormValues>) {
-    setValues((current) => ({ ...current, ...patch }));
+    setValues((current) => applyDetectedHardware(current, patch));
     setEvaluation({ fieldErrors: {} });
   }
 
@@ -263,6 +273,7 @@ function ResultPanel({
         <QuantizationSizingNote quantization={selectedQuantization} />
       )}
       <p className="result-message">{result.messages[0]}</p>
+      <UnifiedMemoryNote result={result} />
       <dl className="result-stats">
         <div>
           <dt>Execution</dt>
@@ -270,10 +281,18 @@ function ResultPanel({
         </div>
         <div>
           <dt>Estimated VRAM (approx.)</dt>
-          <dd>{formatMemoryGiB(result.memory.estimatedVramGiB)}</dd>
+          <dd>
+            {result.memory.estimatedVramGiB === null
+              ? "Not applicable"
+              : formatMemoryGiB(result.memory.estimatedVramGiB)}
+          </dd>
         </div>
         <div>
-          <dt>Estimated system RAM (approx.)</dt>
+          <dt>
+            {result.memory.estimatedUnifiedMemoryGiB !== undefined
+              ? "Estimated unified memory (approx.)"
+              : "Estimated system RAM (approx.)"}
+          </dt>
           <dd>{formatMemoryGiB(result.memory.estimatedSystemRamGiB)}</dd>
         </div>
       </dl>

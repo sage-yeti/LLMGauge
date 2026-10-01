@@ -335,3 +335,84 @@ describe("recommendModels", () => {
     });
   });
 });
+
+describe("Apple recommendation policy", () => {
+  const hardware: HardwareProfile = {
+    memoryMode: "apple-unified",
+    cpu: { name: "Apple M4" },
+    operatingSystem: "macos",
+    systemRamGiB: 16,
+  };
+  it("selects fitting quantizations ahead of unsupported and retains metadata/memory/ID ties", () => {
+    const model = (
+      id: string,
+      sizeGiB: number,
+      bitsPerWeight?: number,
+    ): ModelDefinition => ({
+      ...fixtureModel,
+      id,
+      quantizations: [
+        {
+          id: "sourced",
+          displayName: "Sourced",
+          sizeGiB,
+          bitsPerWeight,
+          provenance: fixtureProvenance,
+        },
+      ],
+    });
+    const models = [
+      model("z-tie", 2, 4),
+      model("a-tie", 2, 4),
+      model("smaller", 1, 4),
+      model("known", 3, 8),
+      model("unknown", 1),
+      model("too-large", 100, 16),
+    ];
+    for (const entries of [models, [...models].reverse()]) {
+      const result = recommendModels(hardware, entries);
+      expect(result.recommendations.map((e) => e.model.id)).toEqual([
+        "known",
+        "smaller",
+        "a-tie",
+        "z-tie",
+        "unknown",
+      ]);
+      expect(result.unsuitable.map((e) => e.model.id)).toEqual(["too-large"]);
+      expect(
+        result.recommendations.every(
+          (e) =>
+            e.result.level === "unified-memory-fit" &&
+            e.result.executionMode === "unverified",
+        ),
+      ).toBe(true);
+    }
+    const mixed = {
+      ...fixtureModel,
+      quantizations: [
+        { ...fixtureModel.quantizations[0], id: "fits", sizeGiB: 2 },
+        {
+          ...fixtureModel.quantizations[0],
+          id: "too-large",
+          bitsPerWeight: 16,
+          sizeGiB: 100,
+        },
+      ],
+    };
+    expect(
+      recommendModels(hardware, [mixed]).recommendations[0].quantization.id,
+    ).toBe("fits");
+  });
+  it("includes both GPT-OSS entries with one pool and sourced sizes", () => {
+    const result = recommendModels(
+      { ...hardware, systemRamGiB: 128 },
+      productionModels,
+    );
+    for (const id of ["openai-gpt-oss-20b", "openai-gpt-oss-120b"]) {
+      const entry = result.recommendations.find((e) => e.model.id === id)!;
+      expect(entry.result.memory.estimatedVramGiB).toBeNull();
+      expect(entry.result.memory.estimatedUnifiedMemoryGiB).toBeDefined();
+      expect(entry.result.level).toBe("unified-memory-fit");
+    }
+  });
+});

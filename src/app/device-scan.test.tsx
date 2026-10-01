@@ -8,6 +8,10 @@ import {
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { BrowserDetectionResult } from "@/application/browser-detection";
 import { gpuCatalog } from "@/data/catalog";
+import {
+  applyDetectedHardware,
+  type HardwareFormValues,
+} from "@/application/hardware";
 import { DeviceScan } from "./device-scan";
 
 const detected: BrowserDetectionResult = {
@@ -85,6 +89,43 @@ describe("device scan control", () => {
       screen.getByRole("button", { name: "Apply selected hints" }),
     );
     expect(onApply).toHaveBeenCalledWith({ operatingSystem: "linux" });
+  });
+
+  it("applies a macOS hint without opting into Apple unified memory", async () => {
+    let values: HardwareFormValues = {
+      cpuName: "CPU",
+      gpuId: "none",
+      vramGiB: "0",
+      systemRamGiB: "16",
+      operatingSystem: "windows",
+    };
+    render(
+      <DeviceScan
+        gpus={gpuCatalog}
+        onApply={(patch) => {
+          values = applyDetectedHardware(values, patch);
+        }}
+        detect={() =>
+          Promise.resolve({
+            ...detected,
+            operatingSystem: { ...detected.operatingSystem, value: "macos" },
+          })
+        }
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Scan my device" }));
+    await waitFor(() =>
+      expect(
+        screen.getByLabelText("Review operating system in form"),
+      ).toBeTruthy(),
+    );
+    fireEvent.click(screen.getByLabelText("Review operating system in form"));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Apply selected hints" }),
+    );
+    expect(values.operatingSystem).toBe("macos");
+    expect(values.memoryMode).toBeUndefined();
+    expect(values.gpuId).toBe("none");
   });
 
   it("keeps the exact VRAM field unavailable even with a GPU suggestion", async () => {

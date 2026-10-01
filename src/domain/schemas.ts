@@ -65,23 +65,41 @@ const memoryEstimateScopeSchema: z.ZodType<MemoryEstimateScope> = z.object({
     }),
 });
 
-export const hardwareProfileSchema: z.ZodType<HardwareProfile> = z.object({
-  cpu: z.object({
-    name: z.string().min(1),
-    physicalCores: positive.optional(),
-  }),
-  gpu: z
-    .object({
-      id: z.string().min(1),
+export const hardwareProfileSchema: z.ZodType<HardwareProfile> = z
+  .object({
+    memoryMode: z.enum(["pc", "apple-unified"]).optional(),
+    cpu: z.object({
       name: z.string().min(1),
-      kind: z.enum(["discrete", "integrated"]),
-      vramGiB: nonNegative,
-      sharedMemoryGiB: nonNegative.optional(),
-    })
-    .optional(),
-  systemRamGiB: positive,
-  operatingSystem: z.enum(["windows", "linux", "macos", "other"]),
-});
+      physicalCores: positive.optional(),
+    }),
+    gpu: z
+      .object({
+        id: z.string().min(1),
+        name: z.string().min(1),
+        kind: z.enum(["discrete", "integrated"]),
+        vramGiB: nonNegative,
+        sharedMemoryGiB: nonNegative.optional(),
+      })
+      .optional(),
+    systemRamGiB: positive,
+    operatingSystem: z.enum(["windows", "linux", "macos", "other"]),
+  })
+  .superRefine((hardware, context) => {
+    if (hardware.memoryMode !== "apple-unified") return;
+    if (hardware.operatingSystem !== "macos")
+      context.addIssue({
+        code: "custom",
+        path: ["operatingSystem"],
+        message: "Apple Silicon unified memory requires macOS.",
+      });
+    if (hardware.gpu !== undefined)
+      context.addIssue({
+        code: "custom",
+        path: ["gpu"],
+        message:
+          "Apple Silicon uses one total memory pool; do not supply a separate GPU allocation.",
+      });
+  });
 
 export const runtimeProfileSchema: z.ZodType<RuntimeProfile> = z.object({
   runtime: z.enum(["llama.cpp", "unknown"]).optional(),
