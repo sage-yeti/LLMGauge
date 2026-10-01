@@ -1,3 +1,4 @@
+import { getModelById } from "@/data/catalog";
 import { describe, expect, it } from "vitest";
 import {
   buildContextGuidance,
@@ -587,4 +588,159 @@ describe("compatibility engine", () => {
     expect(guidance.recommendedContextLength).toBe(2048);
     expect(guidance.modelMaximumContextLength).toBe(8192);
   });
+});
+
+describe("Apple unified-memory assessment", () => {
+  const model = { ...fixtureModel, parameterCountBillions: 8 };
+  const apple = (total: number): HardwareProfile => ({
+    cpu: { name: "Apple M4" },
+    memoryMode: "apple-unified",
+    systemRamGiB: total,
+    operatingSystem: "macos",
+  });
+  it.each([0, 0.25])(
+    "counts fallback weights, overhead, reserve and margin once (%s)",
+    (margin) => {
+      const policy = {
+        ...DEFAULT_COMPATIBILITY_POLICY,
+        availableMemorySafetyMarginGiB: margin,
+      };
+      const required = 6.922325134277344;
+      for (const [delta, level] of [
+        [-0.000001, "unsupported"],
+        [0, "unified-memory-fit"],
+        [0.000001, "unified-memory-fit"],
+      ] as const) {
+        const result = evaluateCompatibility(
+          apple(required + margin + delta),
+          model,
+          model.quantizations[0],
+          policy,
+        );
+        expect(result.level).toBe(level);
+        expect(result.memory.estimatedUnifiedMemoryGiB).toBeCloseTo(
+          required,
+          12,
+        );
+        expect(result.memory.modelWeightsGiB).toBeCloseTo(
+          3.725290298461914,
+          12,
+        );
+        expect(result.memory.estimatedVramGiB).toBeNull();
+        expect(result.executionMode).toBe(
+          level === "unsupported" ? "unsupported" : "unverified",
+        );
+        expect(
+          result.reasons.some((r) => r.code === "exact-memory-boundary"),
+        ).toBe(delta === 0);
+        expect(result.reasons.some((r) => r.code === "no-discrete-gpu")).toBe(
+          false,
+        );
+        expect(result.warnings.join(" ")).toMatch(
+          /does not guarantee full GPU offload/,
+        );
+      }
+    },
+  );
+  it("keeps supplied sizes authoritative with and without bpw, despite identical display rounding", () => {
+    for (const bitsPerWeight of [undefined, 16]) {
+      const quantization = {
+        id: "source",
+        displayName: "Source",
+        sizeGiB: 5.0001,
+        bitsPerWeight,
+        provenance: fixtureProvenance,
+      };
+      const sized = { ...model, quantizations: [quantization] };
+      const below = evaluateCompatibility(apple(8.35), sized, quantization);
+      const above = evaluateCompatibility(apple(8.351), sized, quantization);
+      expect(below.level).toBe("unsupported");
+      expect(above.level).toBe("unified-memory-fit");
+      expect(below.memory.estimatedUnifiedMemoryGiB).toBeCloseTo(8.350112, 12);
+      expect(below.memory.modelWeightsGiB).toBe(5.0001);
+    }
+  });
+  it.each(["openai-gpt-oss-20b", "openai-gpt-oss-120b"])(
+    "supports sourced-size GPT-OSS %s without fabricating bpw or VRAM",
+    (id) => {
+      const sourced = getModelById(id)!;
+      const quantization = sourced.quantizations[0];
+      expect(quantization.bitsPerWeight).toBeUndefined();
+      const result = evaluateCompatibility(apple(128), sourced, quantization);
+      expect(result.level).toBe("unified-memory-fit");
+      expect(result.memory.modelWeightsGiB).toBe(quantization.sizeGiB);
+      expect(result.memory.estimatedUnifiedMemoryGiB).toBe(
+        quantization.sizeGiB! * 1.12 + 0.75 + 2,
+      );
+      expect(result.memory.estimatedVramGiB).toBeNull();
+    },
+  );
+  it("never infers Apple semantics from macOS or integrated graphics", () => {
+    for (const hardware of [
+      fixtureHardware.cpuOnly,
+      {
+        ...fixtureHardware.cpuOnly,
+        gpu: {
+          id: "integrated",
+          name: "Integrated",
+          kind: "integrated" as const,
+          vramGiB: 0,
+          sharedMemoryGiB: 999,
+        },
+      },
+    ]) {
+      const legacy = { ...hardware, operatingSystem: "macos" as const };
+      const before = evaluateCompatibility(
+        legacy,
+        model,
+        model.quantizations[0],
+      );
+      expect(
+        evaluateCompatibility(
+          { ...legacy, memoryMode: "pc" },
+          model,
+          model.quantizations[0],
+        ),
+      ).toEqual(before);
+      expect(before.level).toBe("cpu-only");
+      expect(before.memory.estimatedUnifiedMemoryGiB).toBeUndefined();
+    }
+    expect(() =>
+      evaluateCompatibility(
+        { ...apple(16), gpu: fixtureHardware.gpu.gpu },
+        model,
+        model.quantizations[0],
+      ),
+    ).toThrow(/separate GPU allocation/);
+  });
+});
+
+it("uses Apple metadata, pooled-memory and quantization-ID ties without changing PC input ties", () => {
+  const quantization = (id: string, sizeGiB: number) => ({
+    ...fixtureModel.quantizations[0],
+    id,
+    sizeGiB,
+  });
+  const model = {
+    ...fixtureModel,
+    quantizations: [
+      quantization("z-large", 3),
+      quantization("z-small", 2),
+      quantization("a-small", 2),
+    ],
+  };
+  expect(
+    recommendQuantization(fixtureHardware.cpuOnly, model)
+      ?.recommendedQuantizationId,
+  ).toBe("z-large");
+  expect(
+    recommendQuantization(
+      {
+        ...fixtureHardware.cpuOnly,
+        memoryMode: "apple-unified",
+        operatingSystem: "macos",
+      },
+      model,
+    )?.recommendedQuantizationId,
+  ).toBe("a-small");
 });
