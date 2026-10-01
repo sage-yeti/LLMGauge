@@ -14,10 +14,147 @@ import {
 import type {
   HardwareProfile,
   ModelDefinition,
+  MemoryEstimate,
   QuantizationDefinition,
 } from "@/domain/types";
 
+function expectMemory(actual: MemoryEstimate, expected: MemoryEstimate) {
+  for (const key of Object.keys(expected) as (keyof MemoryEstimate)[]) {
+    expect(actual[key], key).toBeCloseTo(expected[key], 12);
+  }
+}
+
 describe("compatibility engine", () => {
+  const eightBModel = { ...fixtureModel, parameterCountBillions: 8 };
+
+  it("converts 4 billion fallback weight bytes to GiB before applying overhead", () => {
+    // Independent byte reference: 8 billion 4-bit weights = 4,000,000,000 bytes.
+    expectMemory(estimateMemory(eightBModel, eightBModel.quantizations[0]), {
+      modelWeightsGiB: 3.725290298461914,
+      runtimeOverheadGiB: 0.75,
+      estimatedVramGiB: 4.922325134277344,
+      estimatedSystemRamGiB: 6.922325134277344,
+    });
+  });
+
+  it.each([0, 0.25])(
+    "uses inclusive unrounded GPU and RAM thresholds with %s GiB safety margin",
+    (margin) => {
+      const policy = {
+        ...DEFAULT_COMPATIBILITY_POLICY,
+        availableMemorySafetyMarginGiB: margin,
+      };
+      // Independently calculated default requirements, plus the policy margin.
+      const vram = 4.922325134277344 + margin;
+      const ram = 6.922325134277344 + margin;
+      const hardware = (
+        vramGiB: number,
+        systemRamGiB: number,
+      ): HardwareProfile => ({
+        ...fixtureHardware.gpu,
+        gpu: { ...fixtureHardware.gpu.gpu!, vramGiB },
+        systemRamGiB,
+      });
+      const evaluate = (profile: HardwareProfile) =>
+        evaluateCompatibility(
+          profile,
+          eightBModel,
+          eightBModel.quantizations[0],
+          policy,
+        );
+
+      for (const delta of [-0.000001, 0, 0.000001]) {
+        const result = evaluate(hardware(vram + delta, ram + delta));
+        expect(result.level).toBe(delta < 0 ? "unsupported" : "gpu-capable");
+        expect(
+          result.reasons.some(
+            (reason) => reason.code === "exact-memory-boundary",
+          ),
+        ).toBe(delta === 0);
+        expect(evaluate(hardware(vram + delta, ram + 1)).level).toBe(
+          delta < 0 ? "partial-offload" : "gpu-capable",
+        );
+        expect(
+          evaluate({ ...fixtureHardware.cpuOnly, systemRamGiB: ram + delta })
+            .level,
+        ).toBe(delta < 0 ? "unsupported" : "cpu-only");
+      }
+      // Matching the base estimate is below the fit boundary when a margin exists.
+      if (margin > 0) {
+        const below = evaluate(hardware(vram - margin, ram - margin));
+        expect(below.level).toBe("unsupported");
+        expect(below.reasons.map((reason) => reason.code)).not.toContain(
+          "exact-memory-boundary",
+        );
+      }
+    },
+  );
+
+  it("preserves precise sourced sizes and distinguishes fits with identical display values", () => {
+    const candidate: QuantizationDefinition = {
+      ...fixtureModel.quantizations[0],
+      bitsPerWeight: undefined,
+      sizeGiB: 5.0001,
+    };
+    const model = { ...fixtureModel, quantizations: [candidate] };
+    const memory = estimateMemory(model, candidate);
+    expect(memory.modelWeightsGiB).toBe(5.0001);
+    expect(memory.estimatedVramGiB).toBeCloseTo(6.350112, 12);
+    expect(memory.estimatedSystemRamGiB).toBeCloseTo(8.350112, 12);
+    const evaluate = (vramGiB: number, systemRamGiB: number) =>
+      evaluateCompatibility(
+        {
+          ...fixtureHardware.gpu,
+          gpu: { ...fixtureHardware.gpu.gpu!, vramGiB },
+          systemRamGiB,
+        },
+        model,
+        candidate,
+      );
+    expect(evaluate(6.35, 9).level).toBe("partial-offload");
+    expect(evaluate(6.351, 9).level).toBe("gpu-capable");
+    expect(evaluate(7, 8.35).level).toBe("unsupported");
+    expect(evaluate(7, 8.351).level).toBe("gpu-capable");
+    expect(
+      evaluate(6.35, 9).reasons.map((reason) => reason.code),
+    ).not.toContain("exact-memory-boundary");
+  });
+
+  it("keeps size-only fits inclusive at full precision with configured overhead and margin", () => {
+    const candidate: QuantizationDefinition = {
+      ...fixtureModel.quantizations[0],
+      bitsPerWeight: undefined,
+      sizeGiB: 5.0009765625,
+    };
+    const model = { ...fixtureModel, quantizations: [candidate] };
+    const policy = {
+      ...DEFAULT_COMPATIBILITY_POLICY,
+      weightOverheadMultiplier: 1.25,
+      availableMemorySafetyMarginGiB: 0.25,
+    };
+    // Binary-exact independent reference: 5.0009765625 × 1.25 + 0.75 + 0.25.
+    const vram = 7.251220703125;
+    const ram = 9.251220703125;
+    for (const delta of [-0.000001, 0, 0.000001]) {
+      const result = evaluateCompatibility(
+        {
+          ...fixtureHardware.gpu,
+          gpu: { ...fixtureHardware.gpu.gpu!, vramGiB: vram + delta },
+          systemRamGiB: ram + delta,
+        },
+        model,
+        candidate,
+        policy,
+      );
+      expect(result.level).toBe(delta < 0 ? "unsupported" : "gpu-capable");
+      expect(
+        result.reasons.some(
+          (reason) => reason.code === "exact-memory-boundary",
+        ),
+      ).toBe(delta === 0);
+    }
+  });
+
   it("uses sourced file size with or without bits per weight and preserves overheads", () => {
     const base = fixtureModel.quantizations[0];
     const expected = {
@@ -26,16 +163,18 @@ describe("compatibility engine", () => {
       estimatedVramGiB: 6.35,
       estimatedSystemRamGiB: 8.35,
     };
-    expect(
+    expectMemory(
       estimateMemory(fixtureModel, {
         ...base,
         bitsPerWeight: undefined,
         sizeGiB: 5,
       }),
-    ).toEqual(expected);
-    expect(
+      expected,
+    );
+    expectMemory(
       estimateMemory(fixtureModel, { ...base, bitsPerWeight: 16, sizeGiB: 5 }),
-    ).toEqual(expected);
+      expected,
+    );
     const sized = { ...base, bitsPerWeight: undefined, sizeGiB: 5 };
     expect(
       evaluateCompatibility(
@@ -106,13 +245,12 @@ describe("compatibility engine", () => {
   });
 
   it("estimates weights and overhead using the default policy", () => {
-    expect(
-      estimateMemory(fixtureModel, fixtureModel.quantizations[0]),
-    ).toMatchObject({
-      modelWeightsGiB: 3.5,
+    // 7B × 4 bits is 3.5 billion bytes, not 3.5 GiB.
+    expectMemory(estimateMemory(fixtureModel, fixtureModel.quantizations[0]), {
+      modelWeightsGiB: 3.2596290111541748,
       runtimeOverheadGiB: 0.75,
-      estimatedVramGiB: 4.67,
-      estimatedSystemRamGiB: 6.67,
+      estimatedVramGiB: 4.400784492492676,
+      estimatedSystemRamGiB: 6.400784492492676,
     });
   });
 
@@ -125,14 +263,15 @@ describe("compatibility engine", () => {
       availableMemorySafetyMarginGiB: 1,
       defaultContextLength: 2048,
     };
-    expect(
+    expectMemory(
       estimateMemory(fixtureModel, fixtureModel.quantizations[0], policy),
-    ).toEqual({
-      modelWeightsGiB: 3.5,
-      runtimeOverheadGiB: 1,
-      estimatedVramGiB: 4.5,
-      estimatedSystemRamGiB: 7.5,
-    });
+      {
+        modelWeightsGiB: 3.2596290111541748,
+        runtimeOverheadGiB: 1,
+        estimatedVramGiB: 4.259629011154175,
+        estimatedSystemRamGiB: 7.259629011154175,
+      },
+    );
   });
 
   it("classifies a GPU-capable profile", () => {
@@ -328,9 +467,12 @@ describe("compatibility engine", () => {
       {
         ...fixtureHardware.gpu,
         gpu: fixtureHardware.gpu.gpu
-          ? { ...fixtureHardware.gpu.gpu, vramGiB: estimate.estimatedVramGiB }
+          ? {
+              ...fixtureHardware.gpu.gpu,
+              vramGiB: estimate.estimatedVramGiB + 0.25,
+            }
           : undefined,
-        systemRamGiB: estimate.estimatedSystemRamGiB,
+        systemRamGiB: estimate.estimatedSystemRamGiB + 0.25,
       },
       fixtureModel,
       fixtureModel.quantizations[0],
