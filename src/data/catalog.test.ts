@@ -28,7 +28,7 @@ describe("catalog registry", () => {
   });
 
   it("keeps the production catalog real, sourced, and separate from fixtures", () => {
-    expect(productionModels).toHaveLength(43);
+    expect(productionModels).toHaveLength(52);
     expect(productionGpus).toHaveLength(64);
     expect(
       productionModels.every((model) => !model.id.startsWith("example-")),
@@ -765,6 +765,195 @@ describe("catalog registry", () => {
     ).toBe(false);
   });
 
+  it("records Batch 37 models with total parameters, separate provenance, and verified GGUF files", () => {
+    const expected = [
+      {
+        id: "qwen-qwen3-vl-8b-instruct",
+        slug: "qwen3-vl-8b-instruct",
+        parameters: 9,
+        license: "Apache-2.0",
+        publisher: "Qwen/Qwen3-VL-8B-Instruct",
+        converter: "Qwen/Qwen3-VL-8B-Instruct-GGUF",
+        file: "Qwen3VL-8B-Instruct-Q4_K_M.gguf",
+        listedSize: "5.03 GB",
+        sizeGiB: 4.68,
+        sourceType: "publisher-conversion",
+        context: 262144,
+        vision: "excluded",
+      },
+      {
+        id: "qwen-qwen3-vl-30b-a3b-instruct",
+        slug: "qwen3-vl-30b-a3b-instruct",
+        parameters: 31,
+        license: "Apache-2.0",
+        publisher: "Qwen/Qwen3-VL-30B-A3B-Instruct",
+        converter: "Qwen/Qwen3-VL-30B-A3B-Instruct-GGUF",
+        file: "Qwen3VL-30B-A3B-Instruct-Q4_K_M.gguf",
+        listedSize: "18.6 GB",
+        sizeGiB: 17.32,
+        sourceType: "publisher-conversion",
+        context: 262144,
+        vision: "excluded",
+      },
+      {
+        id: "mistralai-ministral-3-14b-instruct-2512",
+        slug: "ministral-3-14b-instruct-2512",
+        parameters: 13.9,
+        license: "Apache-2.0",
+        publisher: "mistralai/Ministral-3-14B-Instruct-2512",
+        converter: "mistralai/Ministral-3-14B-Instruct-2512-GGUF",
+        file: "Ministral-3-14B-Instruct-2512-Q4_K_M.gguf",
+        listedSize: "8.24 GB",
+        sizeGiB: 7.67,
+        sourceType: "publisher-conversion",
+        context: 262144,
+        vision: "excluded",
+      },
+      {
+        id: "mistralai-devstral-small-2-24b-instruct-2512",
+        slug: "devstral-small-2-24b-instruct-2512",
+        parameters: 24,
+        license: "Apache-2.0",
+        publisher: "mistralai/Devstral-Small-2-24B-Instruct-2512",
+        converter: "lmstudio-community/Devstral-Small-2-24B-Instruct-2512-GGUF",
+        file: "Devstral-Small-2-24B-Instruct-2512-Q4_K_M.gguf",
+        listedSize: "14.3 GB",
+        sizeGiB: 13.32,
+        sourceType: "community-conversion",
+        context: 262144,
+        vision: "excluded",
+      },
+      {
+        id: "liquidai-lfm2-24b-a2b",
+        slug: "lfm2-24b-a2b",
+        parameters: 24,
+        license: "LFM Open License v1.0",
+        publisher: "LiquidAI/LFM2-24B-A2B",
+        converter: "LiquidAI/LFM2-24B-A2B-GGUF",
+        file: "LFM2-24B-A2B-Q4_K_M.gguf",
+        listedSize: "14.4 GB",
+        sizeGiB: 13.41,
+        sourceType: "publisher-conversion",
+        context: 32768,
+      },
+      {
+        id: "nvidia-nemotron-3-nano-30b-a3b",
+        slug: "nemotron-3-nano-30b-a3b",
+        parameters: 30,
+        license: "NVIDIA Nemotron Open Model License",
+        publisher: "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16",
+        converter: "ggml-org/NVIDIA-Nemotron-3-Nano-30B-A3B-GGUF",
+        file: "NVIDIA-Nemotron-3-Nano-30B-A3B-Q4_K_M.gguf",
+        listedSize: "22.4 GB",
+        sizeGiB: 20.86,
+        sourceType: "community-conversion",
+      },
+      {
+        id: "mistralai-mistral-small-4-119b-2603",
+        slug: "mistral-small-4-119b-2603",
+        parameters: 119,
+        license: "Apache-2.0",
+        publisher: "mistralai/Mistral-Small-4-119B-2603",
+        converter: "bartowski/mistralai_Mistral-Small-4-119B-2603-GGUF",
+        file: "mistralai_Mistral-Small-4-119B-2603-Q4_K_M-00001-of-00002.gguf",
+        listedSize: "72.64 GB",
+        sizeGiB: 67.68,
+        sourceType: "community-conversion",
+        context: 262144,
+        vision: "unverified",
+      },
+      {
+        id: "nvidia-nemotron-3-super-120b-a12b",
+        slug: "nemotron-3-super-120b-a12b",
+        parameters: 120,
+        license: "NVIDIA Nemotron Open Model License",
+        publisher: "nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-BF16",
+        converter: "ggml-org/Nemotron-3-Super-120B-GGUF",
+        file: "Nemotron-3-Super-120B-Q4_K.gguf",
+        listedSize: "69.9 GB",
+        sizeGiB: 65.08,
+        quantization: "Q4_K",
+        sourceType: "community-conversion",
+        context: 1048576,
+      },
+      {
+        id: "poolside-laguna-s-2-1",
+        slug: "laguna-s-2-1",
+        parameters: 118,
+        license: "OpenMDW-1.1",
+        publisher: "poolside/Laguna-S-2.1",
+        converter: "bartowski/Laguna-S-2.1-GGUF",
+        file: "Laguna-S-2.1-Q4_K_M.gguf",
+        listedSize: "71.76 GB",
+        sizeGiB: 66.84,
+        sourceType: "community-conversion",
+        context: 1048576,
+      },
+    ] as const;
+
+    const entries = expected.map((facts) =>
+      productionModels.find((entry) => entry.id === facts.id),
+    );
+    expect(entries.every(Boolean)).toBe(true);
+    expect(entries.map((entry) => entry?.slug)).toEqual(
+      expected.map((facts) => facts.slug),
+    );
+
+    for (const [index, facts] of expected.entries()) {
+      const entry = entries[index]!;
+      const quantization = entry.quantizations[0];
+      expect(entry.parameterCountBillions).toBe(facts.parameters);
+      expect(entry.license).toBe(facts.license);
+      expect(entry.provenance.sourceUrl).toBe(
+        `https://huggingface.co/${facts.publisher}`,
+      );
+      expect(entry.provenance.sourceType).toBe("official-model-card");
+      expect(entry.provenance.confidence).toBe("verified");
+      expect(entry.provenance.lastVerified).toBe("2026-10-01");
+      expect(quantization.displayName).toBe(
+        "quantization" in facts ? facts.quantization : "Q4_K_M",
+      );
+      expect(quantization.sizeGiB).toBe(facts.sizeGiB);
+      expect(quantization.description).toContain(facts.file);
+      expect(quantization.description).toContain(facts.listedSize);
+      expect(quantization.provenance.sourceUrl).toContain(facts.converter);
+      expect(quantization.provenance.sourceType).toBe(facts.sourceType);
+      expect(quantization.provenance.confidence).toBe("approximate");
+      expect(quantization.provenance.lastVerified).toBe("2026-10-01");
+      expect(entry.defaultContextLength).toBeUndefined();
+      expect(entry.maxContextLength).toBe(
+        "context" in facts ? facts.context : undefined,
+      );
+      expect(entry.supportedRuntimes).toContain("llama.cpp");
+      if ("vision" in facts && facts.vision) {
+        expect(entry.memoryEstimateScope?.auxiliaryVisionFiles).toBe(
+          facts.vision,
+        );
+      } else {
+        expect(entry.memoryEstimateScope).toBeUndefined();
+      }
+    }
+
+    expect(entries[0]?.summary).toContain("9B total parameters");
+    expect(entries[1]?.summary).toContain("31B total and 3B active");
+    expect(entries[2]?.summary).toContain("13.9B total-parameter");
+    expect(entries[4]?.summary).toContain("24B total and 2.3B active");
+    expect(entries[5]?.summary).toContain("30B total and 3.5B active");
+    expect(entries[6]?.summary).toContain("119B total and 6.5B active");
+    expect(entries[7]?.summary).toContain("120B total and 12B active");
+    expect(entries[8]?.summary).toContain("118B total and approximately 8B");
+    expect(
+      productionModels.filter((entry) =>
+        [
+          "qwen-qwen3-coder-30b-a3b-instruct",
+          "qwen-qwen3-coder-next",
+          "zai-glm-4-7-flash",
+          "google-gemma-3n-e4b-it",
+        ].includes(entry.id),
+      ),
+    ).toHaveLength(4);
+  });
+
   it("includes sourced newer, established, and integrated GPU classes", () => {
     const expected = [
       ["nvidia-rtx-2060-6gb", 6, "GDDR6"],
@@ -1050,6 +1239,11 @@ describe("catalog registry", () => {
       "qwen-qwen3-5-9b": "excluded",
       "qwen-qwen3-8-27b": "excluded",
       "prismml-bonsai-2-27b": "excluded",
+      "qwen-qwen3-vl-8b-instruct": "excluded",
+      "qwen-qwen3-vl-30b-a3b-instruct": "excluded",
+      "mistralai-ministral-3-14b-instruct-2512": "excluded",
+      "mistralai-devstral-small-2-24b-instruct-2512": "excluded",
+      "mistralai-mistral-small-4-119b-2603": "unverified",
     };
 
     for (const [id, status] of Object.entries(expected)) {
