@@ -11,6 +11,7 @@ import type {
   ContextGuidance,
   HardwareProfile,
   ModelDefinition,
+  MemoryEstimate,
   QuantizationDefinition,
   RuntimeProfile,
 } from "@/domain/types";
@@ -22,7 +23,7 @@ export function estimateMemory(
   model: ModelDefinition,
   quantization: QuantizationDefinition,
   policy: CompatibilityPolicy = DEFAULT_COMPATIBILITY_POLICY,
-) {
+): MemoryEstimate {
   validatePolicy(policy);
   const validQuantization = quantizationSchema.safeParse(quantization);
   if (!validQuantization.success)
@@ -37,7 +38,11 @@ export function estimateMemory(
     modelWeightsGiB = quantization.sizeGiB;
   } else if (quantization.bitsPerWeight !== undefined) {
     modelWeightsGiB =
-      (model.parameterCountBillions * quantization.bitsPerWeight) / 8;
+      (model.parameterCountBillions *
+        1_000_000_000 *
+        quantization.bitsPerWeight) /
+      8 /
+      2 ** 30;
   } else {
     throw new Error("Quantization requires sizeGiB or bitsPerWeight");
   }
@@ -46,10 +51,10 @@ export function estimateMemory(
   const estimatedVramGiB =
     modelWeightsGiB * overhead + policy.runtimeOverheadGiB;
   return {
-    modelWeightsGiB: round(modelWeightsGiB),
+    modelWeightsGiB,
     runtimeOverheadGiB: policy.runtimeOverheadGiB,
-    estimatedVramGiB: round(estimatedVramGiB),
-    estimatedSystemRamGiB: round(estimatedVramGiB + policy.systemRamReserveGiB),
+    estimatedVramGiB,
+    estimatedSystemRamGiB: estimatedVramGiB + policy.systemRamReserveGiB,
   };
 }
 
@@ -94,11 +99,12 @@ export function evaluateCompatibility(
   validatePolicy(policy);
   const memory = estimateMemory(model, quantization, policy);
   const vram = hardware.gpu?.vramGiB ?? 0;
-  const vramCanHoldModel =
-    vram >= memory.estimatedVramGiB + policy.availableMemorySafetyMarginGiB;
-  const ramCanHoldModel =
-    hardware.systemRamGiB >=
+  const requiredVramGiB =
+    memory.estimatedVramGiB + policy.availableMemorySafetyMarginGiB;
+  const requiredSystemRamGiB =
     memory.estimatedSystemRamGiB + policy.availableMemorySafetyMarginGiB;
+  const vramCanHoldModel = vram >= requiredVramGiB;
+  const ramCanHoldModel = hardware.systemRamGiB >= requiredSystemRamGiB;
   let level: CompatibilityResult["level"];
   let executionMode: CompatibilityResult["executionMode"];
   const reasons: CompatibilityReason[] = [
@@ -169,8 +175,8 @@ export function evaluateCompatibility(
       message: "Integrated GPU shared memory is not counted as dedicated VRAM.",
     });
   if (
-    vram === memory.estimatedVramGiB ||
-    hardware.systemRamGiB === memory.estimatedSystemRamGiB
+    vram === requiredVramGiB ||
+    hardware.systemRamGiB === requiredSystemRamGiB
   )
     reasons.push({
       code: "exact-memory-boundary",
@@ -386,8 +392,4 @@ function formatValidationError(
     .map((issue) => `${issue.path.join(".") || "value"}: ${issue.message}`)
     .join("; ");
   return `${prefix}: ${detail}`;
-}
-
-function round(value: number): number {
-  return Math.round(value * 100) / 100;
 }

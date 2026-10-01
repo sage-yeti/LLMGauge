@@ -40,6 +40,44 @@ function choose(label: string, value: string) {
 describe("compatibility calculator", () => {
   afterEach(cleanup);
 
+  it("renders corrected fallback estimates and a newly fitting GPU profile", () => {
+    renderCalculator();
+    choose("Model", "meta-llama-3-1-8b-instruct");
+    choose("GPU", "nvidia-rtx-4060-8gb");
+    fireEvent.change(screen.getByLabelText("Dedicated VRAM (GiB)"), {
+      target: { value: "5.5" },
+    });
+    fireEvent.change(screen.getByLabelText("System RAM (GiB)"), {
+      target: { value: "8" },
+    });
+    submit();
+    // 8B × 4.5 bits = 4.5 billion bytes; default overhead/reserve remain unchanged.
+    expect(screen.getByText("5.44 GiB")).toBeTruthy();
+    expect(screen.getByText("7.44 GiB")).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "GPU-capable" })).toBeTruthy();
+  });
+
+  it("formats the same estimate while preserving distinct sub-display-precision fits", () => {
+    renderCalculator();
+    choose("Model", "openai-gpt-oss-20b");
+    choose("GPU", "nvidia-rtx-4060-8gb");
+    fireEvent.change(screen.getByLabelText("System RAM (GiB)"), {
+      target: { value: "32" },
+    });
+    for (const [vram, level] of [
+      ["13.38", "Partial offload"],
+      ["13.382", "GPU-capable"],
+    ]) {
+      fireEvent.change(screen.getByLabelText("Dedicated VRAM (GiB)"), {
+        target: { value: vram },
+      });
+      submit();
+      expect(screen.getByText("13.38 GiB")).toBeTruthy();
+      expect(screen.getByText("15.38 GiB")).toBeTruthy();
+      expect(screen.getByRole("heading", { name: level })).toBeTruthy();
+    }
+  });
+
   it("selects and evaluates both GPT-OSS size-only candidates without claiming a bit width", () => {
     for (const [variant, size, vram, ram] of [
       ["20b", "11.28", "13.38", "15.38"],

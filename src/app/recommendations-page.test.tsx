@@ -35,6 +35,25 @@ function choose(label: string, value: string) {
 describe("recommendations interface", () => {
   afterEach(cleanup);
 
+  it("renders corrected fallback memory and classifies the representative using unrounded GiB", () => {
+    renderRecommendations();
+    choose("GPU", "nvidia-rtx-4060-8gb");
+    fireEvent.change(screen.getByLabelText("Dedicated VRAM (GiB)"), {
+      target: { value: "5.5" },
+    });
+    fireEvent.change(screen.getByLabelText("System RAM (GiB)"), {
+      target: { value: "8" },
+    });
+    submit();
+    const card = screen
+      .getByRole("heading", { name: "Llama 3.1 8B Instruct" })
+      .closest("article");
+    expect(card?.textContent).toContain("Q4_K_M");
+    expect(card?.textContent).toContain("GPU-capable");
+    expect(card?.textContent).toContain("5.44 GiB");
+    expect(card?.textContent).toContain("7.44 GiB");
+  });
+
   it("includes GPT-OSS with sourced size and runtime caveats in recommendation results", () => {
     renderRecommendations();
     fireEvent.change(screen.getByLabelText("System RAM (GiB)"), {
