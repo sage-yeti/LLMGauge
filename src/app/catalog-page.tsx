@@ -100,7 +100,10 @@ export function ModelCatalogPage({ model }: { model: ModelDefinition }) {
               <dl>
                 <div>
                   <dt>Bits per weight</dt>
-                  <dd>{quantization.bitsPerWeight}</dd>
+                  <dd>
+                    {quantization.bitsPerWeight ??
+                      "Unavailable (whole-model value not documented)"}
+                  </dd>
                 </div>
                 {quantization.sizeGiB !== undefined && (
                   <div>

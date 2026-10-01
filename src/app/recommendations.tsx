@@ -18,6 +18,7 @@ import { RuntimeFields } from "./runtime-fields";
 import { RuntimeProfileView } from "./runtime-profile-view";
 import { RuntimeRequirementNote } from "./runtime-requirement-note";
 import { MemoryEstimateScopeNote } from "./memory-estimate-scope-note";
+import { QuantizationSizingNote } from "./quantization-sizing-note";
 
 interface RecommendationsProps {
   models: readonly ModelDefinition[];
@@ -243,6 +244,7 @@ function RecommendationCard({
       </div>
       <p className="recommendation-summary">{entry.model.summary}</p>
       <p className="recommendation-explanation">{entry.explanation}</p>
+      <QuantizationSizingNote quantization={entry.quantization} />
       {entry.model.runtimeRequirement && (
         <RuntimeRequirementNote requirement={entry.model.runtimeRequirement} />
       )}

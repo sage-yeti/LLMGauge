@@ -20,6 +20,7 @@ import { RuntimeProfileView } from "./runtime-profile-view";
 import { RuntimeRequirementNote } from "./runtime-requirement-note";
 import { MemoryEstimateScopeNote } from "./memory-estimate-scope-note";
 import { SearchableCombobox } from "./searchable-combobox";
+import { QuantizationSizingNote } from "./quantization-sizing-note";
 
 interface CalculatorProps {
   models: readonly ModelDefinition[];
@@ -156,8 +157,10 @@ export function Calculator({ models, gpus }: CalculatorProps) {
             >
               {selectedModel?.quantizations.map((quantization) => (
                 <option key={quantization.id} value={quantization.id}>
-                  {quantization.displayName} · {quantization.bitsPerWeight}{" "}
-                  bits/weight
+                  {quantization.displayName} ·{" "}
+                  {quantization.bitsPerWeight !== undefined
+                    ? `${quantization.bitsPerWeight} bits/weight`
+                    : `${quantization.sizeGiB?.toFixed(2)} GiB · whole-model bits/weight unavailable`}
                 </option>
               ))}
             </select>
@@ -228,6 +231,9 @@ function ResultPanel({
   const recommended = model?.quantizations.find(
     (quantization) => quantization.id === result.recommendedQuantizationId,
   );
+  const selectedQuantization = model?.quantizations.find(
+    (quantization) => quantization.id === result.quantizationId,
+  );
   return (
     <aside
       className={`result-card result-${result.level}`}
@@ -252,6 +258,9 @@ function ResultPanel({
       {model?.memoryEstimateScope && (
         <MemoryEstimateScopeNote scope={model.memoryEstimateScope} />
       )}
+      {selectedQuantization && (
+        <QuantizationSizingNote quantization={selectedQuantization} />
+      )}
       <p className="result-message">{result.messages[0]}</p>
       <dl className="result-stats">
         <div>
@@ -272,8 +281,9 @@ function ResultPanel({
           <strong>Recommended quantization</strong>
           <span>{recommended.displayName}</span>
           <small>
-            This is the highest-bit candidate that fits this hardware according
-            to the current estimates.
+            {recommended.bitsPerWeight !== undefined
+              ? "This is the highest-bit candidate that fits this hardware according to the current estimates."
+              : "This candidate uses a sourced file size under the catalog metadata ordering policy; whole-model bits per weight is unavailable."}
           </small>
         </div>
       )}
