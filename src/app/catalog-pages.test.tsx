@@ -62,6 +62,43 @@ describe("public catalog pages", () => {
     expect(screen.queryByText(/tokens per second/i)).toBeNull();
   });
 
+  it("renders detail pages for every newly curated GPU profile", async () => {
+    const slugs = [
+      "radeon-ai-pro-r9700-32gb",
+      "arc-pro-b70-32gb",
+      "arc-pro-b65-32gb",
+      "arc-pro-b60-24gb",
+      "rtx-4060-ti-8gb",
+      "rtx-4070-ti-12gb",
+      "rtx-4080-16gb",
+      "rtx-3050-8gb",
+      "rtx-3050-6gb",
+      "rtx-3090-ti-24gb",
+      "rtx-3080-ti-12gb",
+      "rtx-2080-ti-11gb",
+      "gtx-1080-ti-11gb",
+      "rtx-a4000-16gb",
+      "rtx-a5000-24gb",
+    ];
+
+    for (const slug of slugs) {
+      const gpu = gpuCatalog.find((entry) => entry.slug === slug);
+      expect(gpu).toBeDefined();
+      const page = await GpuPage({ params: Promise.resolve({ slug }) });
+      render(page);
+      expect(
+        screen.getByRole("heading", { name: gpu!.displayName }),
+      ).toBeTruthy();
+      expect(
+        screen.getAllByText(gpu!.suitabilitySummary).length,
+      ).toBeGreaterThan(0);
+      expect(
+        screen.getByRole("link", { name: /find models/i }).getAttribute("href"),
+      ).toBe("/recommendations");
+      cleanup();
+    }
+  });
+
   it("renders distinct details from newly curated model and GPU records", async () => {
     const qwen = modelCatalog.find((model) => model.slug === "qwen3-4b");
     const gpu = gpuCatalog.find((entry) => entry.slug === "arc-b580-12gb");

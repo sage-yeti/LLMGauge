@@ -29,7 +29,7 @@ describe("catalog registry", () => {
 
   it("keeps the production catalog real, sourced, and separate from fixtures", () => {
     expect(productionModels).toHaveLength(43);
-    expect(productionGpus).toHaveLength(49);
+    expect(productionGpus).toHaveLength(64);
     expect(
       productionModels.every((model) => !model.id.startsWith("example-")),
     ).toBe(true);
@@ -48,6 +48,186 @@ describe("catalog registry", () => {
       expect(gpu.provenance.sourceType).toBe("manufacturer-specification");
       if (gpu.memoryType) expect(gpu.kind).toBe("discrete");
     }
+  });
+
+  it("records the requested GPU variants with manufacturer-backed specifications", () => {
+    const expected = [
+      [
+        "amd-radeon-ai-pro-r9700-32gb",
+        "Radeon AI PRO R9700 32GB",
+        "AMD",
+        "RDNA 4",
+        32,
+        "GDDR6",
+        "amd-radeon-ai-pro-r9700.html",
+      ],
+      [
+        "intel-arc-pro-b70-32gb",
+        "Intel Arc Pro B70 32GB",
+        "Intel",
+        "Battlemage",
+        32,
+        "GDDR6",
+        "sku/245797/",
+      ],
+      [
+        "intel-arc-pro-b65-32gb",
+        "Intel Arc Pro B65 32GB",
+        "Intel",
+        "Battlemage",
+        32,
+        "GDDR6",
+        "sku/245796/",
+      ],
+      [
+        "intel-arc-pro-b60-24gb",
+        "Intel Arc Pro B60 24GB",
+        "Intel",
+        "Battlemage",
+        24,
+        "GDDR6",
+        "sku/243916/",
+      ],
+      [
+        "nvidia-geforce-rtx-4060-ti-8gb",
+        "GeForce RTX 4060 Ti 8GB",
+        "NVIDIA",
+        "Ada Lovelace",
+        8,
+        "GDDR6",
+        "rtx-4060-4060ti/",
+      ],
+      [
+        "nvidia-geforce-rtx-4070-ti-12gb",
+        "GeForce RTX 4070 Ti 12GB",
+        "NVIDIA",
+        "Ada Lovelace",
+        12,
+        "GDDR6X",
+        "rtx-4070-family/",
+      ],
+      [
+        "nvidia-geforce-rtx-4080-16gb",
+        "GeForce RTX 4080 16GB",
+        "NVIDIA",
+        "Ada Lovelace",
+        16,
+        "GDDR6X",
+        "rtx-4080-family/",
+      ],
+      [
+        "nvidia-geforce-rtx-3050-8gb",
+        "GeForce RTX 3050 8GB",
+        "NVIDIA",
+        "Ampere",
+        8,
+        "GDDR6",
+        "rtx-3050/",
+      ],
+      [
+        "nvidia-geforce-rtx-3050-6gb",
+        "GeForce RTX 3050 6GB",
+        "NVIDIA",
+        "Ampere",
+        6,
+        "GDDR6",
+        "rtx-3050/",
+      ],
+      [
+        "nvidia-geforce-rtx-3090-ti-24gb",
+        "GeForce RTX 3090 Ti 24GB",
+        "NVIDIA",
+        "Ampere",
+        24,
+        "GDDR6X",
+        "rtx-3090-3090ti/",
+      ],
+      [
+        "nvidia-geforce-rtx-3080-ti-12gb",
+        "GeForce RTX 3080 Ti 12GB",
+        "NVIDIA",
+        "Ampere",
+        12,
+        "GDDR6X",
+        "rtx-3080-3080ti/",
+      ],
+      [
+        "nvidia-geforce-rtx-2080-ti-11gb",
+        "GeForce RTX 2080 Ti 11GB",
+        "NVIDIA",
+        "Turing",
+        11,
+        "GDDR6",
+        "rtx-2080-ti.html",
+      ],
+      [
+        "nvidia-geforce-gtx-1080-ti-11gb",
+        "GeForce GTX 1080 Ti 11GB",
+        "NVIDIA",
+        "Pascal",
+        11,
+        "GDDR5X",
+        "nvidia-geforce-gtx-1080-ti/",
+      ],
+      [
+        "nvidia-rtx-a4000-16gb",
+        "NVIDIA RTX A4000 16GB",
+        "NVIDIA",
+        "Ampere",
+        16,
+        "GDDR6",
+        "workstations/rtx-a4000/",
+      ],
+      [
+        "nvidia-rtx-a5000-24gb",
+        "NVIDIA RTX A5000 24GB",
+        "NVIDIA",
+        "Ampere",
+        24,
+        "GDDR6",
+        "workstations/rtx-a5000/",
+      ],
+    ] as const;
+    const byId = new Map(productionGpus.map((gpu) => [gpu.id, gpu]));
+
+    for (const [
+      id,
+      displayName,
+      vendor,
+      architecture,
+      vramGiB,
+      memoryType,
+      sourcePath,
+    ] of expected) {
+      const gpu = byId.get(id);
+      expect(gpu).toBeDefined();
+      expect(gpu?.slug).toBeTruthy();
+      expect(gpu?.displayName).toBe(displayName);
+      expect(gpu?.kind).toBe("discrete");
+      expect(gpu?.vendor).toBe(vendor);
+      expect(gpu?.architecture).toBe(architecture);
+      expect(gpu?.vramGiB).toBe(vramGiB);
+      expect(gpu?.memoryType).toBe(memoryType);
+      expect(gpu?.provenance.sourceType).toBe("manufacturer-specification");
+      expect(gpu?.provenance.confidence).toBe("verified");
+      expect(gpu?.provenance.lastVerified).toBe("2026-10-01");
+      expect(gpu?.provenance.sourceUrl).toContain(sourcePath);
+      expect(gpu?.suitabilitySummary).not.toMatch(
+        /benchmark|tokens per second/i,
+      );
+    }
+
+    expect(byId.get("nvidia-rtx-4060-ti-16gb")?.vramGiB).toBe(16);
+    expect(byId.get("nvidia-geforce-rtx-4060-ti-8gb")?.vramGiB).toBe(8);
+    expect(byId.get("nvidia-geforce-rtx-3050-8gb")?.vramGiB).toBe(8);
+    expect(byId.get("nvidia-geforce-rtx-3050-6gb")?.vramGiB).toBe(6);
+    expect(
+      [
+        "intel-arc-pro-b70-32gb",
+        "intel-arc-pro-b65-32gb",
+        "intel-arc-pro-b60-24gb",
+      ].map((id) => byId.get(id)?.vramGiB),
+    ).toEqual([32, 32, 24]);
   });
 
   it("records the verified Batch 31 model facts, GGUF files, sizes, and separate provenance", () => {
