@@ -2,6 +2,7 @@ import { z } from "zod";
 import { getGpuById } from "@/data/catalog";
 import { hardwareProfileSchema } from "@/domain/schemas";
 import type {
+  MemoryMode,
   GpuDefinition,
   HardwareProfile,
   OperatingSystem,
@@ -12,6 +13,7 @@ import type {
 } from "@/domain/types";
 
 export interface HardwareFormValues {
+  memoryMode?: MemoryMode;
   cpuName: string;
   gpuId: string;
   vramGiB: string;
@@ -49,6 +51,7 @@ const nonNegativeNumberText = z
   .refine(isNonNegativeNumber, "Enter a number of 0 or more.");
 
 const hardwareFormSchema = z.object({
+  memoryMode: z.enum(["pc", "apple-unified"]).optional(),
   cpuName: z.string().trim().min(1, "Enter a CPU name."),
   gpuId: z.string().trim().min(1, "Choose a GPU option."),
   vramGiB: nonNegativeNumberText,
@@ -101,7 +104,12 @@ export function parseRuntimeProfile(
 export function parseHardwareForm(
   values: HardwareFormValues,
 ): HardwareFormEvaluation {
-  const parsed = hardwareFormSchema.safeParse(values);
+  // Hidden PC fields are retained for mode switching, but never submitted as Apple allocations.
+  const parsed = hardwareFormSchema.safeParse(
+    values.memoryMode === "apple-unified"
+      ? { ...values, gpuId: "none", vramGiB: "0" }
+      : values,
+  );
   if (!parsed.success)
     return { fieldErrors: issuesToFieldErrors(parsed.error.issues) };
 
@@ -129,6 +137,7 @@ export function parseHardwareForm(
   }
 
   const hardware: HardwareProfile = {
+    ...(parsed.data.memoryMode ? { memoryMode: parsed.data.memoryMode } : {}),
     cpu: { name: parsed.data.cpuName },
     ...(gpu ? { gpu: toGpuInfo(gpu, vramGiB) } : {}),
     systemRamGiB: Number(parsed.data.systemRamGiB),
@@ -137,7 +146,7 @@ export function parseHardwareForm(
   const validHardware = hardwareProfileSchema.safeParse(hardware);
   if (!validHardware.success) {
     return {
-      fieldErrors: {},
+      fieldErrors: issuesToFieldErrors(validHardware.error.issues),
       formError:
         "The hardware details could not be validated. Please review the form and try again.",
     };
@@ -179,4 +188,26 @@ function issuesToFieldErrors(
   return Object.fromEntries(
     issues.map((issue) => [String(issue.path[0] ?? "form"), issue.message]),
   );
+}
+
+/** Scan hints cannot opt into Apple mode or overwrite its macOS/single-pool inputs. */
+export function applyDetectedHardware<T extends HardwareFormValues>(
+  values: T,
+  patch: Partial<HardwareFormValues>,
+): T {
+  return {
+    ...values,
+    ...(patch.systemRamGiB !== undefined
+      ? { systemRamGiB: patch.systemRamGiB }
+      : {}),
+    ...(values.memoryMode !== "apple-unified"
+      ? {
+          ...(patch.operatingSystem !== undefined
+            ? { operatingSystem: patch.operatingSystem }
+            : {}),
+          ...(patch.gpuId !== undefined ? { gpuId: patch.gpuId } : {}),
+          ...(patch.vramGiB !== undefined ? { vramGiB: patch.vramGiB } : {}),
+        }
+      : {}),
+  };
 }
