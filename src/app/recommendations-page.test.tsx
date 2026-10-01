@@ -35,6 +35,33 @@ function choose(label: string, value: string) {
 describe("recommendations interface", () => {
   afterEach(cleanup);
 
+  it("includes GPT-OSS with sourced size and runtime caveats in recommendation results", () => {
+    renderRecommendations();
+    fireEvent.change(screen.getByLabelText("System RAM (GiB)"), {
+      target: { value: "128" },
+    });
+    submit();
+    for (const [variant, size] of [
+      ["20b", "11.28"],
+      ["120b", "59.03"],
+    ]) {
+      const card = screen
+        .getByRole("heading", { name: `OpenAI gpt-oss-${variant}` })
+        .closest("article");
+      expect(card?.textContent).toContain(
+        `MXFP4 sourced file size: ${size} GiB`,
+      );
+      expect(card?.textContent).toContain(
+        "Whole-model bits per weight is unavailable",
+      );
+      expect(card?.textContent).toContain(
+        "memory-fit estimates remain approximate",
+      );
+      expect(card?.textContent).toMatch(/GPT-OSS\/MXFP4 support.*Harmony/);
+      expect(card?.textContent).not.toContain("Multimodal memory scope");
+    }
+  });
+
   it("starts with an empty CPU name and accepts a user-entered name", () => {
     renderRecommendations();
     const cpuInput = screen.getByLabelText("CPU") as HTMLInputElement;

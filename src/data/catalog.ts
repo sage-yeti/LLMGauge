@@ -1,4 +1,8 @@
-import { gpuDefinitionSchema, modelDefinitionSchema } from "@/domain/schemas";
+import {
+  gpuDefinitionSchema,
+  modelDefinitionSchema,
+  quantizationSchema,
+} from "@/domain/schemas";
 import type { GpuDefinition, ModelDefinition } from "@/domain/types";
 import { productionGpus, productionModels } from "./production-catalog";
 
@@ -87,9 +91,9 @@ export function validateUniqueQuantizationIds(model: ModelDefinition): void {
       throw new Error(
         `Duplicate quantization ID in model ${model.id}: ${quantization.id}`,
       );
-    if (quantization.bitsPerWeight <= 0 || quantization.bitsPerWeight > 16)
+    if (!quantizationSchema.safeParse(quantization).success)
       throw new Error(
-        `Quantization ${model.id}/${quantization.id} has an invalid bit width.`,
+        `Quantization ${model.id}/${quantization.id} has invalid sizing or metadata.`,
       );
     ids.add(quantization.id);
   }

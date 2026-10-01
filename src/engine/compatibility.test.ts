@@ -11,9 +11,100 @@ import {
   fixtureModel,
   fixtureProvenance,
 } from "@/data/fixtures";
-import type { HardwareProfile, ModelDefinition } from "@/domain/types";
+import type {
+  HardwareProfile,
+  ModelDefinition,
+  QuantizationDefinition,
+} from "@/domain/types";
 
 describe("compatibility engine", () => {
+  it("uses sourced file size with or without bits per weight and preserves overheads", () => {
+    const base = fixtureModel.quantizations[0];
+    const expected = {
+      modelWeightsGiB: 5,
+      runtimeOverheadGiB: 0.75,
+      estimatedVramGiB: 6.35,
+      estimatedSystemRamGiB: 8.35,
+    };
+    expect(
+      estimateMemory(fixtureModel, {
+        ...base,
+        bitsPerWeight: undefined,
+        sizeGiB: 5,
+      }),
+    ).toEqual(expected);
+    expect(
+      estimateMemory(fixtureModel, { ...base, bitsPerWeight: 16, sizeGiB: 5 }),
+    ).toEqual(expected);
+    const sized = { ...base, bitsPerWeight: undefined, sizeGiB: 5 };
+    expect(
+      evaluateCompatibility(
+        fixtureHardware.gpu,
+        { ...fixtureModel, quantizations: [sized] },
+        sized,
+      ).level,
+    ).toBe("gpu-capable");
+  });
+
+  it("rejects direct estimates with missing or invalid sizing instead of producing NaN", () => {
+    for (const sizing of [
+      { bitsPerWeight: undefined, sizeGiB: undefined },
+      { bitsPerWeight: 0, sizeGiB: 5 },
+      { bitsPerWeight: NaN, sizeGiB: 5 },
+      { bitsPerWeight: 17, sizeGiB: 5 },
+      { bitsPerWeight: 4, sizeGiB: Infinity },
+      { bitsPerWeight: 4, sizeGiB: -1 },
+    ]) {
+      expect(() =>
+        estimateMemory(fixtureModel, {
+          ...fixtureModel.quantizations[0],
+          ...sizing,
+        } as QuantizationDefinition),
+      ).toThrow(/Invalid quantization/);
+    }
+  });
+
+  it("orders known metadata before size-only candidates and preserves input ties", () => {
+    const sizeOnly: QuantizationDefinition = {
+      id: "size-only",
+      displayName: "Size only",
+      sizeGiB: 1,
+      provenance: fixtureProvenance,
+    };
+    const model: ModelDefinition = {
+      ...fixtureModel,
+      quantizations: [sizeOnly, ...fixtureModel.quantizations],
+    };
+    expect(
+      recommendQuantization(fixtureHardware.gpu, model)?.quantizationId,
+    ).toBe("q8");
+    // The known candidates no longer fit; the valid size-only candidate still can.
+    expect(
+      recommendQuantization(
+        { ...fixtureHardware.cpuOnly, systemRamGiB: 4 },
+        model,
+      )?.quantizationId,
+    ).toBe("size-only");
+    expect(
+      recommendQuantization(fixtureHardware.cpuOnly, {
+        ...model,
+        quantizations: [sizeOnly, { ...sizeOnly, id: "other" }],
+      })?.quantizationId,
+    ).toBe("size-only");
+    expect(
+      recommendQuantization(fixtureHardware.cpuOnly, {
+        ...model,
+        quantizations: [
+          {
+            ...sizeOnly,
+            sizeGiB: undefined,
+          } as unknown as QuantizationDefinition,
+          sizeOnly,
+        ],
+      })?.quantizationId,
+    ).toBe("size-only");
+  });
+
   it("estimates weights and overhead using the default policy", () => {
     expect(
       estimateMemory(fixtureModel, fixtureModel.quantizations[0]),

@@ -1869,6 +1869,96 @@ export const productionModels: readonly ModelDefinition[] = [
       ),
     ],
   }),
+  model({
+    id: "openai-gpt-oss-20b",
+    slug: "gpt-oss-20b",
+    displayName: "OpenAI gpt-oss-20b",
+    summary:
+      "OpenAI's text reasoning MoE has 20.91B total and 3.61B active parameters per token. The mixed-precision MXFP4 GGUF uses its sourced file size for approximate weight planning; context memory is not estimated.",
+    family: "gpt-oss",
+    provider: "OpenAI",
+    architecture: "GPT-OSS MoE",
+    parameterCountBillions: 20.91,
+    supportedFormats: ["gguf", "safetensors"],
+    supportedRuntimes: ["llama.cpp"],
+    license: "Apache-2.0",
+    maxContextLength: 131072,
+    provenance: modelProvenance(
+      "OpenAI gpt-oss-20b publisher model card",
+      "https://huggingface.co/openai/gpt-oss-20b",
+      "OpenAI documents Apache-2.0 and Harmony formatting. The linked publisher model card (https://cdn.openai.com/pdf/419b6906-9da6-406c-a19d-1bb078ac7637/oai_gpt-oss_model_card.pdf), Table 1 and section 2.2, gives 20.91B total, 3.61B active parameters and 131,072-token maximum context. Active parameters are descriptive only; no runtime default context is assumed.",
+      "2026-10-01",
+    ),
+    runtimeRequirement: {
+      description:
+        "Use a current llama.cpp build with GPT-OSS/MXFP4 support and the model's Harmony chat template (the llama.cpp guide uses --jinja). Memory fit does not guarantee runtime or backend compatibility. Context/KV-cache and runtime-specific buffers can require additional memory and are not separately estimated.",
+      source: "llama.cpp GPT-OSS runtime guide",
+      sourceUrl: "https://github.com/ggml-org/llama.cpp/discussions/15396",
+    },
+    quantizations: [
+      {
+        id: "mxfp4",
+        displayName: "MXFP4",
+        sizeGiB: 12109566624 / 2 ** 30,
+        description:
+          "Main-model gpt-oss-20b-MXFP4.gguf: 12,109,566,624 bytes, converted with bytes / 2^30. MoE weights use MXFP4 while other tensors retain higher precision; a whole-model bits-per-weight value is not documented. Separate Eagle speculative-decoding files are excluded. File size is not runtime RAM/VRAM usage.",
+        provenance: {
+          source: "ggml-org gpt-oss-20b MXFP4 GGUF artifact metadata",
+          sourceUrl:
+            "https://huggingface.co/ggml-org/gpt-oss-20b-GGUF/raw/main/gpt-oss-20b-MXFP4.gguf",
+          sourceType: "community-conversion",
+          confidence: "verified",
+          lastVerified: "2026-10-01",
+          note: "The repository's LFS pointer records the exact main-model artifact size (12,109,566,624 bytes), SHA256 27cd6c432c7672cb812a92f611cf3ba7bbc35928262bb1e1253ff4ee6ae35901. No sharding is listed. Eagle files and repository totals are not used. Exact file metadata does not make the runtime memory estimate exact.",
+        },
+      },
+    ],
+  }),
+  model({
+    id: "openai-gpt-oss-120b",
+    slug: "gpt-oss-120b",
+    displayName: "OpenAI gpt-oss-120b",
+    summary:
+      "OpenAI's text reasoning MoE has 116.83B total and 5.13B active parameters per token. The mixed-precision MXFP4 GGUF uses its sourced file size for approximate weight planning; context memory is not estimated.",
+    family: "gpt-oss",
+    provider: "OpenAI",
+    architecture: "GPT-OSS MoE",
+    parameterCountBillions: 116.83,
+    supportedFormats: ["gguf", "safetensors"],
+    supportedRuntimes: ["llama.cpp"],
+    license: "Apache-2.0",
+    maxContextLength: 131072,
+    provenance: modelProvenance(
+      "OpenAI gpt-oss-120b publisher model card",
+      "https://huggingface.co/openai/gpt-oss-120b",
+      "OpenAI documents Apache-2.0 and Harmony formatting. The linked publisher model card (https://cdn.openai.com/pdf/419b6906-9da6-406c-a19d-1bb078ac7637/oai_gpt-oss_model_card.pdf), Table 1 and section 2.2, gives 116.83B total, 5.13B active parameters and 131,072-token maximum context. Active parameters are descriptive only; no runtime default context is assumed.",
+      "2026-10-01",
+    ),
+    runtimeRequirement: {
+      description:
+        "Use a current llama.cpp build with GPT-OSS/MXFP4 support and the model's Harmony chat template (the llama.cpp guide uses --jinja). Memory fit does not guarantee runtime or backend compatibility. Context/KV-cache and runtime-specific buffers can require additional memory and are not separately estimated.",
+      source: "llama.cpp GPT-OSS runtime guide",
+      sourceUrl: "https://github.com/ggml-org/llama.cpp/discussions/15396",
+    },
+    quantizations: [
+      {
+        id: "mxfp4",
+        displayName: "MXFP4",
+        sizeGiB: 63387346208 / 2 ** 30,
+        description:
+          "Main-model gpt-oss-120b-MXFP4.gguf: 63,387,346,208 bytes, converted with bytes / 2^30. MoE weights use MXFP4 while other tensors retain higher precision; a whole-model bits-per-weight value is not documented. Separate Eagle speculative-decoding files are excluded. File size is not runtime RAM/VRAM usage.",
+        provenance: {
+          source: "ggml-org gpt-oss-120b MXFP4 GGUF artifact metadata",
+          sourceUrl:
+            "https://huggingface.co/ggml-org/gpt-oss-120b-GGUF/raw/main/gpt-oss-120b-MXFP4.gguf",
+          sourceType: "community-conversion",
+          confidence: "verified",
+          lastVerified: "2026-10-01",
+          note: "The repository's LFS pointer records the exact main-model artifact size (63,387,346,208 bytes), SHA256 582bd40f6886200101f4c4ed9f25f3fe80cc14c86e9e2b37746cd8904a0c622d. No sharding is listed. Eagle files and repository totals are not used. Exact file metadata does not make the runtime memory estimate exact.",
+        },
+      },
+    ],
+  }),
 ];
 
 function gpuProvenance(

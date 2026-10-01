@@ -16,6 +16,7 @@ import type {
 } from "@/domain/types";
 import { DEFAULT_COMPATIBILITY_POLICY } from "./assumptions";
 import { buildRuntimeProfileGuidance } from "./runtime-profile";
+import { compareQuantizationMetadata } from "@/domain/quantization-order";
 
 export function estimateMemory(
   model: ModelDefinition,
@@ -23,9 +24,23 @@ export function estimateMemory(
   policy: CompatibilityPolicy = DEFAULT_COMPATIBILITY_POLICY,
 ) {
   validatePolicy(policy);
-  const modelWeightsGiB =
-    quantization.sizeGiB ??
-    (model.parameterCountBillions * quantization.bitsPerWeight) / 8;
+  const validQuantization = quantizationSchema.safeParse(quantization);
+  if (!validQuantization.success)
+    throw new Error(
+      formatValidationError(
+        "Invalid quantization definition",
+        validQuantization.error,
+      ),
+    );
+  let modelWeightsGiB: number;
+  if (quantization.sizeGiB !== undefined) {
+    modelWeightsGiB = quantization.sizeGiB;
+  } else if (quantization.bitsPerWeight !== undefined) {
+    modelWeightsGiB =
+      (model.parameterCountBillions * quantization.bitsPerWeight) / 8;
+  } else {
+    throw new Error("Quantization requires sizeGiB or bitsPerWeight");
+  }
   const overhead =
     quantization.overheadMultiplier ?? policy.weightOverheadMultiplier;
   const estimatedVramGiB =
@@ -290,8 +305,8 @@ export function recommendQuantization(
     }))
     .filter((entry) => entry.parsed.success)
     .sort((a, b) => {
-      const precision = b.candidate.bitsPerWeight - a.candidate.bitsPerWeight;
-      return precision || a.index - b.index;
+      const metadata = compareQuantizationMetadata(a.candidate, b.candidate);
+      return metadata || a.index - b.index;
     });
   for (const { candidate } of candidates) {
     const result = evaluateCompatibility(

@@ -8,6 +8,7 @@ import type {
   RuntimeProfile,
 } from "@/domain/types";
 import { evaluateCompatibility } from "@/engine/compatibility";
+import { compareQuantizationMetadata } from "@/domain/quantization-order";
 
 export interface RecommendationEntry {
   model: ModelDefinition;
@@ -105,9 +106,11 @@ function compareEntries(
   const levelDifference =
     levelPriority[b.result.level] - levelPriority[a.result.level];
   if (levelDifference) return levelDifference;
-  const qualityDifference =
-    b.quantization.bitsPerWeight - a.quantization.bitsPerWeight;
-  if (qualityDifference) return qualityDifference;
+  const metadataDifference = compareQuantizationMetadata(
+    a.quantization,
+    b.quantization,
+  );
+  if (metadataDifference) return metadataDifference;
   const memoryDifference =
     a.result.memory.estimatedVramGiB - b.result.memory.estimatedVramGiB;
   if (memoryDifference) return memoryDifference;

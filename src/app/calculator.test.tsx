@@ -40,6 +40,39 @@ function choose(label: string, value: string) {
 describe("compatibility calculator", () => {
   afterEach(cleanup);
 
+  it("selects and evaluates both GPT-OSS size-only candidates without claiming a bit width", () => {
+    for (const [variant, size, vram, ram] of [
+      ["20b", "11.28", "13.38", "15.38"],
+      ["120b", "59.03", "66.87", "68.87"],
+    ]) {
+      renderCalculator();
+      choose("Model", `openai-gpt-oss-${variant}`);
+      expect(
+        screen.getByRole("option", {
+          name: `MXFP4 · ${size} GiB · whole-model bits/weight unavailable`,
+        }),
+      ).toBeTruthy();
+      fireEvent.change(screen.getByLabelText("System RAM (GiB)"), {
+        target: { value: "128" },
+      });
+      submit();
+      expect(screen.getByRole("heading", { name: "CPU-only" })).toBeTruthy();
+      expect(screen.getByText(`${vram} GiB`)).toBeTruthy();
+      expect(screen.getByText(`${ram} GiB`)).toBeTruthy();
+      expect(
+        screen.getByText(
+          /Whole-model bits per weight is unavailable.*memory-fit estimates remain approximate/,
+        ),
+      ).toBeTruthy();
+      expect(
+        screen.getByText(/Use a current llama.cpp build.*Harmony/),
+      ).toBeTruthy();
+      expect(screen.queryByText(/highest-bit candidate/)).toBeNull();
+      expect(screen.queryByText(/Multimodal memory scope/)).toBeNull();
+      cleanup();
+    }
+  });
+
   it("renders the registry model, quantizations, and GPU options", () => {
     renderCalculator();
 

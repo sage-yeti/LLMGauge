@@ -19,6 +19,45 @@ import { gpuCatalog, modelCatalog } from "@/data/catalog";
 describe("public catalog pages", () => {
   afterEach(cleanup);
 
+  it("renders both GPT-OSS artifacts with explicit unavailable bpw and runtime caveats", async () => {
+    for (const slug of ["gpt-oss-20b", "gpt-oss-120b"]) {
+      render(await ModelPage({ params: Promise.resolve({ slug }) }));
+      expect(
+        screen.getByRole("heading", { name: `OpenAI ${slug}` }),
+      ).toBeTruthy();
+      expect(screen.getByText("MXFP4")).toBeTruthy();
+      expect(
+        screen.getByText("Unavailable (whole-model value not documented)"),
+      ).toBeTruthy();
+      expect(
+        screen.getByText(slug === "gpt-oss-20b" ? "11.28 GiB" : "59.03 GiB"),
+      ).toBeTruthy();
+      expect(screen.getByText(/main-model.*gguf:/i)).toBeTruthy();
+      expect(
+        screen.getByText(/Use a current llama.cpp build.*Harmony/),
+      ).toBeTruthy();
+      expect(screen.queryByText(/Multimodal memory scope/)).toBeNull();
+      cleanup();
+    }
+    render(<ModelCatalogIndex models={modelCatalog} />);
+    fireEvent.change(screen.getByRole("searchbox", { name: "Search models" }), {
+      target: { value: "gpt-oss" },
+    });
+    expect(
+      screen.getByRole("link", { name: "OpenAI gpt-oss-20b" }),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole("link", { name: "OpenAI gpt-oss-120b" }),
+    ).toBeTruthy();
+    cleanup();
+    const routes = await sitemap();
+    for (const slug of ["gpt-oss-20b", "gpt-oss-120b"]) {
+      expect(
+        routes.some((route) => route.url.endsWith(`/models/${slug}`)),
+      ).toBe(true);
+    }
+  });
+
   it("renders useful model information and calculator links", async () => {
     const page = await ModelPage({
       params: Promise.resolve({ slug: modelCatalog[0].slug }),

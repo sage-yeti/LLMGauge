@@ -9,6 +9,113 @@ import { productionModels } from "@/data/production-catalog";
 import type { HardwareProfile, ModelDefinition } from "@/domain/types";
 
 describe("recommendModels", () => {
+  it("ranks mixed metadata deterministically by level, known bpw, memory, and stable IDs", () => {
+    const sized = (id: string, sizeGiB: number): ModelDefinition => ({
+      ...fixtureModel,
+      id,
+      quantizations: [
+        {
+          id: "mxfp4",
+          displayName: "MXFP4",
+          sizeGiB,
+          provenance: fixtureProvenance,
+        },
+      ],
+    });
+    const known: ModelDefinition = {
+      ...fixtureModel,
+      id: "known",
+      quantizations: [fixtureModel.quantizations[0]],
+    };
+    const entries = [
+      sized("unknown-b", 2),
+      sized("unknown-large", 3),
+      known,
+      sized("unknown-a", 2),
+    ];
+    for (const input of [entries, [...entries].reverse()]) {
+      expect(
+        recommendModels(fixtureHardware.gpu, input).recommendations.map(
+          (entry) => entry.model.id,
+        ),
+      ).toEqual(["known", "unknown-a", "unknown-b", "unknown-large"]);
+    }
+    const lowVram = {
+      ...fixtureHardware.gpu,
+      gpu: { ...fixtureHardware.gpu.gpu!, vramGiB: 3 },
+    };
+    expect(
+      recommendModels(lowVram, [
+        known,
+        sized("unknown-fit", 1),
+      ]).recommendations.map((entry) => [entry.model.id, entry.result.level]),
+    ).toEqual([
+      ["unknown-fit", "gpu-capable"],
+      ["known", "partial-offload"],
+    ]);
+  });
+
+  it("uses the same missing-bpw policy for representative quantization selection", () => {
+    const model: ModelDefinition = {
+      ...fixtureModel,
+      quantizations: [
+        {
+          id: "unknown-b",
+          displayName: "Unknown B",
+          sizeGiB: 2,
+          provenance: fixtureProvenance,
+        },
+        fixtureModel.quantizations[0],
+        {
+          id: "unknown-a",
+          displayName: "Unknown A",
+          sizeGiB: 2,
+          provenance: fixtureProvenance,
+        },
+      ],
+    };
+    expect(
+      recommendModels(fixtureHardware.gpu, [model]).recommendations[0]
+        .quantization.id,
+    ).toBe("q4");
+    expect(
+      recommendModels(fixtureHardware.gpu, [
+        {
+          ...model,
+          quantizations: model.quantizations.filter(
+            (candidate) => candidate.bitsPerWeight === undefined,
+          ),
+        },
+      ]).recommendations[0].quantization.id,
+    ).toBe("unknown-a");
+  });
+
+  it("keeps existing known-bpw fixture ordering with an added size-only model", () => {
+    const a = { ...fixtureModel, id: "known-a" };
+    const b = { ...fixtureModel, id: "known-b" };
+    const unknown: ModelDefinition = {
+      ...fixtureModel,
+      id: "unknown",
+      quantizations: [
+        {
+          id: "mxfp4",
+          displayName: "MXFP4",
+          sizeGiB: 1,
+          provenance: fixtureProvenance,
+        },
+      ],
+    };
+    expect(
+      recommendModels(fixtureHardware.gpu, [b, unknown, a]).recommendations.map(
+        (entry) => [entry.model.id, entry.quantization.id],
+      ),
+    ).toEqual([
+      ["known-a", "q8"],
+      ["known-b", "q8"],
+      ["unknown", "mxfp4"],
+    ]);
+  });
+
   it("evaluates the curated production catalog deterministically", () => {
     const first = recommendModels(fixtureHardware.gpu, productionModels);
     const second = recommendModels(fixtureHardware.gpu, productionModels);

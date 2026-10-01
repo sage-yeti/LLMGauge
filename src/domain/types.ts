@@ -57,15 +57,20 @@ export interface RuntimeProfile {
   targetContextLength?: number;
 }
 
-export interface QuantizationDefinition {
+interface QuantizationMetadata {
   id: string;
   displayName: string;
-  bitsPerWeight: number;
-  sizeGiB?: number;
   overheadMultiplier?: number;
   description?: string;
   provenance: CatalogProvenance;
 }
+
+/** File size takes precedence; at least one usable sizing input is required. */
+export type QuantizationDefinition = QuantizationMetadata &
+  (
+    | { bitsPerWeight: number; sizeGiB?: number }
+    | { bitsPerWeight?: number; sizeGiB: number }
+  );
 
 export interface RuntimeRequirement {
   description: string;
