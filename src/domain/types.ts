@@ -122,6 +122,7 @@ export interface GpuDefinition {
   provenance: CatalogProvenance;
 }
 
+/** Unrounded GiB estimates for decisions and ordering; format only for display. */
 export interface MemoryEstimate {
   modelWeightsGiB: number;
   runtimeOverheadGiB: number;
