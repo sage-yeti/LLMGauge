@@ -157,6 +157,37 @@ describe("recommendations interface", () => {
     }
   });
 
+  it("includes added Batch 37 models in recommendations when system RAM is sufficient", () => {
+    renderRecommendations();
+    fireEvent.change(screen.getByLabelText("System RAM (GiB)"), {
+      target: { value: "512" },
+    });
+    choose("GPU", "nvidia-rtx-5090-32gb");
+    submit();
+
+    for (const name of [
+      "Qwen3-VL-8B-Instruct",
+      "Qwen3-VL-30B-A3B-Instruct",
+      "Ministral 3 14B Instruct 2512",
+      "Devstral Small 2 24B Instruct 2512",
+      "LFM2-24B-A2B",
+      "NVIDIA Nemotron 3 Nano 30B-A3B",
+      "Mistral Small 4 119B A6B",
+      "NVIDIA Nemotron 3 Super 120B-A12B",
+      "Laguna S 2.1",
+    ]) {
+      expect(screen.getByRole("heading", { name })).toBeTruthy();
+    }
+
+    const qwenCard = screen
+      .getByRole("heading", { name: "Qwen3-VL-8B-Instruct" })
+      .closest("article");
+    expect(qwenCard?.textContent).toMatch(/Multimodal memory scope/);
+    expect(qwenCard?.textContent).toMatch(
+      /multimodal runtime memory are not estimated separately/i,
+    );
+  });
+
   it("shows multimodal scope on affected recommendation cards only", () => {
     renderRecommendations();
     choose("GPU", "nvidia-rtx-5090-32gb");

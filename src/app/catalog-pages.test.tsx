@@ -437,6 +437,68 @@ describe("public catalog pages", () => {
     }
   });
 
+  it("renders each added Batch 37 model detail page and its source-backed memory scope", async () => {
+    const slugs = [
+      "qwen3-vl-8b-instruct",
+      "qwen3-vl-30b-a3b-instruct",
+      "ministral-3-14b-instruct-2512",
+      "devstral-small-2-24b-instruct-2512",
+      "lfm2-24b-a2b",
+      "nemotron-3-nano-30b-a3b",
+      "mistral-small-4-119b-2603",
+      "nemotron-3-super-120b-a12b",
+      "laguna-s-2-1",
+    ];
+
+    for (const slug of slugs) {
+      const model = modelCatalog.find((entry) => entry.slug === slug);
+      expect(model).toBeDefined();
+      const page = await ModelPage({ params: Promise.resolve({ slug }) });
+      render(page);
+      expect(
+        screen.getByRole("heading", { name: model!.displayName }),
+      ).toBeTruthy();
+      expect(
+        screen.getByText(model!.quantizations[0].displayName),
+      ).toBeTruthy();
+      expect(
+        screen
+          .getByRole("link", {
+            name: model!.quantizations[0].provenance.source,
+          })
+          .getAttribute("href"),
+      ).toBe(model!.quantizations[0].provenance.sourceUrl);
+      if (model!.memoryEstimateScope) {
+        expect(screen.getByText(/Multimodal memory scope/)).toBeTruthy();
+      } else {
+        expect(screen.queryByText(/Multimodal memory scope/)).toBeNull();
+      }
+      cleanup();
+    }
+  });
+
+  it("includes added Batch 37 model routes in the sitemap", async () => {
+    const routes = await sitemap();
+    const modelRoutes = routes
+      .filter((route) => route.url.includes("/models/"))
+      .map((route) => route.url);
+    for (const slug of [
+      "qwen3-vl-8b-instruct",
+      "qwen3-vl-30b-a3b-instruct",
+      "ministral-3-14b-instruct-2512",
+      "devstral-small-2-24b-instruct-2512",
+      "lfm2-24b-a2b",
+      "nemotron-3-nano-30b-a3b",
+      "mistral-small-4-119b-2603",
+      "nemotron-3-super-120b-a12b",
+      "laguna-s-2-1",
+    ]) {
+      expect(
+        modelRoutes.some((route) => route.endsWith(`/models/${slug}`)),
+      ).toBe(true);
+    }
+  });
+
   it("renders every model and GPU in directly browsable catalog indexes", () => {
     const modelsPage = ModelsPage();
     render(modelsPage);
