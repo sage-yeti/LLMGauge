@@ -1,5 +1,6 @@
 "use client";
 
+import { formatMemoryGiB } from "./format-memory";
 import { FormEvent, useState } from "react";
 import Link from "next/link";
 import type {
@@ -263,11 +264,11 @@ function RecommendationCard({
         </div>
         <div>
           <dt>Estimated VRAM (approx.)</dt>
-          <dd>{result.memory.estimatedVramGiB} GiB</dd>
+          <dd>{formatMemoryGiB(result.memory.estimatedVramGiB)}</dd>
         </div>
         <div>
           <dt>Estimated system RAM (approx.)</dt>
-          <dd>{result.memory.estimatedSystemRamGiB} GiB</dd>
+          <dd>{formatMemoryGiB(result.memory.estimatedSystemRamGiB)}</dd>
         </div>
       </dl>
       {result.limitingFactors.length > 0 && (
