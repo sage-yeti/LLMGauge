@@ -9,6 +9,38 @@ import { productionModels } from "@/data/production-catalog";
 import type { HardwareProfile, ModelDefinition } from "@/domain/types";
 
 describe("recommendModels", () => {
+  it.each([undefined, 4])(
+    "orders same-metadata memory ties by unrounded estimates (bpw %s)",
+    (bitsPerWeight) => {
+      const model = (id: string, sizeGiB: number): ModelDefinition => ({
+        ...fixtureModel,
+        id,
+        quantizations: [
+          {
+            id: "sized",
+            displayName: "Sized",
+            sizeGiB,
+            bitsPerWeight,
+            provenance: fixtureProvenance,
+          },
+        ],
+      });
+      // Both requirements display as 2.99 GiB; lower actual memory precedes the ID tie-breaker.
+      const smaller = model("z-smaller", 2.0001);
+      const larger = model("a-larger", 2.0002);
+      for (const models of [
+        [larger, smaller],
+        [smaller, larger],
+      ]) {
+        expect(
+          recommendModels(fixtureHardware.gpu, models).recommendations.map(
+            (entry) => entry.model.id,
+          ),
+        ).toEqual(["z-smaller", "a-larger"]);
+      }
+    },
+  );
+
   it("ranks mixed metadata deterministically by level, known bpw, memory, and stable IDs", () => {
     const sized = (id: string, sizeGiB: number): ModelDefinition => ({
       ...fixtureModel,
