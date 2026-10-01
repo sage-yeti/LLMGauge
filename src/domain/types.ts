@@ -1,8 +1,13 @@
 export type ModelFormat = "gguf" | "safetensors" | "other";
 export type OperatingSystem = "windows" | "linux" | "macos" | "other";
-export type ExecutionMode = "gpu" | "partial-offload" | "cpu" | "unsupported";
+export type ExecutionMode =
+  "gpu" | "partial-offload" | "cpu" | "unverified" | "unsupported";
 export type CompatibilityLevel =
-  "unsupported" | "cpu-only" | "partial-offload" | "gpu-capable";
+  | "unsupported"
+  | "cpu-only"
+  | "partial-offload"
+  | "gpu-capable"
+  | "unified-memory-fit";
 export type GpuKind = "discrete" | "integrated";
 export type Runtime = "llama.cpp" | "ollama" | "other";
 export type RuntimeProfileRuntime = "llama.cpp" | "unknown";
@@ -42,9 +47,14 @@ export interface GpuInfo {
   sharedMemoryGiB?: number;
 }
 
+export type MemoryMode = "pc" | "apple-unified";
+
 export interface HardwareProfile {
+  /** Explicit opt-in; omitted mode retains legacy PC semantics. */
+  memoryMode?: MemoryMode;
   cpu: CpuInfo;
   gpu?: GpuInfo;
+  /** Total physical memory pool in Apple mode; never a separate GPU allocation. */
   systemRamGiB: number;
   operatingSystem: OperatingSystem;
 }
@@ -135,7 +145,11 @@ export interface CompatibilityResult {
   quantizationId: string;
   level: CompatibilityLevel;
   executionMode: ExecutionMode;
-  memory: MemoryEstimate;
+  memory: Omit<MemoryEstimate, "estimatedVramGiB"> & {
+    /** Not applicable for pooled Apple memory. */
+    estimatedVramGiB: number | null;
+    estimatedUnifiedMemoryGiB?: number;
+  };
   recommendedQuantizationId: string | null;
   contextGuidance: ContextGuidance;
   runtimeGuidance: RuntimeProfileGuidance;
@@ -158,7 +172,9 @@ export type CompatibilityReasonCode =
   | "no-discrete-gpu"
   | "integrated-shared-memory"
   | "exact-memory-boundary"
-  | "safety-margin";
+  | "safety-margin"
+  | "unified-execution-unverified"
+  | "insufficient-unified-memory";
 
 export interface CompatibilityReason {
   code: CompatibilityReasonCode;

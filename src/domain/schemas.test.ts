@@ -184,3 +184,45 @@ describe("domain schemas", () => {
     ).toBe(false);
   });
 });
+
+describe("explicit Apple memory contract", () => {
+  const apple = {
+    cpu: { name: "Apple M4" },
+    memoryMode: "apple-unified",
+    systemRamGiB: 16,
+    operatingSystem: "macos",
+  };
+  it("accepts explicit Apple and preserves omitted/explicit PC modes", () => {
+    expect(hardwareProfileSchema.safeParse(apple).success).toBe(true);
+    expect(hardwareProfileSchema.safeParse(fixtureHardware.gpu).success).toBe(
+      true,
+    );
+    expect(
+      hardwareProfileSchema.safeParse({
+        ...fixtureHardware.gpu,
+        memoryMode: "pc",
+      }).success,
+    ).toBe(true);
+  });
+  it.each([
+    { operatingSystem: "windows" },
+    { operatingSystem: "linux" },
+    { memoryMode: "automatic" },
+    { gpu: fixtureHardware.gpu.gpu },
+    {
+      gpu: {
+        id: "shared",
+        name: "Shared",
+        kind: "integrated",
+        vramGiB: 0,
+        sharedMemoryGiB: 16,
+      },
+    },
+    { systemRamGiB: 0 },
+    { systemRamGiB: Infinity },
+  ])("rejects contradictory or invalid Apple inputs %j", (patch) => {
+    expect(
+      hardwareProfileSchema.safeParse({ ...apple, ...patch }).success,
+    ).toBe(false);
+  });
+});
