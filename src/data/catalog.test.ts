@@ -28,7 +28,7 @@ describe("catalog registry", () => {
   });
 
   it("keeps the production catalog real, sourced, and separate from fixtures", () => {
-    expect(productionModels).toHaveLength(52);
+    expect(productionModels).toHaveLength(54);
     expect(productionGpus).toHaveLength(64);
     expect(
       productionModels.every((model) => !model.id.startsWith("example-")),
@@ -757,12 +757,66 @@ describe("catalog registry", () => {
         `https://huggingface.co/${expected[index][4]}`,
       );
     }
+  });
 
-    // gpt-oss GGUFs are real, but the current schema requires a numeric bpw
-    // value that the MXFP4 source does not provide; do not force them into Q4_K_M.
-    expect(
-      productionModels.some((entry) => entry.id.startsWith("openai-gpt-oss")),
-    ).toBe(false);
+  it("records GPT-OSS main-model MXFP4 artifacts without fabricated bits per weight", () => {
+    for (const [variant, total, active, bytes] of [
+      ["20b", 20.91, 3.61, 12109566624],
+      ["120b", 116.83, 5.13, 63387346208],
+    ] as const) {
+      const entry = getModelById(`openai-gpt-oss-${variant}`)!;
+      expect(entry.slug).toBe(`gpt-oss-${variant}`);
+      expect(entry.parameterCountBillions).toBe(total);
+      expect(entry.summary).toContain(`${active}B active parameters`);
+      expect(entry.license).toBe("Apache-2.0");
+      expect(entry.maxContextLength).toBe(131072);
+      expect(entry.defaultContextLength).toBeUndefined();
+      expect(entry.memoryEstimateScope).toBeUndefined();
+      expect(entry.provenance).toMatchObject({
+        sourceUrl: `https://huggingface.co/openai/gpt-oss-${variant}`,
+        sourceType: "official-model-card",
+        confidence: "verified",
+        lastVerified: "2026-10-01",
+      });
+      expect(entry.runtimeRequirement?.description).toMatch(
+        /GPT-OSS\/MXFP4 support.*Harmony/,
+      );
+      expect(entry.quantizations).toHaveLength(1);
+      const quantization = entry.quantizations[0];
+      expect(quantization).toMatchObject({
+        id: "mxfp4",
+        displayName: "MXFP4",
+        sizeGiB: bytes / 2 ** 30,
+        provenance: {
+          sourceType: "community-conversion",
+          confidence: "verified",
+          lastVerified: "2026-10-01",
+          sourceUrl: `https://huggingface.co/ggml-org/gpt-oss-${variant}-GGUF/raw/main/gpt-oss-${variant}-MXFP4.gguf`,
+        },
+      });
+      expect(quantization.bitsPerWeight).toBeUndefined();
+      expect(quantization.description).toMatch(/Separate Eagle.*excluded/);
+      expect(modelDefinitionSchema.safeParse(entry).success).toBe(true);
+      expect(() => validateModelCatalogEntry(entry)).not.toThrow();
+    }
+  });
+
+  it("validates size-only catalog candidates and rejects invalid supplied sizing", () => {
+    const base = fixtureModel.quantizations[0];
+    expect(() =>
+      validateUniqueQuantizationIds({
+        ...fixtureModel,
+        quantizations: [{ ...base, bitsPerWeight: undefined, sizeGiB: 5 }],
+      }),
+    ).not.toThrow();
+    for (const bitsPerWeight of [0, -1, NaN, Infinity, 17]) {
+      expect(() =>
+        validateUniqueQuantizationIds({
+          ...fixtureModel,
+          quantizations: [{ ...base, bitsPerWeight, sizeGiB: 5 }],
+        }),
+      ).toThrow(/invalid sizing/);
+    }
   });
 
   it("records Batch 37 models with total parameters, separate provenance, and verified GGUF files", () => {
