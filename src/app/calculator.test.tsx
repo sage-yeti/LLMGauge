@@ -353,3 +353,100 @@ describe("compatibility calculator", () => {
     );
   });
 });
+
+describe("Apple hardware workflow", () => {
+  afterEach(cleanup);
+  it("switches explicitly, excludes hidden dedicated memory and restores retained PC values", () => {
+    renderCalculator();
+    choose("GPU", "nvidia-rtx-4060-8gb");
+    fireEvent.change(screen.getByLabelText("Dedicated VRAM (GiB)"), {
+      target: { value: "999" },
+    });
+    fireEvent.change(screen.getByLabelText("Hardware mode"), {
+      target: { value: "apple-unified" },
+    });
+    expect(screen.queryByLabelText("GPU")).toBeNull();
+    expect(screen.queryByLabelText("Dedicated VRAM (GiB)")).toBeNull();
+    expect(
+      (screen.getByLabelText("Operating system") as HTMLSelectElement).value,
+    ).toBe("macos");
+    expect(
+      (screen.getByLabelText("Operating system") as HTMLSelectElement).disabled,
+    ).toBe(true);
+    fireEvent.change(screen.getByLabelText("CPU / Apple chip"), {
+      target: { value: "Apple M4" },
+    });
+    fireEvent.change(screen.getByLabelText("Total unified memory (GiB)"), {
+      target: { value: "0.1" },
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: /evaluate compatibility/i }),
+    );
+    expect(screen.getAllByText("Unsupported").length).toBeGreaterThan(0);
+    expect(screen.queryByText("GPU-capable")).toBeNull();
+    fireEvent.change(screen.getByLabelText("Total unified memory (GiB)"), {
+      target: { value: "128" },
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: /evaluate compatibility/i }),
+    );
+    expect(
+      screen.getAllByText("Fits estimated unified memory").length,
+    ).toBeGreaterThan(0);
+    expect(
+      screen.getAllByText("Estimated unified memory (approx.)").length,
+    ).toBeGreaterThan(0);
+    expect(screen.getAllByText("Not applicable").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Unverified (advisory)").length).toBeGreaterThan(
+      0,
+    );
+    expect(
+      screen.getAllByText(
+        /Total unified-memory fit does not guarantee full GPU offload/,
+      ).length,
+    ).toBeGreaterThan(0);
+    fireEvent.change(screen.getByLabelText("Hardware mode"), {
+      target: { value: "pc" },
+    });
+    expect(
+      (screen.getByLabelText("Dedicated VRAM (GiB)") as HTMLInputElement).value,
+    ).toBe("999");
+    expect((screen.getByLabelText("GPU") as HTMLInputElement).value).toBe(
+      "GeForce RTX 4060 8GB",
+    );
+    expect(screen.queryByLabelText("Total unified memory (GiB)")).toBeNull();
+    fireEvent.click(
+      screen.getByRole("button", { name: /evaluate compatibility/i }),
+    );
+    expect(screen.getAllByText("GPU-capable").length).toBeGreaterThan(0);
+    expect(screen.queryByText("Fits estimated unified memory")).toBeNull();
+  });
+});
+
+it("keeps GPT-OSS and multimodal caveats visible for Apple memory results", () => {
+  renderCalculator();
+  choose("Hardware mode", "apple-unified");
+  choose("Total unified memory (GiB)", "128");
+  choose("CPU / Apple chip", "Apple M4");
+  for (const id of ["openai-gpt-oss-20b", "openai-gpt-oss-120b"]) {
+    choose("Model", id);
+    fireEvent.click(
+      screen.getByRole("button", { name: /evaluate compatibility/i }),
+    );
+    expect(
+      screen.getByRole("heading", { name: "Fits estimated unified memory" }),
+    ).toBeTruthy();
+    expect(screen.getAllByText(/Harmony/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/whole-model bits/i).length).toBeGreaterThan(0);
+    expect(screen.getByText("Not applicable")).toBeTruthy();
+  }
+  const multimodal = modelCatalog.find((model) => model.memoryEstimateScope)!;
+  choose("Model", multimodal.id);
+  fireEvent.click(
+    screen.getByRole("button", { name: /evaluate compatibility/i }),
+  );
+  expect(screen.getByText(/Multimodal memory scope:/i)).toBeTruthy();
+  expect(
+    screen.getByRole("heading", { name: "Context guidance" }),
+  ).toBeTruthy();
+});

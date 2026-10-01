@@ -1,6 +1,8 @@
 "use client";
 
 import { formatMemoryGiB } from "./format-memory";
+import { UnifiedMemoryNote } from "./unified-memory-note";
+import { applyDetectedHardware } from "@/application/hardware";
 import { FormEvent, useState } from "react";
 import Link from "next/link";
 import type {
@@ -53,7 +55,13 @@ export function Recommendations({ models, gpus }: RecommendationsProps) {
     field: keyof (HardwareFormValues & RuntimeProfileFormValues),
     value: string,
   ) {
-    setValues((current) => ({ ...current, [field]: value }));
+    setValues((current) => ({
+      ...current,
+      [field]: value,
+      ...(field === "memoryMode" && value === "apple-unified"
+        ? { operatingSystem: "macos" as const }
+        : {}),
+    }));
     setFormState({ fieldErrors: {} });
     setRecommendationSet(undefined);
   }
@@ -70,7 +78,7 @@ export function Recommendations({ models, gpus }: RecommendationsProps) {
   }
 
   function applyDetected(patch: Partial<HardwareFormValues>) {
-    setValues((current) => ({ ...current, ...patch }));
+    setValues((current) => applyDetectedHardware(current, patch));
     setFormState({ fieldErrors: {} });
     setRecommendationSet(undefined);
   }
@@ -257,6 +265,7 @@ function RecommendationCard({
         headingId={`context-guidance-${entry.model.id}-${entry.quantization.id}`}
       />
       <RuntimeProfileView guidance={result.runtimeGuidance} />
+      <UnifiedMemoryNote result={result} />
       <dl className="recommendation-stats">
         <div>
           <dt>Execution</dt>
@@ -264,10 +273,18 @@ function RecommendationCard({
         </div>
         <div>
           <dt>Estimated VRAM (approx.)</dt>
-          <dd>{formatMemoryGiB(result.memory.estimatedVramGiB)}</dd>
+          <dd>
+            {result.memory.estimatedVramGiB === null
+              ? "Not applicable"
+              : formatMemoryGiB(result.memory.estimatedVramGiB)}
+          </dd>
         </div>
         <div>
-          <dt>Estimated system RAM (approx.)</dt>
+          <dt>
+            {result.memory.estimatedUnifiedMemoryGiB !== undefined
+              ? "Estimated unified memory (approx.)"
+              : "Estimated system RAM (approx.)"}
+          </dt>
           <dd>{formatMemoryGiB(result.memory.estimatedSystemRamGiB)}</dd>
         </div>
       </dl>
@@ -299,12 +316,14 @@ function labelForLevel(level: keyof typeof levelLabels): string {
 
 const levelLabels = {
   "gpu-capable": "GPU-capable",
+  "unified-memory-fit": "Fits estimated unified memory",
   "partial-offload": "Partial offload",
   "cpu-only": "CPU-only",
   unsupported: "Unsupported",
 } as const;
 const executionLabels = {
   gpu: "Full GPU execution",
+  unverified: "Unverified (advisory)",
   "partial-offload": "Partial GPU offload",
   cpu: "CPU execution",
   unsupported: "Not recommended",
