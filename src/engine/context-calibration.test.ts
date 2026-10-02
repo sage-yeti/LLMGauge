@@ -134,7 +134,7 @@ describe("context guidance calibration scenarios", () => {
     ]);
     expect(available.warnings).toEqual(
       expect.arrayContaining([
-        "Context guidance is conservative and advisory; it does not calculate KV-cache memory.",
+        "Context guidance is conservative and advisory; the separate KV-cache estimate uses only an explicit target context and supported sourced metadata.",
       ]),
     );
     expect(unavailable.contextGuidance.reasonCodes).toEqual([
