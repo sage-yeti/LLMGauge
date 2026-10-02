@@ -68,7 +68,7 @@ export const runtimeEvidenceMatrix: readonly RuntimeEvidenceEntry[] = [
       "https://github.com/ggml-org/llama.cpp/blob/master/docs/multi-gpu.md",
     assessment: "currently-unknowable",
     currentTreatment:
-      "Context guidance is advisory and separate from classification because exact KV-cache cost depends on architecture, runtime settings, and backend details not present in the catalog.",
+      "Context guidance remains advisory. KV-cache estimates are available only for sourced supported architectures and explicit targets; memory placement still depends on selected execution settings and runtime behavior.",
   },
   {
     id: "practical-context-default",

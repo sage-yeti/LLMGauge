@@ -105,7 +105,7 @@ describe("runtime profile guidance", () => {
     expect(evaluate(2048).contextAssessment).toBe("within-guidance");
     expect(evaluate(4096).contextAssessment).toBe("within-guidance");
     expect(evaluate(8192).contextAssessment).toBe("above-practical-guidance");
-    expect(evaluate(8192).warnings[0]).toMatch(/additional memory/);
+    expect(evaluate(8192).warnings[0]).toMatch(/KV-cache estimate/);
   });
 
   it("warns when target context exceeds model maximum", () => {

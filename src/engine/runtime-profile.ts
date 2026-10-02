@@ -97,13 +97,13 @@ export function buildRuntimeProfileGuidance(
       contextAssessment = "above-practical-guidance";
       reasons.push("target-context-above-guidance");
       warnings.push(
-        `The requested context is above the practical starting guidance of ${contextGuidance.recommendedContextLength.toLocaleString()} tokens; additional memory impact is not estimated.`,
+        `The requested context is above the practical starting guidance of ${contextGuidance.recommendedContextLength.toLocaleString()} tokens. A separate KV-cache estimate is shown only when sourced architecture data is available, and placement may remain unverified.`,
       );
     } else {
       contextAssessment = "within-guidance";
       reasons.push("target-context-within-guidance");
       assumptions.push(
-        "The requested context is at or below the practical starting guidance; exact context memory is still not estimated.",
+        "The requested context is at or below the practical starting guidance; the separate KV-cache estimate still uses an approximate FP16 assumption.",
       );
     }
   }
