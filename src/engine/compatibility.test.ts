@@ -47,14 +47,57 @@ describe("compatibility engine", () => {
     expect(estimate(8192).sizeGiB).toBe(1);
   });
 
+  it.each([
+    ["meta-llama-3-2-1b-instruct", 0.125, 0.5],
+    ["meta-llama-3-2-3b-instruct", 0.4375, 1.75],
+    ["meta-llama-3-3-70b-instruct", 1.25, 5],
+  ])(
+    "estimates %s from explicit context and scales linearly",
+    (modelId, expectedAt4096, expectedAt16384) => {
+      const model = getModelById(modelId)!;
+      const estimate = (targetContextLength: number) =>
+        estimateKvCache(model, fixtureHardware.cpuOnly, {
+          targetContextLength,
+        });
+
+      expect(estimate(4096)).toMatchObject({
+        status: "estimated",
+        sizeGiB: expectedAt4096,
+        targetContextLength: 4096,
+        precision: "FP16",
+        placement: "unverified",
+        includedInFit: false,
+      });
+      expect(estimate(16384).sizeGiB).toBe(expectedAt16384);
+      expect(estimateKvCache(model, fixtureHardware.cpuOnly).status).toBe(
+        "unavailable",
+      );
+    },
+  );
+
   it("keeps missing context, unsupported architecture, and over-limit targets unavailable", () => {
     expect(estimateKvCache(llama31, fixtureHardware.cpuOnly).status).toBe(
       "unavailable",
     );
     expect(
+      estimateKvCache(
+        getModelById("meta-llama-3-2-1b-instruct")!,
+        fixtureHardware.cpuOnly,
+      ).status,
+    ).toBe("unavailable");
+    expect(
       estimateKvCache(fixtureModel, fixtureHardware.cpuOnly, {
         targetContextLength: 4096,
       }),
+    ).toMatchObject({ status: "unavailable", sizeGiB: null });
+    expect(
+      estimateKvCache(
+        getModelById("google-gemma-3-1b-it")!,
+        fixtureHardware.cpuOnly,
+        {
+          targetContextLength: 4096,
+        },
+      ),
     ).toMatchObject({ status: "unavailable", sizeGiB: null });
     expect(
       estimateKvCache(llama31, fixtureHardware.cpuOnly, {

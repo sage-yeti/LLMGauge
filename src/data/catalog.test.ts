@@ -50,6 +50,48 @@ describe("catalog registry", () => {
     }
   });
 
+  it("records Meta-sourced KV-cache architecture for the three text-only Llama variants", () => {
+    const expected = [
+      ["meta-llama-3-2-1b-instruct", 16, 8, 64, "2048 ÷ 32 = 64"],
+      ["meta-llama-3-2-3b-instruct", 28, 8, 128, "3072 ÷ 24 = 128"],
+      ["meta-llama-3-3-70b-instruct", 80, 8, 128, "8192 ÷ 64 = 128"],
+    ] as const;
+    const sourceUrl =
+      "https://github.com/meta-llama/llama-models/blob/main/models/sku_list.py";
+
+    for (const [
+      id,
+      layers,
+      kvHeads,
+      headDimension,
+      derivedDimension,
+    ] of expected) {
+      const entry = productionModels.find((candidate) => candidate.id === id);
+      expect(entry?.kvCacheMetadata).toMatchObject({
+        transformerLayers: layers,
+        keyValueHeads: kvHeads,
+        headDimension,
+        provenance: {
+          sourceUrl,
+          sourceType: "official-documentation",
+          confidence: "verified",
+          lastVerified: "2026-10-02",
+          note: expect.stringContaining(derivedDimension),
+        },
+      });
+    }
+
+    expect(
+      productionModels.find((entry) => entry.id === "google-gemma-3-1b-it")
+        ?.kvCacheMetadata,
+    ).toBeUndefined();
+    expect(
+      productionModels.find(
+        (entry) => entry.id === "meta-llama-3-1-8b-instruct",
+      )?.kvCacheMetadata?.transformerLayers,
+    ).toBe(32);
+  });
+
   it("records the requested GPU variants with manufacturer-backed specifications", () => {
     const expected = [
       [
