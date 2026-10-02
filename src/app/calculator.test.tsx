@@ -365,6 +365,33 @@ describe("compatibility calculator", () => {
     },
   );
 
+  it.each([
+    ["qwen-qwen3-4b", "0.56 GiB", "Qwen3-4B"],
+    ["qwen-qwen3-8b", "0.56 GiB", "Qwen3-8B"],
+    ["qwen-qwen3-14b", "0.63 GiB", "Qwen3-14B"],
+    ["qwen-qwen3-32b", "1 GiB", "Qwen3-32B"],
+  ] as const)(
+    "shows the sourced Qwen KV-cache estimate for %s in the single-model calculator",
+    (modelId, expectedCache, modelName) => {
+      renderCalculator();
+      choose("Model", modelId);
+      fireEvent.click(screen.getByText("Advanced settings"));
+      fireEvent.change(
+        screen.getByLabelText("Target context length (tokens)"),
+        { target: { value: "4096" } },
+      );
+      submit();
+
+      expect(screen.getAllByText("4,096 tokens").length).toBeGreaterThan(0);
+      expect(screen.getByText(expectedCache)).toBeTruthy();
+      expect(
+        screen
+          .getByRole("link", { name: "model-specific source" })
+          .getAttribute("href"),
+      ).toBe(`https://huggingface.co/Qwen/${modelName}/blob/main/config.json`);
+    },
+  );
+
   it("opens advanced settings to expose a hidden runtime validation error", () => {
     renderCalculator();
     const summary = screen.getByText("Advanced settings");
