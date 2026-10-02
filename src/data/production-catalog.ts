@@ -155,6 +155,21 @@ export const productionModels: readonly ModelDefinition[] = [
     license: "Llama 3.2 Community License",
     defaultContextLength: 4096,
     maxContextLength: 131072,
+    kvCacheMetadata: {
+      transformerLayers: 16,
+      keyValueHeads: 8,
+      headDimension: 64,
+      provenance: {
+        source:
+          "Meta llama-models Llama 3.2 1B Instruct architecture configuration",
+        sourceUrl:
+          "https://github.com/meta-llama/llama-models/blob/main/models/sku_list.py",
+        sourceType: "official-documentation",
+        confidence: "verified",
+        lastVerified: "2026-10-02",
+        note: "Meta lists 16 layers, model dimension 2048, 32 attention heads, and 8 KV heads for this exact text-only variant. Head dimension is derived as 2048 ÷ 32 = 64. The estimate assumes conventional full-context attention with FP16 cache elements.",
+      },
+    },
     provenance: modelProvenance(
       "Meta Llama 3.2 model card",
       "https://huggingface.co/meta-llama/Llama-3.2-1B-Instruct",
@@ -176,6 +191,21 @@ export const productionModels: readonly ModelDefinition[] = [
     license: "Llama 3.2 Community License",
     defaultContextLength: 4096,
     maxContextLength: 131072,
+    kvCacheMetadata: {
+      transformerLayers: 28,
+      keyValueHeads: 8,
+      headDimension: 128,
+      provenance: {
+        source:
+          "Meta llama-models Llama 3.2 3B Instruct architecture configuration",
+        sourceUrl:
+          "https://github.com/meta-llama/llama-models/blob/main/models/sku_list.py",
+        sourceType: "official-documentation",
+        confidence: "verified",
+        lastVerified: "2026-10-02",
+        note: "Meta lists 28 layers, model dimension 3072, 24 attention heads, and 8 KV heads for this exact text-only variant. Head dimension is derived as 3072 ÷ 24 = 128. The estimate assumes conventional full-context attention with FP16 cache elements.",
+      },
+    },
     provenance: modelProvenance(
       "Meta Llama 3.2 model card",
       "https://huggingface.co/meta-llama/Llama-3.2-3B-Instruct",
@@ -621,6 +651,21 @@ export const productionModels: readonly ModelDefinition[] = [
     supportedRuntimes: ["llama.cpp"],
     license: "Llama 3.3 Community License",
     maxContextLength: 131072,
+    kvCacheMetadata: {
+      transformerLayers: 80,
+      keyValueHeads: 8,
+      headDimension: 128,
+      provenance: {
+        source:
+          "Meta llama-models Llama 3.3 70B Instruct architecture configuration",
+        sourceUrl:
+          "https://github.com/meta-llama/llama-models/blob/main/models/sku_list.py",
+        sourceType: "official-documentation",
+        confidence: "verified",
+        lastVerified: "2026-10-02",
+        note: "Meta lists 80 layers, model dimension 8192, 64 attention heads, and 8 KV heads for this exact text-only variant. Head dimension is derived as 8192 ÷ 64 = 128. The estimate assumes conventional full-context attention with FP16 cache elements.",
+      },
+    },
     provenance: modelProvenance(
       "Meta Llama 3.3 70B Instruct model card",
       "https://huggingface.co/meta-llama/Llama-3.3-70B-Instruct",
