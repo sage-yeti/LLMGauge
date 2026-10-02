@@ -75,6 +75,59 @@ describe("compatibility engine", () => {
     },
   );
 
+  it.each([
+    ["qwen-qwen3-4b", 0.5625, 2.25],
+    ["qwen-qwen3-8b", 0.5625, 2.25],
+    ["qwen-qwen3-14b", 0.625, 2.5],
+    ["qwen-qwen3-32b", 1, 4],
+  ])(
+    "estimates sourced dense %s KV cache at explicit contexts and scales linearly",
+    (modelId, expectedAt4096, expectedAt16384) => {
+      const model = getModelById(modelId)!;
+      const estimate = (targetContextLength: number) =>
+        estimateKvCache(model, fixtureHardware.cpuOnly, {
+          targetContextLength,
+        });
+
+      expect(estimate(4096)).toMatchObject({
+        status: "estimated",
+        sizeGiB: expectedAt4096,
+        targetContextLength: 4096,
+        precision: "FP16",
+        placement: "unverified",
+        includedInFit: false,
+      });
+      expect(estimate(16384)).toMatchObject({
+        status: "estimated",
+        sizeGiB: expectedAt16384,
+        targetContextLength: 16384,
+        includedInFit: false,
+      });
+      expect(estimateKvCache(model, fixtureHardware.cpuOnly).status).toBe(
+        "unavailable",
+      );
+    },
+  );
+
+  it.each([
+    "qwen-qwen3-8-27b",
+    "qwen-qwen3-coder-30b-a3b-instruct",
+    "qwen-qwen3-coder-next",
+    "qwen-qwen3-vl-8b-instruct",
+    "qwen-qwen3-vl-30b-a3b-instruct",
+    "qwen-qwen3-5-4b",
+  ])("keeps unsupported Qwen-family %s cache estimates unavailable", (id) => {
+    expect(
+      estimateKvCache(getModelById(id)!, fixtureHardware.cpuOnly, {
+        targetContextLength: 4096,
+      }),
+    ).toMatchObject({
+      status: "unavailable",
+      sizeGiB: null,
+      includedInFit: false,
+    });
+  });
+
   it("keeps missing context, unsupported architecture, and over-limit targets unavailable", () => {
     expect(estimateKvCache(llama31, fixtureHardware.cpuOnly).status).toBe(
       "unavailable",
