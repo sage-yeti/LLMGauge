@@ -134,10 +134,11 @@ export function ModelCatalogPage({ model }: { model: ModelDefinition }) {
         <p className="catalog-copy">
           Estimates use the cataloged model-weight size (or a parameter-based
           estimate), apply weight overhead, and include standard runtime
-          overhead. They do not include context/KV-cache memory. Real
-          requirements vary with runtime, drivers, and other system use. A model
-          page cannot determine compatibility without your hardware profile; use
-          the calculator for that assessment.
+          overhead. Context/KV-cache estimates are shown separately only when a
+          target context and supported sourced architecture metadata are
+          available. Real requirements vary with runtime, drivers, and other
+          system use. A model page cannot determine compatibility without your
+          hardware profile; use the calculator for that assessment.
         </p>
         <p className="provenance-note">
           {provenanceText(

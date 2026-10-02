@@ -35,8 +35,9 @@ export function RuntimeFields({
           <div>
             <h3>Optional runtime planning</h3>
             <p>
-              These inputs add explanations only. They do not verify drivers,
-              backend support, speed, or exact context memory.
+              These inputs can establish a cache-memory placement assumption.
+              They do not verify drivers, backend support, actual allocation, or
+              speed.
             </p>
           </div>
         </div>
@@ -118,7 +119,7 @@ export function RuntimeFields({
           <Field
             id="target-context-length"
             label="Target context length (tokens)"
-            help="Optional planning target; exact context memory is not estimated."
+            help="Optional planning target for the FP16 KV-cache estimate. Cache memory is included in fit only when its placement is explicit; otherwise it remains advisory."
             error={fieldErrors.targetContextLength}
             required={false}
           >

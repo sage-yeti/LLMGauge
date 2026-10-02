@@ -303,6 +303,8 @@ describe("compatibility calculator", () => {
 
   it("shows optional runtime assumptions and context warnings", () => {
     renderCalculator();
+    choose("Model", "meta-llama-3-1-8b-instruct");
+    choose("GPU", "nvidia-rtx-4060-8gb");
     const summary = screen.getByText("Advanced settings");
     fireEvent.click(summary);
     expect(screen.getByLabelText("Runtime")).toBeTruthy();
@@ -321,7 +323,12 @@ describe("compatibility calculator", () => {
     ).toBeTruthy();
     expect(screen.getAllByText("llama.cpp").length).toBeGreaterThan(1);
     expect(
-      screen.getByText(/above the practical starting guidance/),
+      screen.getByText(/requested context cannot be compared/),
+    ).toBeTruthy();
+    expect(screen.getByText("1 GiB")).toBeTruthy();
+    expect(screen.getByText("Dedicated VRAM")).toBeTruthy();
+    expect(
+      screen.getByText("KV cache included in the assessed memory total"),
     ).toBeTruthy();
     expect(
       screen.getByText(/do not prove local runtime or backend support/),
@@ -394,7 +401,7 @@ describe("Apple hardware workflow", () => {
       screen.getAllByText("Fits estimated unified memory").length,
     ).toBeGreaterThan(0);
     expect(
-      screen.getAllByText("Estimated unified memory (approx.)").length,
+      screen.getAllByText("Total assessed unified memory (approx.)").length,
     ).toBeGreaterThan(0);
     expect(screen.getAllByText("Not applicable").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Unverified (advisory)").length).toBeGreaterThan(
