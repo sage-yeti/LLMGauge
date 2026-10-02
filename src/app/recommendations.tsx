@@ -1,6 +1,5 @@
 "use client";
 
-import { formatMemoryGiB } from "./format-memory";
 import { UnifiedMemoryNote } from "./unified-memory-note";
 import { applyDetectedHardware } from "@/application/hardware";
 import { FormEvent, useState } from "react";
@@ -17,6 +16,7 @@ import {
 import type { GpuDefinition, ModelDefinition } from "@/domain/types";
 import { HardwareFields } from "./hardware-fields";
 import { ContextGuidanceView } from "./context-guidance";
+import { KvCacheResult } from "./kv-cache-result";
 import { RuntimeFields } from "./runtime-fields";
 import { RuntimeProfileView } from "./runtime-profile-view";
 import { RuntimeRequirementNote } from "./runtime-requirement-note";
@@ -264,28 +264,16 @@ function RecommendationCard({
         guidance={result.contextGuidance}
         headingId={`context-guidance-${entry.model.id}-${entry.quantization.id}`}
       />
+      <KvCacheResult
+        result={result}
+        headingId={`kv-cache-${entry.model.id}-${entry.quantization.id}`}
+      />
       <RuntimeProfileView guidance={result.runtimeGuidance} />
       <UnifiedMemoryNote result={result} />
       <dl className="recommendation-stats">
         <div>
           <dt>Execution</dt>
           <dd>{labelForExecution(result.executionMode)}</dd>
-        </div>
-        <div>
-          <dt>Estimated VRAM (approx.)</dt>
-          <dd>
-            {result.memory.estimatedVramGiB === null
-              ? "Not applicable"
-              : formatMemoryGiB(result.memory.estimatedVramGiB)}
-          </dd>
-        </div>
-        <div>
-          <dt>
-            {result.memory.estimatedUnifiedMemoryGiB !== undefined
-              ? "Estimated unified memory (approx.)"
-              : "Estimated system RAM (approx.)"}
-          </dt>
-          <dd>{formatMemoryGiB(result.memory.estimatedSystemRamGiB)}</dd>
         </div>
       </dl>
       {result.limitingFactors.length > 0 && (

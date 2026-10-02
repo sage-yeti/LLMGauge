@@ -71,6 +71,31 @@ describe("domain schemas", () => {
     expect(modelDefinitionSchema.safeParse(fixtureModel).success).toBe(true);
   });
 
+  it("validates sourced KV-cache architecture metadata as positive integers", () => {
+    const kvCacheMetadata = {
+      transformerLayers: 32,
+      keyValueHeads: 8,
+      headDimension: 128,
+      provenance: fixtureProvenance,
+    };
+    expect(
+      modelDefinitionSchema.safeParse({ ...fixtureModel, kvCacheMetadata })
+        .success,
+    ).toBe(true);
+    expect(
+      modelDefinitionSchema.safeParse({
+        ...fixtureModel,
+        kvCacheMetadata: { ...kvCacheMetadata, keyValueHeads: 0 },
+      }).success,
+    ).toBe(false);
+    expect(
+      modelDefinitionSchema.safeParse({
+        ...fixtureModel,
+        kvCacheMetadata: { ...kvCacheMetadata, headDimension: 128.5 },
+      }).success,
+    ).toBe(false);
+  });
+
   it("reject zero system RAM and negative memory values", () => {
     expect(
       hardwareProfileSchema.safeParse({

@@ -12,6 +12,7 @@ import type {
   HardwareProfile,
   ModelDefinition,
   MemoryEstimate,
+  KvCacheAssessment,
   QuantizationDefinition,
   RuntimeProfile,
 } from "@/domain/types";
@@ -97,8 +98,15 @@ export function evaluateCompatibility(
   )
     throw new Error("Quantization is not available for this model");
   validatePolicy(policy);
-  const memory = estimateMemory(model, quantization, policy);
   const appleUnified = hardware.memoryMode === "apple-unified";
+  const baseMemory = estimateMemory(model, quantization, policy);
+  const contextGuidance = buildContextGuidance(model, policy);
+  const runtimeGuidance = buildRuntimeProfileGuidance(
+    runtimeProfile,
+    contextGuidance,
+  );
+  const kvCache = estimateKvCache(model, hardware, runtimeProfile);
+  const memory = applyKvCacheToMemory(baseMemory, kvCache);
   const vram = hardware.gpu?.vramGiB ?? 0;
   const requiredVramGiB =
     memory.estimatedVramGiB + policy.availableMemorySafetyMarginGiB;
@@ -116,12 +124,27 @@ export function evaluateCompatibility(
         "This is a deterministic memory estimate, not a benchmark or performance guarantee.",
     },
   ];
-  const contextGuidance = buildContextGuidance(model, policy);
-  const runtimeGuidance = buildRuntimeProfileGuidance(
-    runtimeProfile,
-    contextGuidance,
-  );
   reasons.push(...contextGuidanceReasons(contextGuidance));
+  if (kvCache.status === "unavailable") {
+    reasons.push({
+      code: "kv-cache-estimate-unavailable",
+      severity: "warning",
+      message: kvCache.reason,
+    });
+  } else if (!kvCache.includedInFit) {
+    reasons.push({
+      code: "kv-cache-placement-unverified",
+      severity: "warning",
+      message:
+        "The KV-cache estimate is advisory and is excluded from this fit assessment because its memory placement is not established by the selected settings.",
+    });
+  } else {
+    reasons.push({
+      code: "kv-cache-included",
+      severity: "info",
+      message: `The estimated FP16 KV cache (${kvCache.sizeGiB!.toFixed(2)} GiB) is included in the ${kvCache.placement === "vram" ? "VRAM" : kvCache.placement === "system-ram" ? "system RAM" : "unified-memory"} fit requirement.`,
+    });
+  }
   if (policy.availableMemorySafetyMarginGiB > 0)
     reasons.push({
       code: "safety-margin",
@@ -220,7 +243,9 @@ export function evaluateCompatibility(
         reason.code === "context-estimation-unavailable" ||
         reason.code === "safety-margin" ||
         reason.code === "integrated-shared-memory" ||
-        reason.code === "unified-execution-unverified",
+        reason.code === "unified-execution-unverified" ||
+        reason.code === "kv-cache-estimate-unavailable" ||
+        reason.code === "kv-cache-placement-unverified",
     )
     .map((reason) => reason.message);
   return {
@@ -238,6 +263,7 @@ export function evaluateCompatibility(
     recommendedQuantizationId: null,
     contextGuidance,
     runtimeGuidance,
+    kvCache,
     limitingFactors,
     messages: [
       `${model.displayName} (${quantization.displayName}) is classified as ${level}.`,
@@ -248,10 +274,139 @@ export function evaluateCompatibility(
   };
 }
 
+/** Estimate conventional FP16 K/V cache only from model-specific sourced metadata. */
+export function estimateKvCache(
+  model: ModelDefinition,
+  hardware: HardwareProfile,
+  runtimeProfile?: RuntimeProfile,
+): KvCacheAssessment {
+  const targetContextLength = runtimeProfile?.targetContextLength ?? null;
+  const unavailable = (reason: string): KvCacheAssessment => ({
+    status: "unavailable",
+    sizeGiB: null,
+    targetContextLength,
+    precision: "FP16",
+    placement: "unavailable",
+    includedInFit: false,
+    reason,
+    sourceUrl: null,
+  });
+  if (targetContextLength === null)
+    return unavailable(
+      "KV-cache memory is unavailable because no target context was supplied; no model maximum or default is substituted.",
+    );
+  if (!model.kvCacheMetadata)
+    return unavailable(
+      "KV-cache memory is unavailable because this model's attention-cache architecture metadata is not sourced and supported by this estimate.",
+    );
+  if (
+    model.maxContextLength !== undefined &&
+    targetContextLength > model.maxContextLength
+  )
+    return unavailable(
+      `KV-cache memory is unavailable because the target context exceeds the documented model maximum of ${model.maxContextLength.toLocaleString()} tokens.`,
+    );
+
+  const { transformerLayers, keyValueHeads, headDimension } =
+    model.kvCacheMetadata;
+  const sizeGiB =
+    (2 *
+      transformerLayers *
+      keyValueHeads *
+      headDimension *
+      2 *
+      targetContextLength) /
+    2 ** 30;
+  if (!Number.isFinite(sizeGiB))
+    return unavailable(
+      "KV-cache memory could not be represented as a finite estimate.",
+    );
+
+  if (hardware.memoryMode === "apple-unified")
+    return {
+      status: "estimated",
+      sizeGiB,
+      targetContextLength,
+      precision: "FP16",
+      placement: "unified-memory",
+      includedInFit: true,
+      reason:
+        "The cache is included in the single pooled-memory requirement; actual CPU/Metal allocation remains unverified.",
+      sourceUrl: model.kvCacheMetadata.provenance.sourceUrl,
+    };
+
+  const profile = runtimeProfile ?? {};
+  const explicitCpu =
+    (profile.executionPreference === "cpu" &&
+      (!profile.backend || profile.backend === "cpu")) ||
+    (profile.backend === "cpu" &&
+      (!profile.executionPreference || profile.executionPreference === "cpu"));
+  if (explicitCpu)
+    return {
+      status: "estimated",
+      sizeGiB,
+      targetContextLength,
+      precision: "FP16",
+      placement: "system-ram",
+      includedInFit: true,
+      reason:
+        "The selected CPU execution setting places the cache estimate in system RAM.",
+      sourceUrl: model.kvCacheMetadata.provenance.sourceUrl,
+    };
+
+  if (
+    profile.executionPreference === "full-gpu" &&
+    (profile.backend === "cuda" || profile.backend === "vulkan") &&
+    hardware.gpu?.kind === "discrete" &&
+    hardware.gpu.vramGiB > 0
+  )
+    return {
+      status: "estimated",
+      sizeGiB,
+      targetContextLength,
+      precision: "FP16",
+      placement: "vram",
+      includedInFit: true,
+      reason:
+        "The selected full-GPU preference and explicit CUDA/Vulkan backend assign the cache estimate to dedicated VRAM; actual loading remains unverified.",
+      sourceUrl: model.kvCacheMetadata.provenance.sourceUrl,
+    };
+
+  return {
+    status: "estimated",
+    sizeGiB,
+    targetContextLength,
+    precision: "FP16",
+    placement: "unverified",
+    includedInFit: false,
+    reason:
+      "The FP16 KV-cache estimate is available, but automatic, partial-offload, or unspecified execution does not establish its RAM/VRAM placement.",
+    sourceUrl: model.kvCacheMetadata.provenance.sourceUrl,
+  };
+}
+
+function applyKvCacheToMemory(
+  base: MemoryEstimate,
+  kvCache: KvCacheAssessment,
+): MemoryEstimate {
+  if (kvCache.status !== "estimated" || !kvCache.includedInFit) return base;
+  const cacheGiB = kvCache.sizeGiB!;
+  if (kvCache.placement === "vram")
+    return {
+      ...base,
+      estimatedVramGiB: base.estimatedVramGiB + cacheGiB,
+      estimatedSystemRamGiB: base.estimatedSystemRamGiB,
+    };
+  return {
+    ...base,
+    estimatedVramGiB: base.estimatedVramGiB,
+    estimatedSystemRamGiB: base.estimatedSystemRamGiB + cacheGiB,
+  };
+}
+
 /**
- * Produces advisory context guidance without changing memory estimates or
- * compatibility classification. KV-cache size and runtime-specific context
- * costs are intentionally not modeled here.
+ * Produces practical context guidance separately from KV-cache estimation.
+ * The advisory recommendation itself does not change compatibility.
  */
 export function buildContextGuidance(
   model: ModelDefinition,
@@ -275,7 +430,7 @@ export function buildContextGuidance(
       message:
         "A practical context recommendation is unavailable because this model's context metadata is incomplete or inconsistent.",
       assumptions: [
-        "No KV-cache size or runtime-specific context memory is estimated.",
+        "KV-cache memory is estimated separately only when an explicit target context and supported sourced architecture metadata are available.",
         "Use the model documentation and start with a conservative context after confirming the runtime supports it.",
       ],
       reasonCodes: [
@@ -301,7 +456,7 @@ export function buildContextGuidance(
     message: `Start around ${recommendedContextLength.toLocaleString()} tokens. The model metadata allows up to ${maxContextLength.toLocaleString()} tokens, but larger contexts require additional memory and may be impractical on this hardware.`,
     assumptions: [
       "The recommendation uses the lower of the model default context and the configured conservative default.",
-      "KV-cache size, runtime settings, and context-related performance are not estimated.",
+      "The practical starting point is context guidance only; a separate target context is required for the KV-cache estimate.",
     ],
     reasonCodes: [
       "model-context-limit",
@@ -413,7 +568,7 @@ function contextGuidanceReasons(
         code,
         severity: "warning",
         message:
-          "Context guidance is conservative and advisory; it does not calculate KV-cache memory.",
+          "Context guidance is conservative and advisory; the separate KV-cache estimate uses only an explicit target context and supported sourced metadata.",
       };
     if (code === "context-estimation-unavailable")
       return {
@@ -425,7 +580,7 @@ function contextGuidanceReasons(
       code,
       severity: "warning",
       message:
-        "Context memory is an approximate, runtime-dependent assumption and is not included in the compatibility classification.",
+        "The practical context recommendation is advisory; KV-cache memory is assessed separately only when a target is supplied and cache placement is known.",
     };
   });
 }

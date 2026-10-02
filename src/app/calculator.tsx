@@ -1,6 +1,5 @@
 "use client";
 
-import { formatMemoryGiB } from "./format-memory";
 import { UnifiedMemoryNote } from "./unified-memory-note";
 import { applyDetectedHardware } from "@/application/hardware";
 import { FormEvent, useState } from "react";
@@ -18,6 +17,7 @@ import type {
 import type { HardwareFormValues } from "@/application/hardware";
 import { Field, HardwareFields } from "./hardware-fields";
 import { ContextGuidanceView } from "./context-guidance";
+import { KvCacheResult } from "./kv-cache-result";
 import { RuntimeFields } from "./runtime-fields";
 import { RuntimeProfileView } from "./runtime-profile-view";
 import { RuntimeRequirementNote } from "./runtime-requirement-note";
@@ -279,22 +279,6 @@ function ResultPanel({
           <dt>Execution</dt>
           <dd>{executionLabels[result.executionMode]}</dd>
         </div>
-        <div>
-          <dt>Estimated VRAM (approx.)</dt>
-          <dd>
-            {result.memory.estimatedVramGiB === null
-              ? "Not applicable"
-              : formatMemoryGiB(result.memory.estimatedVramGiB)}
-          </dd>
-        </div>
-        <div>
-          <dt>
-            {result.memory.estimatedUnifiedMemoryGiB !== undefined
-              ? "Estimated unified memory (approx.)"
-              : "Estimated system RAM (approx.)"}
-          </dt>
-          <dd>{formatMemoryGiB(result.memory.estimatedSystemRamGiB)}</dd>
-        </div>
       </dl>
       {recommended && (
         <div className="recommendation">
@@ -307,6 +291,7 @@ function ResultPanel({
           </small>
         </div>
       )}
+      <KvCacheResult result={result} />
       <ContextGuidanceView guidance={result.contextGuidance} />
       <RuntimeProfileView guidance={result.runtimeGuidance} />
       <ResultList

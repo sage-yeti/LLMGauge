@@ -334,6 +334,46 @@ describe("recommendModels", () => {
       targetContextLength: 4096,
     });
   });
+
+  it("ranks explicit CPU recommendations using cache-inclusive RAM requirements", () => {
+    const llama = productionModels.find(
+      (model) => model.id === "meta-llama-3-1-8b-instruct",
+    )!;
+    const candidate = {
+      id: "sourced-size",
+      displayName: "Sourced size",
+      sizeGiB: 2,
+      provenance: fixtureProvenance,
+    };
+    const supported = {
+      ...llama,
+      quantizations: [candidate],
+    };
+    const noCache: ModelDefinition = {
+      ...supported,
+      id: "zz-no-cache-metadata",
+      slug: "zz-no-cache-metadata",
+      displayName: "No cache metadata",
+      kvCacheMetadata: undefined,
+    };
+    const hardware = { ...fixtureHardware.cpuOnly, systemRamGiB: 128 };
+    const noTarget = recommendModels(hardware, [supported, noCache]);
+    const withTarget = recommendModels(hardware, [supported, noCache], {
+      executionPreference: "cpu",
+      targetContextLength: 4096,
+    });
+    expect(noTarget.recommendations.map((entry) => entry.model.id)).toEqual([
+      "meta-llama-3-1-8b-instruct",
+      "zz-no-cache-metadata",
+    ]);
+    expect(withTarget.recommendations.map((entry) => entry.model.id)).toEqual([
+      "zz-no-cache-metadata",
+      "meta-llama-3-1-8b-instruct",
+    ]);
+    expect(withTarget.recommendations[1].result.kvCache.includedInFit).toBe(
+      true,
+    );
+  });
 });
 
 describe("Apple recommendation policy", () => {

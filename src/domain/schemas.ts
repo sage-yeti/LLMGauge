@@ -4,6 +4,7 @@ import type {
   HardwareProfile,
   ModelDefinition,
   MemoryEstimateScope,
+  KvCacheMetadata,
   QuantizationDefinition,
   RuntimeRequirement,
   RuntimeProfile,
@@ -63,6 +64,12 @@ const memoryEstimateScopeSchema: z.ZodType<MemoryEstimateScope> = z.object({
     .refine((value) => value.startsWith("https://"), {
       message: "Source URLs must use HTTPS.",
     }),
+});
+const kvCacheMetadataSchema: z.ZodType<KvCacheMetadata> = z.object({
+  transformerLayers: z.number().int().positive(),
+  keyValueHeads: z.number().int().positive(),
+  headDimension: z.number().int().positive(),
+  provenance: provenanceSchema,
 });
 
 export const hardwareProfileSchema: z.ZodType<HardwareProfile> = z
@@ -140,6 +147,7 @@ export const modelDefinitionSchema: z.ZodType<ModelDefinition> = z.object({
   license: z.string().trim().min(1).optional(),
   defaultContextLength: z.number().int().positive().optional(),
   maxContextLength: z.number().int().positive().optional(),
+  kvCacheMetadata: kvCacheMetadataSchema.optional(),
   runtimeRequirement: runtimeRequirementSchema.optional(),
   memoryEstimateScope: memoryEstimateScopeSchema.optional(),
   quantizations: z.array(quantizationSchema),
@@ -162,6 +170,7 @@ export const modelMetadataSchema: z.ZodType<
   license: z.string().trim().min(1).optional(),
   defaultContextLength: z.number().int().positive().optional(),
   maxContextLength: z.number().int().positive().optional(),
+  kvCacheMetadata: kvCacheMetadataSchema.optional(),
   runtimeRequirement: runtimeRequirementSchema.optional(),
   memoryEstimateScope: memoryEstimateScopeSchema.optional(),
   provenance: provenanceSchema,

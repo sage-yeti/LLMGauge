@@ -112,16 +112,21 @@ function compareEntries(
     b.quantization,
   );
   if (metadataDifference) return metadataDifference;
-  const memoryDifference =
-    (a.result.memory.estimatedUnifiedMemoryGiB ??
-      a.result.memory.estimatedVramGiB ??
-      a.result.memory.estimatedSystemRamGiB) -
-    (b.result.memory.estimatedUnifiedMemoryGiB ??
-      b.result.memory.estimatedVramGiB ??
-      b.result.memory.estimatedSystemRamGiB);
+  const memoryDifference = assessedMemory(a) - assessedMemory(b);
   if (memoryDifference) return memoryDifference;
   const modelDifference = a.model.id.localeCompare(b.model.id);
   return modelDifference || a.quantization.id.localeCompare(b.quantization.id);
+}
+
+function assessedMemory(entry: RecommendationEntry): number {
+  const { kvCache, memory } = entry.result;
+  if (memory.estimatedUnifiedMemoryGiB !== undefined)
+    return memory.estimatedUnifiedMemoryGiB;
+  if (kvCache.includedInFit && kvCache.placement === "system-ram")
+    return memory.estimatedSystemRamGiB;
+  if (kvCache.includedInFit && kvCache.placement === "vram")
+    return memory.estimatedVramGiB ?? memory.estimatedSystemRamGiB;
+  return memory.estimatedVramGiB ?? memory.estimatedSystemRamGiB;
 }
 
 function makeExplanation(result: CompatibilityResult): string {

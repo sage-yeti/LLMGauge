@@ -81,6 +81,26 @@ describe("recommendations interface", () => {
     }
   });
 
+  it("uses explicit target context consistently in recommendation memory results", () => {
+    renderRecommendations();
+    const summary = screen.getByText("Advanced settings");
+    fireEvent.click(summary);
+    fireEvent.change(screen.getByLabelText("Target context length (tokens)"), {
+      target: { value: "4096" },
+    });
+    submit();
+    const card = screen
+      .getByRole("heading", { name: "Llama 3.1 8B Instruct" })
+      .closest("article");
+    expect(card?.textContent).toContain("4,096 tokens");
+    expect(card?.textContent).toContain("0.5 GiB");
+    expect(card?.textContent).toContain("Cache placement");
+    expect(card?.textContent).toContain("Unverified");
+    expect(card?.textContent).toContain(
+      "KV cache not included in the fit decision",
+    );
+  });
+
   it("starts with an empty CPU name and accepts a user-entered name", () => {
     renderRecommendations();
     const cpuInput = screen.getByLabelText("CPU") as HTMLInputElement;
@@ -394,7 +414,7 @@ describe("Apple hardware workflow", () => {
       screen.getAllByText("Fits estimated unified memory").length,
     ).toBeGreaterThan(0);
     expect(
-      screen.getAllByText("Estimated unified memory (approx.)").length,
+      screen.getAllByText("Total assessed unified memory (approx.)").length,
     ).toBeGreaterThan(0);
     expect(screen.getAllByText("Not applicable").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Unverified (advisory)").length).toBeGreaterThan(

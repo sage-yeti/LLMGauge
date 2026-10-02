@@ -2,6 +2,7 @@ import { getModelById } from "@/data/catalog";
 import { describe, expect, it } from "vitest";
 import {
   buildContextGuidance,
+  estimateKvCache,
   evaluateCompatibility,
   estimateMemory,
   recommendQuantization,
@@ -27,6 +28,193 @@ function expectMemory(actual: MemoryEstimate, expected: MemoryEstimate) {
 
 describe("compatibility engine", () => {
   const eightBModel = { ...fixtureModel, parameterCountBillions: 8 };
+
+  const llama31 = getModelById("meta-llama-3-1-8b-instruct")!;
+
+  it("estimates a sourced FP16 KV cache linearly from an explicit target", () => {
+    const estimate = (targetContextLength: number) =>
+      estimateKvCache(llama31, fixtureHardware.cpuOnly, {
+        targetContextLength,
+      });
+    expect(estimate(4096)).toMatchObject({
+      status: "estimated",
+      sizeGiB: 0.5,
+      targetContextLength: 4096,
+      precision: "FP16",
+      placement: "unverified",
+      includedInFit: false,
+    });
+    expect(estimate(8192).sizeGiB).toBe(1);
+  });
+
+  it("keeps missing context, unsupported architecture, and over-limit targets unavailable", () => {
+    expect(estimateKvCache(llama31, fixtureHardware.cpuOnly).status).toBe(
+      "unavailable",
+    );
+    expect(
+      estimateKvCache(fixtureModel, fixtureHardware.cpuOnly, {
+        targetContextLength: 4096,
+      }),
+    ).toMatchObject({ status: "unavailable", sizeGiB: null });
+    expect(
+      estimateKvCache(llama31, fixtureHardware.cpuOnly, {
+        targetContextLength: 131073,
+      }),
+    ).toMatchObject({ status: "unavailable", sizeGiB: null });
+  });
+
+  it("includes cache in fit only for explicit placement and preserves unverified PC fit", () => {
+    const quantization = llama31.quantizations[0];
+    const base = estimateMemory(llama31, quantization);
+    const ramAtBase = base.estimatedSystemRamGiB + 0.25;
+    const hardware = { ...fixtureHardware.cpuOnly, systemRamGiB: ramAtBase };
+    const unverified = evaluateCompatibility(
+      hardware,
+      llama31,
+      quantization,
+      undefined,
+      { targetContextLength: 4096 },
+    );
+    expect(unverified.level).toBe("cpu-only");
+    expect(unverified.kvCache).toMatchObject({
+      status: "estimated",
+      includedInFit: false,
+      placement: "unverified",
+    });
+    expect(unverified.memory.estimatedSystemRamGiB).toBe(
+      base.estimatedSystemRamGiB,
+    );
+
+    const cpuPlaced = evaluateCompatibility(
+      hardware,
+      llama31,
+      quantization,
+      undefined,
+      { executionPreference: "cpu", targetContextLength: 4096 },
+    );
+    expect(cpuPlaced.level).toBe("unsupported");
+    expect(cpuPlaced.kvCache).toMatchObject({
+      placement: "system-ram",
+      includedInFit: true,
+      sizeGiB: 0.5,
+    });
+    expect(cpuPlaced.memory.estimatedSystemRamGiB).toBe(
+      base.estimatedSystemRamGiB + 0.5,
+    );
+    const requiredRam =
+      base.estimatedSystemRamGiB +
+      0.5 +
+      DEFAULT_COMPATIBILITY_POLICY.availableMemorySafetyMarginGiB;
+    for (const [delta, level] of [
+      [-0.000001, "unsupported"],
+      [0, "cpu-only"],
+      [0.000001, "cpu-only"],
+    ] as const) {
+      expect(
+        evaluateCompatibility(
+          { ...fixtureHardware.cpuOnly, systemRamGiB: requiredRam + delta },
+          llama31,
+          quantization,
+          undefined,
+          { executionPreference: "cpu", targetContextLength: 4096 },
+        ).level,
+      ).toBe(level);
+    }
+  });
+
+  it("includes supported cache in Apple pooled memory once and uses inclusive thresholds", () => {
+    const quantization = llama31.quantizations[0];
+    const base = estimateMemory(llama31, quantization);
+    const required =
+      base.estimatedSystemRamGiB +
+      0.5 +
+      DEFAULT_COMPATIBILITY_POLICY.availableMemorySafetyMarginGiB;
+    const hardware = (systemRamGiB: number) => ({
+      ...fixtureHardware.cpuOnly,
+      memoryMode: "apple-unified" as const,
+      operatingSystem: "macos" as const,
+      systemRamGiB,
+    });
+    const result = (systemRamGiB: number) =>
+      evaluateCompatibility(
+        hardware(systemRamGiB),
+        llama31,
+        quantization,
+        undefined,
+        { targetContextLength: 4096 },
+      );
+    expect(result(required - 0.000001).level).toBe("unsupported");
+    const atBoundary = result(required);
+    expect(atBoundary.level).toBe("unified-memory-fit");
+    expect(atBoundary.kvCache).toMatchObject({
+      placement: "unified-memory",
+      includedInFit: true,
+    });
+    expect(atBoundary.memory.estimatedSystemRamGiB).toBe(
+      base.estimatedSystemRamGiB + 0.5,
+    );
+    expect(result(required + 0.000001).level).toBe("unified-memory-fit");
+  });
+
+  it("accounts for cache in VRAM only with an explicit full-GPU backend selection", () => {
+    const quantization = llama31.quantizations[0];
+    const base = estimateMemory(llama31, quantization);
+    const vram =
+      base.estimatedVramGiB +
+      DEFAULT_COMPATIBILITY_POLICY.availableMemorySafetyMarginGiB +
+      0.25;
+    const hardware = {
+      ...fixtureHardware.gpu,
+      gpu: { ...fixtureHardware.gpu.gpu!, vramGiB: vram },
+      systemRamGiB: base.estimatedSystemRamGiB + 1,
+    };
+    const automatic = evaluateCompatibility(
+      hardware,
+      llama31,
+      quantization,
+      undefined,
+      { targetContextLength: 4096 },
+    );
+    const fullGpu = evaluateCompatibility(
+      hardware,
+      llama31,
+      quantization,
+      undefined,
+      {
+        backend: "cuda",
+        executionPreference: "full-gpu",
+        targetContextLength: 4096,
+      },
+    );
+    expect(automatic.level).toBe("gpu-capable");
+    expect(automatic.kvCache.includedInFit).toBe(false);
+    expect(fullGpu.level).toBe("partial-offload");
+    expect(fullGpu.kvCache).toMatchObject({
+      placement: "vram",
+      includedInFit: true,
+    });
+    expect(fullGpu.memory.estimatedVramGiB).toBe(base.estimatedVramGiB + 0.5);
+    const exactVram =
+      base.estimatedVramGiB +
+      0.5 +
+      DEFAULT_COMPATIBILITY_POLICY.availableMemorySafetyMarginGiB;
+    expect(
+      evaluateCompatibility(
+        {
+          ...hardware,
+          gpu: { ...hardware.gpu!, vramGiB: exactVram },
+        },
+        llama31,
+        quantization,
+        undefined,
+        {
+          backend: "cuda",
+          executionPreference: "full-gpu",
+          targetContextLength: 4096,
+        },
+      ).level,
+    ).toBe("gpu-capable");
+  });
 
   it("converts 4 billion fallback weight bytes to GiB before applying overhead", () => {
     // Independent byte reference: 8 billion 4-bit weights = 4,000,000,000 bytes.
@@ -451,6 +639,7 @@ describe("compatibility engine", () => {
       "recommendedQuantizationId",
       "contextGuidance",
       "runtimeGuidance",
+      "kvCache",
       "limitingFactors",
       "messages",
       "reasons",
@@ -506,7 +695,7 @@ describe("compatibility engine", () => {
     ]);
     expect(result.warnings).toEqual(
       expect.arrayContaining([
-        "Context guidance is conservative and advisory; it does not calculate KV-cache memory.",
+        "Context guidance is conservative and advisory; the separate KV-cache estimate uses only an explicit target context and supported sourced metadata.",
       ]),
     );
   });
@@ -673,6 +862,21 @@ describe("Apple unified-memory assessment", () => {
         quantization.sizeGiB! * 1.12 + 0.75 + 2,
       );
       expect(result.memory.estimatedVramGiB).toBeNull();
+      const withTarget = evaluateCompatibility(
+        apple(128),
+        sourced,
+        quantization,
+        undefined,
+        { targetContextLength: 4096 },
+      );
+      expect(withTarget.kvCache).toMatchObject({
+        status: "unavailable",
+        sizeGiB: null,
+        includedInFit: false,
+      });
+      expect(withTarget.memory.estimatedUnifiedMemoryGiB).toBe(
+        result.memory.estimatedUnifiedMemoryGiB,
+      );
     },
   );
   it("never infers Apple semantics from macOS or integrated graphics", () => {
