@@ -134,6 +134,40 @@ describe("recommendations interface", () => {
     }
   });
 
+  it("shows all four sourced dense Qwen3 estimates with provenance in recommendations", () => {
+    renderRecommendations();
+    fireEvent.change(screen.getByLabelText("System RAM (GiB)"), {
+      target: { value: "256" },
+    });
+    fireEvent.click(screen.getByText("Advanced settings"));
+    fireEvent.change(screen.getByLabelText("Target context length (tokens)"), {
+      target: { value: "4096" },
+    });
+    submit();
+
+    for (const [displayName, estimate, modelName] of [
+      ["Qwen3 4B", "0.56 GiB", "Qwen3-4B"],
+      ["Qwen3 8B", "0.56 GiB", "Qwen3-8B"],
+      ["Qwen3 14B", "0.63 GiB", "Qwen3-14B"],
+      ["Qwen3 32B", "1 GiB", "Qwen3-32B"],
+    ]) {
+      const card = screen
+        .getByRole("heading", { name: displayName })
+        .closest("article");
+      expect(card?.textContent).toContain("4,096 tokens");
+      expect(card?.textContent).toContain(estimate);
+      expect(card?.textContent).toContain("Unverified");
+      expect(card?.textContent).toContain(
+        "KV cache not included in the fit decision",
+      );
+      expect(
+        card?.querySelector(
+          `a[href="https://huggingface.co/Qwen/${modelName}/blob/main/config.json"]`,
+        ),
+      ).toBeTruthy();
+    }
+  });
+
   it("starts with an empty CPU name and accepts a user-entered name", () => {
     renderRecommendations();
     const cpuInput = screen.getByLabelText("CPU") as HTMLInputElement;
