@@ -67,6 +67,14 @@ export interface RuntimeProfile {
   targetContextLength?: number;
 }
 
+/** Sourced architecture metadata for conventional full-context attention. */
+export interface KvCacheMetadata {
+  transformerLayers: number;
+  keyValueHeads: number;
+  headDimension: number;
+  provenance: CatalogProvenance;
+}
+
 interface QuantizationMetadata {
   id: string;
   displayName: string;
@@ -109,6 +117,8 @@ export interface ModelDefinition {
   /** Publisher/runtime metadata; incomplete direct inputs produce unavailable guidance. */
   defaultContextLength?: number;
   maxContextLength?: number;
+  /** Present only when the model's KV-cache architecture is explicitly sourced. */
+  kvCacheMetadata?: KvCacheMetadata;
   /** Runtime prerequisite for loading the listed model files; separate from memory compatibility. */
   runtimeRequirement?: RuntimeRequirement;
   /** Records whether auxiliary vision files are outside, or unverified in, the listed weight estimate. */
@@ -150,6 +160,7 @@ export interface CompatibilityResult {
     estimatedVramGiB: number | null;
     estimatedUnifiedMemoryGiB?: number;
   };
+  kvCache: KvCacheAssessment;
   recommendedQuantizationId: string | null;
   contextGuidance: ContextGuidance;
   runtimeGuidance: RuntimeProfileGuidance;
@@ -158,6 +169,21 @@ export interface CompatibilityResult {
   reasons: CompatibilityReason[];
   assumptions: CompatibilityAssumptions;
   warnings: string[];
+}
+
+export type KvCacheStatus = "estimated" | "unavailable";
+export type KvCachePlacement =
+  "unified-memory" | "system-ram" | "vram" | "unverified" | "unavailable";
+
+export interface KvCacheAssessment {
+  status: KvCacheStatus;
+  sizeGiB: number | null;
+  targetContextLength: number | null;
+  precision: "FP16";
+  placement: KvCachePlacement;
+  includedInFit: boolean;
+  reason: string;
+  sourceUrl: string | null;
 }
 
 export type CompatibilityReasonCode =
@@ -174,7 +200,10 @@ export type CompatibilityReasonCode =
   | "exact-memory-boundary"
   | "safety-margin"
   | "unified-execution-unverified"
-  | "insufficient-unified-memory";
+  | "insufficient-unified-memory"
+  | "kv-cache-estimate-unavailable"
+  | "kv-cache-placement-unverified"
+  | "kv-cache-included";
 
 export interface CompatibilityReason {
   code: CompatibilityReasonCode;
