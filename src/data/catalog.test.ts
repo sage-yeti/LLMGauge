@@ -92,6 +92,46 @@ describe("catalog registry", () => {
     ).toBe(32);
   });
 
+  it("records Qwen-sourced dense Qwen3 KV-cache architecture and leaves other Qwen families unsupported", () => {
+    const expected = [
+      ["qwen-qwen3-4b", 36, 8, 128, "Qwen3-4B"],
+      ["qwen-qwen3-8b", 36, 8, 128, "Qwen3-8B"],
+      ["qwen-qwen3-14b", 40, 8, 128, "Qwen3-14B"],
+      ["qwen-qwen3-32b", 64, 8, 128, "Qwen3-32B"],
+    ] as const;
+
+    for (const [id, layers, kvHeads, headDimension, modelName] of expected) {
+      const entry = productionModels.find((candidate) => candidate.id === id);
+      expect(entry?.kvCacheMetadata).toMatchObject({
+        transformerLayers: layers,
+        keyValueHeads: kvHeads,
+        headDimension,
+        provenance: {
+          source: `Qwen ${modelName} official config.json`,
+          sourceUrl: `https://huggingface.co/Qwen/${modelName}/blob/main/config.json`,
+          sourceType: "official-documentation",
+          confidence: "verified",
+          lastVerified: "2026-10-02",
+          note: expect.stringContaining("use_sliding_window=false"),
+        },
+      });
+    }
+
+    for (const id of [
+      "qwen-qwen3-8-27b",
+      "qwen-qwen3-coder-30b-a3b-instruct",
+      "qwen-qwen3-coder-next",
+      "qwen-qwen3-vl-8b-instruct",
+      "qwen-qwen3-vl-30b-a3b-instruct",
+      "qwen-qwen3-5-4b",
+    ]) {
+      expect(
+        productionModels.find((candidate) => candidate.id === id)
+          ?.kvCacheMetadata,
+      ).toBeUndefined();
+    }
+  });
+
   it("records the requested GPU variants with manufacturer-backed specifications", () => {
     const expected = [
       [
