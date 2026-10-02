@@ -363,6 +363,19 @@ export const productionModels: readonly ModelDefinition[] = [
     supportedRuntimes: ["llama.cpp"],
     license: "Apache-2.0",
     maxContextLength: 32768,
+    kvCacheMetadata: {
+      transformerLayers: 36,
+      keyValueHeads: 8,
+      headDimension: 128,
+      provenance: {
+        source: "Qwen Qwen3-4B official config.json",
+        sourceUrl: "https://huggingface.co/Qwen/Qwen3-4B/blob/main/config.json",
+        sourceType: "official-documentation",
+        confidence: "verified",
+        lastVerified: "2026-10-02",
+        note: "The official configuration lists 36 layers, 8 KV heads, and head_dim 128. It sets use_sliding_window=false and sliding_window=null, supporting the conventional full-context FP16 cache estimate.",
+      },
+    },
     provenance: modelProvenance(
       "Qwen3 4B publisher model card",
       "https://huggingface.co/Qwen/Qwen3-4B",
@@ -384,6 +397,19 @@ export const productionModels: readonly ModelDefinition[] = [
     supportedRuntimes: ["llama.cpp"],
     license: "Apache-2.0",
     maxContextLength: 32768,
+    kvCacheMetadata: {
+      transformerLayers: 36,
+      keyValueHeads: 8,
+      headDimension: 128,
+      provenance: {
+        source: "Qwen Qwen3-8B official config.json",
+        sourceUrl: "https://huggingface.co/Qwen/Qwen3-8B/blob/main/config.json",
+        sourceType: "official-documentation",
+        confidence: "verified",
+        lastVerified: "2026-10-02",
+        note: "The official configuration lists 36 layers, 8 KV heads, and head_dim 128. It sets use_sliding_window=false and sliding_window=null, supporting the conventional full-context FP16 cache estimate.",
+      },
+    },
     provenance: modelProvenance(
       "Qwen3 8B publisher model card",
       "https://huggingface.co/Qwen/Qwen3-8B",
@@ -567,6 +593,20 @@ export const productionModels: readonly ModelDefinition[] = [
     supportedRuntimes: ["llama.cpp"],
     license: "Apache-2.0",
     maxContextLength: 32768,
+    kvCacheMetadata: {
+      transformerLayers: 40,
+      keyValueHeads: 8,
+      headDimension: 128,
+      provenance: {
+        source: "Qwen Qwen3-14B official config.json",
+        sourceUrl:
+          "https://huggingface.co/Qwen/Qwen3-14B/blob/main/config.json",
+        sourceType: "official-documentation",
+        confidence: "verified",
+        lastVerified: "2026-10-02",
+        note: "The official configuration lists 40 layers, 8 KV heads, and head_dim 128. It sets use_sliding_window=false and sliding_window=null, supporting the conventional full-context FP16 cache estimate.",
+      },
+    },
     provenance: modelProvenance(
       "Qwen3 14B publisher model card",
       "https://huggingface.co/Qwen/Qwen3-14B",
@@ -593,6 +633,20 @@ export const productionModels: readonly ModelDefinition[] = [
     supportedRuntimes: ["llama.cpp"],
     license: "Apache-2.0",
     maxContextLength: 32768,
+    kvCacheMetadata: {
+      transformerLayers: 64,
+      keyValueHeads: 8,
+      headDimension: 128,
+      provenance: {
+        source: "Qwen Qwen3-32B official config.json",
+        sourceUrl:
+          "https://huggingface.co/Qwen/Qwen3-32B/blob/main/config.json",
+        sourceType: "official-documentation",
+        confidence: "verified",
+        lastVerified: "2026-10-02",
+        note: "The official configuration lists 64 layers, 8 KV heads, and head_dim 128. It sets use_sliding_window=false and sliding_window=null, supporting the conventional full-context FP16 cache estimate.",
+      },
+    },
     provenance: modelProvenance(
       "Qwen3 32B publisher model card",
       "https://huggingface.co/Qwen/Qwen3-32B",
