@@ -113,6 +113,32 @@ describe("public catalog pages", () => {
     }
   });
 
+  it("shows official config provenance on dense Qwen3 model pages", async () => {
+    for (const [slug, layers, kvHeads, headDimension, modelName] of [
+      ["qwen3-4b", "36", "8", "128", "Qwen3-4B"],
+      ["qwen3-8b", "36", "8", "128", "Qwen3-8B"],
+      ["qwen3-14b", "40", "8", "128", "Qwen3-14B"],
+      ["qwen3-32b", "64", "8", "128", "Qwen3-32B"],
+    ]) {
+      const page = await ModelPage({ params: Promise.resolve({ slug }) });
+      render(page);
+      const metadata = screen.getByRole("heading", {
+        name: "KV-cache architecture metadata",
+      }).parentElement;
+      expect(metadata?.textContent).toContain(layers);
+      expect(metadata?.textContent).toContain(kvHeads);
+      expect(metadata?.textContent).toContain(headDimension);
+      expect(metadata?.textContent).toContain("use_sliding_window=false");
+      expect(
+        screen
+          .getByRole("link", { name: "View KV-cache architecture source" })
+          .getAttribute("href"),
+      ).toBe(`https://huggingface.co/Qwen/${modelName}/blob/main/config.json`);
+      expect(screen.getByText(/last verified 2026-10-02/)).toBeTruthy();
+      cleanup();
+    }
+  });
+
   it("keeps invalid model slugs on the not-found route", async () => {
     await expect(
       ModelPage({ params: Promise.resolve({ slug: "not-a-real-model" }) }),
