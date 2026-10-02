@@ -101,6 +101,39 @@ describe("recommendations interface", () => {
     );
   });
 
+  it("shows the three added sourced cache estimates and provenance in model recommendations", () => {
+    renderRecommendations();
+    fireEvent.change(screen.getByLabelText("System RAM (GiB)"), {
+      target: { value: "256" },
+    });
+    fireEvent.click(screen.getByText("Advanced settings"));
+    fireEvent.change(screen.getByLabelText("Target context length (tokens)"), {
+      target: { value: "4096" },
+    });
+    submit();
+
+    for (const [displayName, estimate] of [
+      ["Llama 3.2 1B Instruct", "0.13 GiB"],
+      ["Llama 3.2 3B Instruct", "0.44 GiB"],
+      ["Llama 3.3 70B Instruct", "1.25 GiB"],
+    ]) {
+      const card = screen
+        .getByRole("heading", { name: displayName })
+        .closest("article");
+      expect(card?.textContent).toContain("4,096 tokens");
+      expect(card?.textContent).toContain(estimate);
+      expect(card?.textContent).toContain("Unverified");
+      expect(card?.textContent).toContain(
+        "KV cache not included in the fit decision",
+      );
+      expect(
+        card?.querySelector(
+          'a[href="https://github.com/meta-llama/llama-models/blob/main/models/sku_list.py"]',
+        ),
+      ).toBeTruthy();
+    }
+  });
+
   it("starts with an empty CPU name and accepts a user-entered name", () => {
     renderRecommendations();
     const cpuInput = screen.getByLabelText("CPU") as HTMLInputElement;

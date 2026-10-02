@@ -335,6 +335,36 @@ describe("compatibility calculator", () => {
     ).toBeTruthy();
   });
 
+  it.each([
+    ["meta-llama-3-2-1b-instruct", "0.13 GiB"],
+    ["meta-llama-3-2-3b-instruct", "0.44 GiB"],
+    ["meta-llama-3-3-70b-instruct", "1.25 GiB"],
+  ] as const)(
+    "shows the sourced KV-cache estimate for %s in the single-model calculator",
+    (modelId, expectedCache) => {
+      renderCalculator();
+      choose("Model", modelId);
+      fireEvent.click(screen.getByText("Advanced settings"));
+      fireEvent.change(
+        screen.getByLabelText("Target context length (tokens)"),
+        {
+          target: { value: "4096" },
+        },
+      );
+      submit();
+
+      expect(screen.getAllByText("4,096 tokens").length).toBeGreaterThan(0);
+      expect(screen.getByText(expectedCache)).toBeTruthy();
+      expect(
+        screen
+          .getByRole("link", { name: "model-specific source" })
+          .getAttribute("href"),
+      ).toBe(
+        "https://github.com/meta-llama/llama-models/blob/main/models/sku_list.py",
+      );
+    },
+  );
+
   it("opens advanced settings to expose a hidden runtime validation error", () => {
     renderCalculator();
     const summary = screen.getByText("Advanced settings");

@@ -140,6 +140,40 @@ export function ModelCatalogPage({ model }: { model: ModelDefinition }) {
           system use. A model page cannot determine compatibility without your
           hardware profile; use the calculator for that assessment.
         </p>
+        {model.kvCacheMetadata && (
+          <div className="provenance-note">
+            <h3>KV-cache architecture metadata</h3>
+            <dl className="metadata-grid">
+              <div>
+                <dt>Transformer layers</dt>
+                <dd>{model.kvCacheMetadata.transformerLayers}</dd>
+              </div>
+              <div>
+                <dt>KV heads</dt>
+                <dd>{model.kvCacheMetadata.keyValueHeads}</dd>
+              </div>
+              <div>
+                <dt>Head dimension</dt>
+                <dd>{model.kvCacheMetadata.headDimension}</dd>
+              </div>
+            </dl>
+            <p>
+              {provenanceText(
+                model.kvCacheMetadata.provenance.source,
+                model.kvCacheMetadata.provenance.confidence,
+                model.kvCacheMetadata.provenance.lastVerified,
+              )}{" "}
+              {model.kvCacheMetadata.provenance.note}
+            </p>
+            <a
+              href={model.kvCacheMetadata.provenance.sourceUrl}
+              target="_blank"
+              rel="noreferrer"
+            >
+              View KV-cache architecture source
+            </a>
+          </div>
+        )}
         <p className="provenance-note">
           {provenanceText(
             model.provenance.source,

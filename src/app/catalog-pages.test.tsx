@@ -80,6 +80,39 @@ describe("public catalog pages", () => {
     expect(screen.getByText(/performance guarantee/i)).toBeTruthy();
   });
 
+  it("shows sourced KV-cache architecture metadata on supported Llama model pages", async () => {
+    for (const [slug, layers, kvHeads, headDimension] of [
+      ["llama-3-2-1b-instruct", "16", "8", "64"],
+      ["llama-3-2-3b-instruct", "28", "8", "128"],
+      ["llama-3-3-70b-instruct", "80", "8", "128"],
+    ]) {
+      const page = await ModelPage({ params: Promise.resolve({ slug }) });
+      render(page);
+      expect(
+        screen.getByRole("heading", {
+          name: "KV-cache architecture metadata",
+        }),
+      ).toBeTruthy();
+      const metadata = screen.getByRole("heading", {
+        name: "KV-cache architecture metadata",
+      }).parentElement;
+      expect(metadata?.textContent).toContain(layers);
+      expect(metadata?.textContent).toContain(kvHeads);
+      expect(metadata?.textContent).toContain(headDimension);
+      expect(
+        screen
+          .getByRole("link", {
+            name: "View KV-cache architecture source",
+          })
+          .getAttribute("href"),
+      ).toBe(
+        "https://github.com/meta-llama/llama-models/blob/main/models/sku_list.py",
+      );
+      expect(screen.getByText(/last verified 2026-10-02/)).toBeTruthy();
+      cleanup();
+    }
+  });
+
   it("keeps invalid model slugs on the not-found route", async () => {
     await expect(
       ModelPage({ params: Promise.resolve({ slug: "not-a-real-model" }) }),
