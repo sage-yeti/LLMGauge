@@ -12,6 +12,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.9,
     },
     {
+      url: absoluteUrl("/gpu-compatibility"),
+      changeFrequency: "monthly",
+      priority: 0.85,
+    },
+    {
       url: absoluteUrl("/guides"),
       changeFrequency: "monthly",
       priority: 0.75,
