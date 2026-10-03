@@ -40,7 +40,9 @@ describe("guide catalog", () => {
       expect(text).toContain("16,384");
       expect(text).toContain("32,768");
       expect(text).toContain("does not");
-      expect(text).toContain("2 × transformer layers × KV heads × head dimension");
+      expect(text).toContain(
+        "2 × transformer layers × KV heads × head dimension",
+      );
       expect(text).toContain("2^30");
       expect(text).toContain("unrounded");
       expect(text).toMatch(/[Ee]xplicit CPU/);
@@ -86,5 +88,4 @@ describe("guide catalog", () => {
       guideCatalog.find((guide) => guide.slug === "what-is-vram")?.lastReviewed,
     ).toBe("2026-09-22");
   });
-
 });
