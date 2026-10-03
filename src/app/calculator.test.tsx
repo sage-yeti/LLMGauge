@@ -1,11 +1,24 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { Calculator } from "./calculator";
 import { gpuCatalog, modelCatalog } from "@/data/catalog";
 
 function renderCalculator() {
   render(<Calculator models={modelCatalog} gpus={gpuCatalog} />);
 }
+
+afterEach(() => {
+  cleanup();
+  window.history.replaceState({}, "", "/");
+  Object.defineProperty(navigator, "clipboard", {
+    configurable: true,
+    value: undefined,
+  });
+  Object.defineProperty(document, "execCommand", {
+    configurable: true,
+    value: undefined,
+  });
+});
 
 function submit(cpuName = "AMD Ryzen 7 7800X3D") {
   fireEvent.change(screen.getByLabelText("CPU"), {
@@ -485,7 +498,6 @@ describe("compatibility calculator", () => {
 });
 
 describe("Apple hardware workflow", () => {
-  afterEach(cleanup);
   it("switches explicitly, excludes hidden dedicated memory and restores retained PC values", () => {
     renderCalculator();
     choose("GPU", "nvidia-rtx-4060-8gb");
@@ -550,6 +562,146 @@ describe("Apple hardware workflow", () => {
     );
     expect(screen.getAllByText("GPU-capable").length).toBeGreaterThan(0);
     expect(screen.queryByText("Fits estimated unified memory")).toBeNull();
+  });
+});
+
+describe("calculator share links", () => {
+  it("restores a valid link, evaluates it, and leaves omitted context unset", async () => {
+    const model = modelCatalog[0]!;
+    const quantization = model.quantizations[0]!;
+    window.history.replaceState(
+      {},
+      "",
+      `/?v=1&model=${model.id}&quantization=${quantization.id}&cpu=AMD+Ryzen+5&ram=64&os=windows&gpu=none&vram=0`,
+    );
+    renderCalculator();
+
+    expect(
+      await screen.findByText("Share this calculator result"),
+    ).toBeTruthy();
+    expect((screen.getByLabelText("CPU") as HTMLInputElement).value).toBe(
+      "AMD Ryzen 5",
+    );
+    expect(
+      (screen.getByLabelText("System RAM (GiB)") as HTMLInputElement).value,
+    ).toBe("64");
+    expect(window.location.search).toContain("ram=64");
+    expect(
+      screen.queryByRole("button", { name: "Copy calculator link" }),
+    ).toBeTruthy();
+    fireEvent.click(screen.getByText("Advanced settings"));
+    expect(
+      (
+        screen.getByLabelText(
+          "Target context length (tokens)",
+        ) as HTMLInputElement
+      ).value,
+    ).toBe("");
+  });
+
+  it("restores a custom target context and only copies after user activation", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText },
+    });
+    const model = modelCatalog[0]!;
+    const quantization = model.quantizations[0]!;
+    window.history.replaceState(
+      {},
+      "",
+      `/?v=1&model=${model.id}&quantization=${quantization.id}&cpu=AMD+Ryzen+5&ram=64&os=windows&gpu=none&vram=0&context=12345`,
+    );
+    renderCalculator();
+    expect(
+      await screen.findByRole("button", { name: "Copy calculator link" }),
+    ).toBeTruthy();
+    expect(writeText).not.toHaveBeenCalled();
+    expect(window.location.search).toContain("context=12345");
+    fireEvent.click(screen.getByText("Advanced settings"));
+    expect(
+      (
+        screen.getByLabelText(
+          "Target context length (tokens)",
+        ) as HTMLInputElement
+      ).value,
+    ).toBe("12345");
+    fireEvent.click(
+      screen.getByRole("button", { name: "Copy calculator link" }),
+    );
+    expect((await screen.findByRole("status")).textContent).toContain(
+      "Link copied.",
+    );
+    expect(writeText).toHaveBeenCalledWith(
+      `${window.location.origin}/?v=1&model=${model.id}&quantization=${quantization.id}&cpu=AMD+Ryzen+5&ram=64&os=windows&gpu=none&vram=0&context=12345`,
+    );
+  });
+
+  it("reevaluates an over-maximum shared context through the existing unavailable path", async () => {
+    const model = modelCatalog.find(
+      (candidate) => candidate.id === "meta-llama-3-2-1b-instruct",
+    )!;
+    const quantization = model.quantizations[0]!;
+    window.history.replaceState(
+      {},
+      "",
+      `/?v=1&model=${model.id}&quantization=${quantization.id}&cpu=AMD+Ryzen+5&ram=64&os=windows&gpu=none&vram=0&context=200000`,
+    );
+    renderCalculator();
+    expect(
+      await screen.findByRole("button", { name: "Copy calculator link" }),
+    ).toBeTruthy();
+    fireEvent.click(screen.getByText("Advanced settings"));
+    expect(
+      (
+        screen.getByLabelText(
+          "Target context length (tokens)",
+        ) as HTMLInputElement
+      ).value,
+    ).toBe("200000");
+    expect(screen.getAllByText("Unavailable").length).toBeGreaterThan(0);
+  });
+
+  it("rejects stale catalog values without partially applying the shared form", async () => {
+    window.history.replaceState(
+      {},
+      "",
+      "/?v=1&model=stale-model&quantization=stale-q&cpu=Other+CPU&ram=128&os=windows&gpu=none&vram=0",
+    );
+    renderCalculator();
+    expect((await screen.findByRole("alert")).textContent).toMatch(
+      /unavailable model/i,
+    );
+    expect((screen.getByLabelText("CPU") as HTMLInputElement).value).toBe("");
+    expect(
+      (screen.getByLabelText("System RAM (GiB)") as HTMLInputElement).value,
+    ).toBe("16");
+    expect(screen.getByText("Ready when you are.")).toBeTruthy();
+    expect(
+      screen.queryByRole("button", { name: "Copy calculator link" }),
+    ).toBeNull();
+  });
+
+  it("provides a selectable link if clipboard APIs and fallback are unavailable", async () => {
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText: vi.fn().mockRejectedValue(new Error("blocked")) },
+    });
+    Object.defineProperty(document, "execCommand", {
+      configurable: true,
+      value: vi.fn(() => false),
+    });
+    renderCalculator();
+    submit();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Copy calculator link" }),
+    );
+    expect((await screen.findByRole("alert")).textContent).toMatch(
+      /select and copy/i,
+    );
+    expect(
+      (screen.getByLabelText("Share link") as HTMLInputElement).value,
+    ).toContain(`model=${modelCatalog[0]!.id}`);
   });
 });
 
