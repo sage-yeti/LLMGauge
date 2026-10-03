@@ -110,7 +110,12 @@ export function Recommendations({ models, gpus }: RecommendationsProps) {
           Enter your hardware once and compare the local models that fit the
           current catalog’s transparent memory estimates.
         </p>
-        <p><Link href="/gpu-compatibility">Compare discrete GPUs for one model</Link> with a fixed system RAM value.</p>
+        <p>
+          <Link href="/gpu-compatibility">
+            Compare discrete GPUs for one model
+          </Link>{" "}
+          with a fixed system RAM value.
+        </p>
       </header>
       <div className="recommendations-layout">
         <form className="calculator-card" onSubmit={handleSubmit} noValidate>
