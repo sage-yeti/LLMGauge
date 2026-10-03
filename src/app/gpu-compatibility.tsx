@@ -101,7 +101,8 @@ export function GpuCompatibility({ models, gpus }: GpuCompatibilityProps) {
     if (!path) {
       setCopyFeedback({
         status: "failure",
-        message: "The comparison values could not be validated. Review the form and try again.",
+        message:
+          "The comparison values could not be validated. Review the form and try again.",
       });
       return;
     }
@@ -117,11 +118,17 @@ export function GpuCompatibility({ models, gpus }: GpuCompatibilityProps) {
           throw new Error("Clipboard copy was unavailable.");
         }
       }
-      setCopyFeedback({ status: "success", message: "Comparison link copied." });
+      setCopyFeedback({
+        status: "success",
+        message: "Comparison link copied.",
+      });
       setManualShareLink("");
     } catch {
       if (!fallbackAttempted && copyWithDocumentCommand(url)) {
-        setCopyFeedback({ status: "success", message: "Comparison link copied." });
+        setCopyFeedback({
+          status: "success",
+          message: "Comparison link copied.",
+        });
         setManualShareLink("");
       } else {
         setCopyFeedback({
@@ -257,24 +264,31 @@ export function GpuCompatibility({ models, gpus }: GpuCompatibilityProps) {
             </div>
           )}
           {evaluation.groups && (
-            <section className="share-comparison" aria-labelledby="share-comparison-heading">
+            <section
+              className="share-comparison"
+              aria-labelledby="share-comparison-heading"
+            >
               <h2 id="share-comparison-heading">Share this comparison</h2>
               <p>
-                The link encodes the model, system RAM, and any runtime, backend,
-                execution preference, or context target you selected. Anyone who
-                has the link can see these values.
+                The link encodes the model, system RAM, and any runtime,
+                backend, execution preference, or context target you selected.
+                Anyone who has the link can see these values.
               </p>
               <button type="button" onClick={handleCopyComparisonLink}>
                 Copy comparison link
               </button>
               {copyFeedback && (
-                <p role={copyFeedback.status === "success" ? "status" : "alert"}>
+                <p
+                  role={copyFeedback.status === "success" ? "status" : "alert"}
+                >
                   {copyFeedback.message}
                 </p>
               )}
               {manualShareLink && (
                 <div className="field">
-                  <label htmlFor="manual-comparison-link">Comparison link</label>
+                  <label htmlFor="manual-comparison-link">
+                    Comparison link
+                  </label>
                   <input
                     id="manual-comparison-link"
                     type="url"
