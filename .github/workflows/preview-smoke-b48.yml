@@ -1,0 +1,75 @@
+name: Batch 48 preview browser smoke test
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  preview-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npm install --no-save playwright
+      - run: npx playwright install --with-deps chromium
+      - name: Verify preview share restoration and accessible failure state
+        env:
+          PREVIEW_URL: https://llm-gauge-git-batch-48-gpu-comparison-share-links-sage-yeti.vercel.app
+        run: |
+          node <<'NODE'
+          const { chromium } = require("playwright");
+
+          (async () => {
+            const browser = await chromium.launch({ headless: true });
+            const shareUrl = new URL("/gpu-compatibility", process.env.PREVIEW_URL);
+            for (const [key, value] of [
+              ["v", "1"],
+              ["model", "meta-llama-3-2-1b-instruct"],
+              ["ram", "128"],
+              ["runtime", "llama.cpp"],
+              ["backend", "cuda"],
+              ["execution", "full-gpu"],
+              ["context", "4096"],
+            ]) shareUrl.searchParams.set(key, value);
+
+            const firstSession = await browser.newContext();
+            const firstPage = await firstSession.newPage();
+            await firstPage.goto(shareUrl.toString(), { waitUntil: "networkidle" });
+            await firstPage.getByRole("heading", { name: "Discrete GPU results" }).waitFor();
+            if (await firstPage.getByLabel("Model").inputValue() !== "meta-llama-3-2-1b-instruct") throw new Error("Model was not restored.");
+            if (await firstPage.getByLabel("System RAM (GiB)").inputValue() !== "128") throw new Error("System RAM was not restored.");
+            await firstPage.getByRole("button", { name: "Advanced settings" }).click();
+            if (await firstPage.getByLabel("Target context length (tokens)").inputValue() !== "4096") throw new Error("Context was not restored.");
+            await firstPage.getByText(/anyone who has the link can see these values/i).waitFor();
+
+            const freshSession = await browser.newContext();
+            const freshPage = await freshSession.newPage();
+            await freshPage.goto(shareUrl.toString(), { waitUntil: "networkidle" });
+            await freshPage.getByRole("heading", { name: "Discrete GPU results" }).waitFor();
+            if (await freshPage.getByLabel("Model").inputValue() !== "meta-llama-3-2-1b-instruct") throw new Error("Fresh session did not restore model.");
+
+            const failureSession = await browser.newContext();
+            await failureSession.addInitScript(() => {
+              Object.defineProperty(navigator, "clipboard", {
+                configurable: true,
+                value: { writeText: () => Promise.reject(new Error("blocked")) },
+              });
+              document.execCommand = () => false;
+            });
+            const failurePage = await failureSession.newPage();
+            await failurePage.goto(shareUrl.toString(), { waitUntil: "networkidle" });
+            await failurePage.getByRole("heading", { name: "Discrete GPU results" }).waitFor();
+            const button = failurePage.getByRole("button", { name: "Copy comparison link" });
+            if (!(await button.isVisible())) throw new Error("Copy action is unavailable after evaluation.");
+            await button.click();
+            await failurePage.getByRole("alert").filter({ hasText: "Select and copy the comparison link below." }).waitFor();
+            if (!(await failurePage.getByLabel("Comparison link").inputValue()).includes("context=4096")) throw new Error("Manual fallback link is unavailable.");
+            await browser.close();
+          })().catch((error) => {
+            console.error(error);
+            process.exit(1);
+          });
+          NODE
