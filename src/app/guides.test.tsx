@@ -51,7 +51,9 @@ describe("educational guides", () => {
     }
   });
 
-  it("renders the reviewed context and compatibility guides with their sources and related links", async () => {
+  it(
+    "renders the reviewed context and compatibility guides with their sources and related links",
+    async () => {
     for (const slug of [
       "context-length-and-memory",
       "compatibility-estimates",
@@ -62,7 +64,9 @@ describe("educational guides", () => {
 
       expect(screen.getByRole("heading", { name: guide.title })).toBeTruthy();
       expect(screen.getByText(/Last reviewed 2026-10-03/)).toBeTruthy();
-      expect(screen.getAllByText(/target context|context target/i).length).toBeGreaterThan(0);
+      expect(
+        screen.getAllByText(/target context|context target/i).length,
+      ).toBeGreaterThan(0);
       expect(screen.getByText(/unrounded/i)).toBeTruthy();
 
       for (const reference of guide.references) {
@@ -93,7 +97,8 @@ describe("educational guides", () => {
         ).toBe(true);
       }
     }
-  });
+    },
+  );
 
   it("returns not-found behavior for unknown guide slugs", async () => {
     await expect(
