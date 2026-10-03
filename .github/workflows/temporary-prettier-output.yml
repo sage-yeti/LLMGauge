@@ -1,8 +1,8 @@
 name: Temporary Prettier output
 on:
-  push:
+  pull_request:
     branches:
-      - batch-47-gpu-compatibility
+      - main
 jobs:
   format-output:
     runs-on: ubuntu-latest
