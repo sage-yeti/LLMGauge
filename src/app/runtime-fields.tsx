@@ -7,12 +7,16 @@ import { Field } from "./hardware-fields";
 interface RuntimeFieldsProps {
   values: RuntimeProfileFormValues;
   fieldErrors: Record<string, string>;
+  recommendationMode?: boolean;
   onChange: (field: keyof RuntimeProfileFormValues, value: string) => void;
 }
+
+const contextPresets = [4096, 8192, 16384, 32768] as const;
 
 export function RuntimeFields({
   values,
   fieldErrors,
+  recommendationMode = false,
   onChange,
 }: RuntimeFieldsProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -119,7 +123,7 @@ export function RuntimeFields({
           <Field
             id="target-context-length"
             label="Target context length (tokens)"
-            help="Optional planning target for the FP16 KV-cache estimate. Cache memory is included in fit only when its placement is explicit; otherwise it remains advisory."
+            help={`Optional planning target for the FP16 KV-cache estimate. Choose a common value below or enter a custom number. ${recommendationMode ? "In recommendations, this target is evaluated against each model’s own documented context limit. " : ""}Cache memory is included in fit only when its placement is explicit; otherwise it remains advisory.`}
             error={fieldErrors.targetContextLength}
             required={false}
           >
@@ -140,6 +144,31 @@ export function RuntimeFields({
                   : "target-context-length-help"
               }
             />
+            <div
+              className="context-presets"
+              role="group"
+              aria-label="Common target context lengths"
+            >
+              {contextPresets.map((contextLength) => {
+                const label = contextLength.toLocaleString("en-US");
+                return (
+                  <button
+                    key={contextLength}
+                    type="button"
+                    className="context-preset"
+                    aria-label={`Set target context to ${label} tokens`}
+                    aria-pressed={
+                      values.targetContextLength === String(contextLength)
+                    }
+                    onClick={() =>
+                      onChange("targetContextLength", String(contextLength))
+                    }
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
           </Field>
         </div>
       </div>
