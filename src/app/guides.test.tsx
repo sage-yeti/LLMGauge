@@ -51,6 +51,52 @@ describe("educational guides", () => {
     }
   });
 
+  it("renders updated guide sources and related links", async () => {
+    for (const slug of [
+      "context-length-and-memory",
+      "compatibility-estimates",
+    ] as const) {
+      cleanup();
+      const guide = guideCatalog.find((entry) => entry.slug === slug)!;
+      render(await GuidePage({ params: Promise.resolve({ slug }) }));
+
+      expect(screen.getByRole("heading", { name: guide.title })).toBeTruthy();
+      expect(screen.getByText(/Last reviewed 2026-10-03/)).toBeTruthy();
+      expect(
+        screen.getAllByText(/target context|context target/i).length,
+      ).toBeGreaterThan(0);
+      expect(screen.getByText(/unrounded/i)).toBeTruthy();
+
+      for (const reference of guide.references) {
+        expect(
+          screen
+            .getByRole("link", { name: reference.label })
+            .getAttribute("href"),
+        ).toBe(reference.url);
+      }
+      for (const link of guide.relatedLinks) {
+        expect(
+          screen
+            .getAllByRole("link", { name: link.label })
+            .some((anchor) => anchor.getAttribute("href") === link.href),
+        ).toBe(true);
+      }
+      for (const relatedSlug of guide.relatedGuideSlugs) {
+        const relatedGuide = guideCatalog.find(
+          (entry) => entry.slug === relatedSlug,
+        )!;
+        expect(
+          screen
+            .getAllByRole("link", { name: relatedGuide.title })
+            .some(
+              (anchor) =>
+                anchor.getAttribute("href") === `/guides/${relatedSlug}`,
+            ),
+        ).toBe(true);
+      }
+    }
+  });
+
   it("returns not-found behavior for unknown guide slugs", async () => {
     await expect(
       GuidePage({ params: Promise.resolve({ slug: "missing-guide" }) }),
