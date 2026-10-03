@@ -78,7 +78,7 @@ export const hardwareProfileSchema: z.ZodType<HardwareProfile> = z
     cpu: z.object({
       name: z.string().min(1),
       physicalCores: positive.optional(),
-    }),
+    }).optional(),
     gpu: z
       .object({
         id: z.string().min(1),
@@ -89,7 +89,7 @@ export const hardwareProfileSchema: z.ZodType<HardwareProfile> = z
       })
       .optional(),
     systemRamGiB: positive,
-    operatingSystem: z.enum(["windows", "linux", "macos", "other"]),
+    operatingSystem: z.enum(["windows", "linux", "macos", "other"]).optional(),
   })
   .superRefine((hardware, context) => {
     if (hardware.memoryMode !== "apple-unified") return;
