@@ -53,6 +53,11 @@ export default function HomePage() {
             </p>
             <Link href="/recommendations">Open recommendations</Link>
           </article>
+          <article className="workflow-card">
+            <h3>Compare GPUs for one model</h3>
+            <p>Keep your system RAM fixed while comparing catalogued discrete GPUs.</p>
+            <Link href="/gpu-compatibility">Which GPUs can run this model?</Link>
+          </article>
         </div>
         <p className="workflow-note">
           You will need your CPU, system RAM, GPU (if you have one), dedicated
