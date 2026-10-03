@@ -81,7 +81,6 @@ describe("recommendations interface", () => {
     }
   });
 
-
   it("renders corrected fallback memory and classifies the representative using unrounded GiB", () => {
     renderRecommendations();
     choose("GPU", "nvidia-rtx-4060-8gb");
