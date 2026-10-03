@@ -1,0 +1,21 @@
+name: Temporary requested validation
+on:
+  pull_request:
+    branches:
+      - main
+jobs:
+  validate-requested-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Build with public site URL and check diff
+        run: |
+          NEXT_PUBLIC_SITE_URL=https://llmgauge.dev npm run build
+          git diff --check origin/main...HEAD
