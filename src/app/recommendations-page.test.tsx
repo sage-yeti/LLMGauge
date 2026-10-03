@@ -61,7 +61,9 @@ describe("recommendations interface", () => {
 
       expect(input.value).toBe(String(contextLength));
       expect(preset.getAttribute("aria-pressed")).toBe("true");
-      expect(screen.getByRole("heading", { name: "Ready when you are." })).toBeTruthy();
+      expect(
+        screen.getByRole("heading", { name: "Ready when you are." }),
+      ).toBeTruthy();
       expect(screen.queryByRole("alert")).toBeNull();
     }
 
