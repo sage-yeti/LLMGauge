@@ -168,6 +168,46 @@ describe("recommendations interface", () => {
     }
   });
 
+  it.each(["4096", "16384"])(
+    "shows both supported Qwen3 MoE estimates at %s tokens with provenance and advisory placement",
+    (contextLength) => {
+      renderRecommendations();
+      fireEvent.change(screen.getByLabelText("System RAM (GiB)"), {
+        target: { value: "256" },
+      });
+      fireEvent.click(screen.getByText("Advanced settings"));
+      fireEvent.change(
+        screen.getByLabelText("Target context length (tokens)"),
+        { target: { value: contextLength } },
+      );
+      submit();
+
+      const expectedEstimate =
+        contextLength === "4096" ? "0.38 GiB" : "1.5 GiB";
+      for (const [displayName, modelName] of [
+        ["Qwen3-30B-A3B-Instruct-2507", "Qwen3-30B-A3B-Instruct-2507"],
+        ["Qwen3-Coder-30B-A3B-Instruct", "Qwen3-Coder-30B-A3B-Instruct"],
+      ]) {
+        const card = screen
+          .getByRole("heading", { name: displayName })
+          .closest("article");
+        expect(card?.textContent).toContain(
+          `${Number(contextLength).toLocaleString()} tokens`,
+        );
+        expect(card?.textContent).toContain(expectedEstimate);
+        expect(card?.textContent).toContain("Unverified");
+        expect(card?.textContent).toContain(
+          "KV cache not included in the fit decision",
+        );
+        expect(
+          card?.querySelector(
+            `a[href="https://huggingface.co/Qwen/${modelName}/blob/main/config.json"]`,
+          ),
+        ).toBeTruthy();
+      }
+    },
+  );
+
   it("starts with an empty CPU name and accepts a user-entered name", () => {
     renderRecommendations();
     const cpuInput = screen.getByLabelText("CPU") as HTMLInputElement;
