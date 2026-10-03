@@ -44,9 +44,9 @@ describe("GPU comparison application boundary", () => {
       ),
     ).toBe(true);
     expect(
-      first.groups?.flatMap((group) => group.entries).every((entry) =>
-        entry.gpu.kind === "discrete",
-      ),
+      first.groups
+        ?.flatMap((group) => group.entries)
+        .every((entry) => entry.gpu.kind === "discrete"),
     ).toBe(true);
   });
 
@@ -84,15 +84,15 @@ describe("GPU comparison application boundary", () => {
       modelCatalog,
       discreteGpus.slice(0, 3),
     );
-    expect(
-      evaluation.groups?.flatMap((group) => group.entries).length,
-    ).toBe(3);
+    expect(evaluation.groups?.flatMap((group) => group.entries).length).toBe(3);
     expect(evaluation.groups?.map((group) => group.level)).toEqual([
       "unsupported",
     ]);
     expect(
       evaluation.groups?.[0]?.entries.every((entry) =>
-        entry.result.limitingFactors.some((factor) => /system RAM/i.test(factor)),
+        entry.result.limitingFactors.some((factor) =>
+          /system RAM/i.test(factor),
+        ),
       ),
     ).toBe(true);
   });
