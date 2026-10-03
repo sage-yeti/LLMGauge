@@ -263,4 +263,28 @@ describe("GPU compatibility workflow", () => {
       (screen.getByLabelText("Comparison link") as HTMLInputElement).value,
     ).toContain("model=meta-llama-3-2-1b-instruct");
   });
+  it("uses the document copy fallback when the clipboard API is unavailable", async () => {
+    Object.defineProperty(document, "execCommand", {
+      configurable: true,
+      value: vi.fn(() => true),
+    });
+    render(<GpuCompatibility models={modelCatalog} gpus={gpuCatalog} />);
+    fireEvent.change(screen.getByLabelText("Model"), {
+      target: { value: "meta-llama-3-2-1b-instruct" },
+    });
+    fireEvent.change(screen.getByLabelText("System RAM (GiB)"), {
+      target: { value: "128" },
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: /compare catalog GPUs/i }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Copy comparison link" }),
+    );
+    expect((await screen.findByRole("status")).textContent).toContain(
+      "Comparison link copied.",
+    );
+    expect(document.execCommand).toHaveBeenCalledWith("copy");
+  });
+
 });
