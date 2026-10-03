@@ -55,7 +55,10 @@ export default function HomePage() {
           </article>
           <article className="workflow-card">
             <h3>Compare GPUs for one model</h3>
-            <p>Keep your system RAM fixed while comparing catalogued discrete GPUs.</p>
+            <p>
+              Keep your system RAM fixed while comparing catalogued discrete
+              GPUs.
+            </p>
             <Link href="/gpu-compatibility">Which GPUs can run this model?</Link>
           </article>
         </div>
