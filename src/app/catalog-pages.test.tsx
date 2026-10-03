@@ -139,6 +139,30 @@ describe("public catalog pages", () => {
     }
   });
 
+  it("shows Qwen3 MoE source metadata on supported model pages", async () => {
+    for (const [slug, modelName] of [
+      ["qwen3-30b-a3b-instruct-2507", "Qwen3-30B-A3B-Instruct-2507"],
+      ["qwen3-coder-30b-a3b-instruct", "Qwen3-Coder-30B-A3B-Instruct"],
+    ]) {
+      const page = await ModelPage({ params: Promise.resolve({ slug }) });
+      render(page);
+      const metadata = screen.getByRole("heading", {
+        name: "KV-cache architecture metadata",
+      }).parentElement;
+      expect(metadata?.textContent).toContain("48");
+      expect(metadata?.textContent).toContain("4");
+      expect(metadata?.textContent).toContain("128");
+      expect(metadata?.textContent).toContain("use_sliding_window=false");
+      expect(
+        screen
+          .getByRole("link", { name: "View KV-cache architecture source" })
+          .getAttribute("href"),
+      ).toBe(`https://huggingface.co/Qwen/${modelName}/blob/main/config.json`);
+      expect(screen.getByText(/last verified 2026-10-03/)).toBeTruthy();
+      cleanup();
+    }
+  });
+
   it("keeps invalid model slugs on the not-found route", async () => {
     await expect(
       ModelPage({ params: Promise.resolve({ slug: "not-a-real-model" }) }),
