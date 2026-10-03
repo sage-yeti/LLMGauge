@@ -91,9 +91,7 @@ export const hardwareProfileSchema: z.ZodType<HardwareProfile> = z
       })
       .optional(),
     systemRamGiB: positive,
-    operatingSystem: z
-      .enum(["windows", "linux", "macos", "other"])
-      .optional(),
+    operatingSystem: z.enum(["windows", "linux", "macos", "other"]).optional(),
   })
   .superRefine((hardware, context) => {
     if (hardware.memoryMode !== "apple-unified") return;
