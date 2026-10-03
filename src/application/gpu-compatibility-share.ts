@@ -92,6 +92,18 @@ export function parseGpuCompatibilityShareParams(
     };
   }
 
+  if (
+    ["runtime", "backend", "execution", "context"].some(
+      (key) => valuesByKey.has(key) && valuesByKey.get(key) === "",
+    )
+  ) {
+    return {
+      status: "invalid",
+      message:
+        "This comparison link contains an empty setting. Enter your comparison manually.",
+    };
+  }
+
   const candidate: GpuCompatibilityFormValues = {
     modelId: valuesByKey.get("model")!,
     systemRamGiB: valuesByKey.get("ram")!,
