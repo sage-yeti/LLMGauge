@@ -231,9 +231,7 @@ describe("public catalog pages", () => {
       params: Promise.resolve({ slug: qwen!.slug }),
     });
     render(modelPage);
-    expect(
-      screen.getByRole("heading", { name: "Qwen3 4B" }),
-    ).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Qwen3 4B" })).toBeTruthy();
     expect(
       screen
         .getByRole("link", { name: "Compare GPUs for this model" })
