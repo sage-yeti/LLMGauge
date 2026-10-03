@@ -53,9 +53,7 @@ describe("GPU comparison share links", () => {
   });
 
   it("restores valid state and leaves omitted settings unset", () => {
-    const result = parse(
-      "v=1&model=meta-llama-3-2-1b-instruct&ram=64",
-    );
+    const result = parse("v=1&model=meta-llama-3-2-1b-instruct&ram=64");
     expect(result).toEqual({
       status: "valid",
       values: {
@@ -79,9 +77,7 @@ describe("GPU comparison share links", () => {
       },
     });
     expect(
-      parse(
-        "v=1&model=meta-llama-3-2-1b-instruct&ram=128&context=12345",
-      ),
+      parse("v=1&model=meta-llama-3-2-1b-instruct&ram=128&context=12345"),
     ).toMatchObject({
       status: "valid",
       values: { targetContextLength: "12345" },
