@@ -4,6 +4,7 @@ import { ThemeControl } from "./theme-control";
 const primaryLinks = [
   { href: "/", label: "Check a model" },
   { href: "/recommendations", label: "What can my PC run?" },
+  { href: "/gpu-compatibility", label: "Compare GPUs" },
   { href: "/models", label: "Models" },
   { href: "/gpus", label: "GPUs" },
   { href: "/guides", label: "Learn the basics" },
