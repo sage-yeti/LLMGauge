@@ -260,6 +260,10 @@ export const guideCatalog: readonly GuideDefinition[] = [
       { label: "Check one model in the calculator", href: "/" },
       { label: "See model recommendations", href: "/recommendations" },
       {
+        label: "Compare discrete GPUs for a model",
+        href: "/gpu-compatibility",
+      },
+      {
         label: "How compatibility estimates work",
         href: "/guides/compatibility-estimates",
       },
@@ -288,7 +292,7 @@ export const guideCatalog: readonly GuideDefinition[] = [
         heading: "What the calculator evaluates",
         paragraphs: [
           "LLMGauge accepts a hardware profile, a catalog model, and a quantization candidate. It estimates weight memory from cataloged model or file-size inputs, applies named overhead assumptions, and compares the result with available memory.",
-          "The recommendations workflow sends the same hardware profile through the same compatibility engine for each catalog candidate. It does not use a separate formula or a hidden ranking model.",
+          "The recommendations workflow sends the same hardware profile through the same compatibility engine for each catalog candidate. The GPU comparison workflow asks for one model and an explicit system RAM amount, then evaluates each catalogued discrete GPU with the existing representative-quantization policy. It does not use a separate formula or a hidden ranking model.",
         ],
       },
       {
@@ -365,6 +369,10 @@ export const guideCatalog: readonly GuideDefinition[] = [
     relatedLinks: [
       { label: "Open the compatibility calculator", href: "/" },
       { label: "Get model recommendations", href: "/recommendations" },
+      {
+        label: "Compare discrete GPUs for a model",
+        href: "/gpu-compatibility",
+      },
       {
         label: "Read about context length and memory",
         href: "/guides/context-length-and-memory",

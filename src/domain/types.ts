@@ -52,11 +52,13 @@ export type MemoryMode = "pc" | "apple-unified";
 export interface HardwareProfile {
   /** Explicit opt-in; omitted mode retains legacy PC semantics. */
   memoryMode?: MemoryMode;
-  cpu: CpuInfo;
+  /** Optional at the engine boundary when only memory inputs are relevant. */
+  cpu?: CpuInfo;
   gpu?: GpuInfo;
   /** Total physical memory pool in Apple mode; never a separate GPU allocation. */
   systemRamGiB: number;
-  operatingSystem: OperatingSystem;
+  /** Optional at the engine boundary when no OS-specific behavior is assessed. */
+  operatingSystem?: OperatingSystem;
 }
 
 /** Optional, user-selected runtime planning inputs. These are advisory only. */

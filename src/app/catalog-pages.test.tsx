@@ -232,6 +232,11 @@ describe("public catalog pages", () => {
     });
     render(modelPage);
     expect(screen.getByRole("heading", { name: "Qwen3 4B" })).toBeTruthy();
+    expect(
+      screen
+        .getByRole("link", { name: "Compare GPUs for this model" })
+        .getAttribute("href"),
+    ).toBe("/gpu-compatibility");
     expect(screen.getByText(/memory input is an estimate/i)).toBeTruthy();
     expect(
       screen.getAllByRole("link", { name: /qwen\/qwen3-4b-gguf/i }),

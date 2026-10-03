@@ -31,6 +31,14 @@ describe("homepage orientation", () => {
         .getAttribute("href"),
     ).toBe("/recommendations");
     expect(
+      screen.getByRole("link", { name: "Compare GPUs" }).getAttribute("href"),
+    ).toBe("/gpu-compatibility");
+    expect(
+      screen
+        .getByRole("link", { name: "Which GPUs can run this model?" })
+        .getAttribute("href"),
+    ).toBe("/gpu-compatibility");
+    expect(
       screen
         .getByRole("link", { name: "Learn the basics" })
         .getAttribute("href"),

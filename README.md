@@ -23,6 +23,12 @@ The `/recommendations` route implements the second core workflow: “What can my
 
 Results show GPU-capable, partial-offload, CPU-only, or unsupported classifications, approximate VRAM/RAM estimates, quantization recommendations, limiting factors, context guidance, and the assumptions/warnings used by the engine. The estimates are not performance benchmarks or guarantees. Recommendations rank the small curated production catalog deterministically; browser hardware scanning is only an optional best-effort convenience and does not replace manual entry.
 
+## Discrete GPU comparison
+
+The `/gpu-compatibility` workflow answers “Which GPUs can run this model?” Choose one catalogued model and explicitly enter system RAM; that same RAM value is used for every catalogued discrete GPU. The workflow calls the existing recommendation policy and compatibility engine for each validated GPU record, groups results by compatibility outcome, and orders GPUs deterministically within each group. It shows the representative catalog quantization, catalogued VRAM, estimated memory requirements, limiting reasons or caveats, and a link to the GPU's provenance-backed catalog page. The representative quantization follows the same fit and metadata policy used by recommendations; it is not a model-quality or performance recommendation.
+
+Runtime and target-context controls are optional and start unset. The target context is never inferred from model defaults or maxima. Explicitly established cache placement is assessed by the compatibility engine; unknown placement remains advisory and outside fit accounting. This workflow is for PC discrete GPUs only. Apple unified-memory planning and integrated-GPU handling remain in the existing calculator and recommendations workflows. Browse the [calculator](/), [hardware recommendations](/recommendations), and [GPU comparison](/gpu-compatibility) routes.
+
 ## Optional browser hardware scan
 
 Both hardware workflows include a `Scan my device` control. It runs locally in the browser and may report an operating-system hint, logical processor count, coarse `deviceMemory`, and a WebGL/WebGPU renderer hint when those APIs are available. Browser privacy settings and feature support vary, so unavailable values are expected. The scan never sends hardware details to a server, stores them, or records analytics identifiers.
@@ -31,7 +37,7 @@ Exact CPU model, exact system RAM, dedicated GPU VRAM, driver details, and relia
 
 ## Public catalog pages and SEO
 
-Curated real entries are available as useful server-rendered pages at `/models/[slug]` and `/gpus/[slug]`. Their slugs, summaries, metadata, provenance, source links, and quantization details come from `src/data/catalog.ts`; route components do not duplicate catalog records. Unknown slugs return a normal 404. The App Router also generates `/sitemap.xml` for the home, recommendations, real catalog pages, and educational guides, plus `/robots.txt` pointing crawlers at that sitemap.
+Curated real entries are available as useful server-rendered pages at `/models/[slug]` and `/gpus/[slug]`. Their slugs, summaries, metadata, provenance, source links, and quantization details come from `src/data/catalog.ts`; route components do not duplicate catalog records. Unknown slugs return a normal 404. The App Router also generates `/sitemap.xml` for the home, recommendations, GPU comparison, real catalog pages, and educational guides, plus `/robots.txt` pointing crawlers at that sitemap.
 
 ### Curated catalog scope and source policy
 
