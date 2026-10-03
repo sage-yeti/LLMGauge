@@ -369,7 +369,10 @@ export const guideCatalog: readonly GuideDefinition[] = [
     relatedLinks: [
       { label: "Open the compatibility calculator", href: "/" },
       { label: "Get model recommendations", href: "/recommendations" },
-      { label: "Compare discrete GPUs for a model", href: "/gpu-compatibility" },
+      {
+        label: "Compare discrete GPUs for a model",
+        href: "/gpu-compatibility",
+      },
       {
         label: "Read about context length and memory",
         href: "/guides/context-length-and-memory",
