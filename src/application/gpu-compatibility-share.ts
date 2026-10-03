@@ -35,9 +35,9 @@ function validValues(
   const model = models.find((candidate) => candidate.id === values.modelId);
   return Boolean(
     model &&
-      modelDefinitionSchema.safeParse(model).success &&
-      positiveRam.safeParse(values.systemRamGiB).success &&
-      Object.keys(parseRuntimeProfile(values).fieldErrors).length === 0,
+    modelDefinitionSchema.safeParse(model).success &&
+    positiveRam.safeParse(values.systemRamGiB).success &&
+    Object.keys(parseRuntimeProfile(values).fieldErrors).length === 0,
   );
 }
 
@@ -107,8 +107,10 @@ export function parseGpuCompatibilityShareParams(
   const candidate: GpuCompatibilityFormValues = {
     modelId: valuesByKey.get("model")!,
     systemRamGiB: valuesByKey.get("ram")!,
-    runtime: (valuesByKey.get("runtime") ?? "") as RuntimeProfileFormValues["runtime"],
-    backend: (valuesByKey.get("backend") ?? "") as RuntimeProfileFormValues["backend"],
+    runtime: (valuesByKey.get("runtime") ??
+      "") as RuntimeProfileFormValues["runtime"],
+    backend: (valuesByKey.get("backend") ??
+      "") as RuntimeProfileFormValues["backend"],
     executionPreference: (valuesByKey.get("execution") ??
       "") as RuntimeProfileFormValues["executionPreference"],
     targetContextLength: valuesByKey.get("context") ?? "",
