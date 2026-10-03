@@ -1,8 +1,10 @@
-import { z } from "zod";
-import { recommendModels, type RecommendationEntry } from "@/application/recommendations";
-import { parseRuntimeProfile, type RuntimeProfileFormValues } from "@/application/hardware";
+import { parseRuntimeProfile } from "@/application/hardware";
+import type { RuntimeProfileFormValues } from "@/application/hardware";
+import { recommendModels } from "@/application/recommendations";
+import type { RecommendationEntry } from "@/application/recommendations";
 import { gpuDefinitionSchema, modelDefinitionSchema } from "@/domain/schemas";
 import type { GpuDefinition, ModelDefinition } from "@/domain/types";
+import { z } from "zod";
 
 export interface GpuCompatibilityFormValues extends RuntimeProfileFormValues {
   modelId: string;
@@ -26,10 +28,14 @@ export interface GpuCompatibilityEvaluation {
   groups?: GpuCompatibilityGroup[];
 }
 
-const positiveNumberText = z.string().trim().min(1, "Enter system RAM.").refine(
-  (value) => Number.isFinite(Number(value)) && Number(value) > 0,
-  "Enter a number greater than 0.",
-);
+const positiveNumberText = z
+  .string()
+  .trim()
+  .min(1, "Enter system RAM.")
+  .refine(
+    (value) => Number.isFinite(Number(value)) && Number(value) > 0,
+    "Enter a number greater than 0.",
+  );
 
 const groupOrder = {
   "gpu-capable": 4,
@@ -47,7 +53,7 @@ const groupLabels = {
   unsupported: "Unsupported",
 } as const;
 
-/** Evaluate every validated discrete GPU through the existing recommendation and compatibility boundaries. */
+/** Evaluate validated discrete GPUs through the established recommendation boundary. */
 export function evaluateGpuCompatibility(
   values: GpuCompatibilityFormValues,
   models: readonly ModelDefinition[],
@@ -57,13 +63,17 @@ export function evaluateGpuCompatibility(
   if (!model || !modelDefinitionSchema.safeParse(model).success) {
     return {
       fieldErrors: { modelId: "Choose a model from the catalog." },
-      formError: "That model is unavailable. Choose a catalog model and try again.",
+      formError:
+        "That model is unavailable. Choose a catalog model and try again.",
     };
   }
 
   const ram = positiveNumberText.safeParse(values.systemRamGiB);
   const fieldErrors: Record<string, string> = {};
-  if (!ram.success) fieldErrors.systemRamGiB = ram.error.issues[0]?.message ?? "Enter system RAM.";
+  if (!ram.success) {
+    fieldErrors.systemRamGiB =
+      ram.error.issues[0]?.message ?? "Enter system RAM.";
+  }
   const runtime = parseRuntimeProfile(values);
   Object.assign(fieldErrors, runtime.fieldErrors);
   if (Object.keys(fieldErrors).length) return { fieldErrors, model };
@@ -71,7 +81,8 @@ export function evaluateGpuCompatibility(
   const systemRamGiB = Number(ram.data);
   const entries: GpuCompatibilityEntry[] = [];
   for (const gpu of gpus) {
-    if (gpu.kind !== "discrete" || !gpuDefinitionSchema.safeParse(gpu).success) continue;
+    if (gpu.kind !== "discrete" || !gpuDefinitionSchema.safeParse(gpu).success)
+      continue;
     const recommendation = recommendModels(
       {
         gpu: {
@@ -93,19 +104,24 @@ export function evaluateGpuCompatibility(
   entries.sort((a, b) => {
     const outcome = groupOrder[b.result.level] - groupOrder[a.result.level];
     if (outcome) return outcome;
-    return a.gpu.displayName.localeCompare(b.gpu.displayName, "en") ||
-      a.gpu.id.localeCompare(b.gpu.id);
+    return (
+      a.gpu.displayName.localeCompare(b.gpu.displayName, "en") ||
+      a.gpu.id.localeCompare(b.gpu.id)
+    );
   });
 
   const groups: GpuCompatibilityGroup[] = [];
   for (const entry of entries) {
     const last = groups[groups.length - 1];
-    if (last?.level === entry.result.level) last.entries.push(entry);
-    else groups.push({
-      level: entry.result.level,
-      label: groupLabels[entry.result.level],
-      entries: [entry],
-    });
+    if (last?.level === entry.result.level) {
+      last.entries.push(entry);
+    } else {
+      groups.push({
+        level: entry.result.level,
+        label: groupLabels[entry.result.level],
+        entries: [entry],
+      });
+    }
   }
   return { fieldErrors: {}, model, groups };
 }
