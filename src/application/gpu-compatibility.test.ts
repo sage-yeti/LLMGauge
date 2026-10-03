@@ -18,7 +18,7 @@ const defaults: GpuCompatibilityFormValues = {
 const discreteGpus = gpuCatalog.filter((gpu) => gpu.kind === "discrete");
 
 describe("GPU comparison application boundary", () => {
-  it("evaluates multiple catalogued discrete GPUs and groups and orders them deterministically", () => {
+  it("orders multiple GPU results deterministically by outcome", () => {
     const reversed = [...discreteGpus].reverse();
     const first = evaluateGpuCompatibility(defaults, modelCatalog, reversed);
     const second = evaluateGpuCompatibility(
