@@ -182,68 +182,125 @@ export const guideCatalog: readonly GuideDefinition[] = [
     slug: "context-length-and-memory",
     title: "Context Length and Local LLM Memory",
     summary:
-      "Why the amount of text a model can consider affects memory beyond the weight file.",
+      "Why context length affects memory, how LLMGauge estimates supported KV caches, and what those estimates do not guarantee.",
     description:
-      "Learn what context length means, why larger contexts can require more memory, and why practical limits vary by runtime.",
+      "Learn how to choose an explicit context target and interpret approximate KV-cache estimates and context limits.",
     category: "Runtime basics",
     sections: [
       {
         heading: "Context is the active conversation window",
         paragraphs: [
-          "Context length is the number of tokens a runtime can keep available as input and recent conversation for a request. A token is a model-specific text unit, not exactly a word or character.",
-          "A model card may document a maximum context, but that maximum is not automatically a sensible setting for every computer. The runtime, backend, batch settings, and available memory all matter.",
+          "Context length is the number of tokens a runtime can keep available while responding. A token is a model-specific text unit, not exactly a word or character.",
+          "A model publisher may document a maximum context length. That maximum describes the model configuration; it does not say that every computer can hold that much active context.",
         ],
       },
       {
-        heading: "Why more context needs more memory",
+        heading: "Choose an optional target in LLMGauge",
         paragraphs: [
-          "The runtime maintains attention-related state for the active context, commonly described as a key-value cache. As the context grows, that state can take more memory in addition to the model weights and runtime buffers.",
-          "This means a model can load at a short context but fail, slow down, or leave less headroom at a much larger context. The exact cost depends on architecture and runtime settings, so a simple public estimate should not pretend to calculate it exactly.",
+          "The single-model calculator and recommendations workflow let you type a target context or choose one of four optional presets: 4,096, 8,192, 16,384, or 32,768 tokens. The field starts empty. No preset is a default, and LLMGauge does not turn a model's published default or maximum into a target for you.",
+          "In recommendations, the target is checked separately against each model's own documented context limit. A target above that maximum produces an unavailable estimate. A published maximum is not a promise that your hardware can run the model at that context.",
         ],
       },
       {
-        heading: "How to use the guidance",
+        heading: "What the KV-cache estimate means",
         paragraphs: [
-          "Start with a context length that matches the work you actually do and leave memory headroom. If a setup is close to the boundary, reducing context can be more useful than immediately choosing a much lower-quality quantization.",
-          "LLMGauge shows model context metadata and gives approximate compatibility guidance. It does not promise that the published maximum context will fit on your hardware or predict a tokens-per-second result.",
+          "While a model responds, the runtime keeps working information about earlier tokens. This is commonly called a key-value cache, or KV cache. A longer target can require more cache memory in addition to the model weights and runtime buffers.",
+          "LLMGauge shows an approximate FP16 cache estimate only when a model has supported, sourced architecture metadata. Supported catalog entries are Llama 3.1 8B Instruct, Llama 3.2 1B and 3B Instruct, Llama 3.3 70B Instruct, dense Qwen3 4B, 8B, 14B, and 32B, Qwen3-30B-A3B-Instruct-2507, and Qwen3-Coder-30B-A3B-Instruct. Cache estimates remain unavailable for other architectures.",
+          "The estimate uses 2 × transformer layers × KV heads × head dimension × 2 bytes × target context tokens, then divides by 2^30 to report GiB. The first 2 accounts for keys and values; 2 bytes is the FP16 assumption. The inputs come from sourced architecture metadata and the target you explicitly entered or selected.",
+          "The interface rounds the displayed size for readability. Fit assessment uses the unrounded estimate, so display rounding does not change the fit decision.",
+        ],
+      },
+      {
+        heading: "When the cache affects fit",
+        paragraphs: [
+          "A cache estimate affects memory fit only when the selected execution path identifies its placement. Explicit CPU execution counts it in system RAM. An explicit full-GPU choice with a CUDA or Vulkan backend and a discrete GPU counts it in dedicated VRAM. Apple unified-memory mode counts it in the single shared memory pool.",
+          "With automatic or partial-offload execution, or any otherwise unverified placement, LLMGauge still shows a supported estimate but excludes it from fit accounting. Placement remains advisory because the app cannot confirm how a particular runtime allocates memory.",
+        ],
+      },
+      {
+        heading: "Use the result as planning guidance",
+        paragraphs: [
+          "Start with a target that fits the work you actually do and leave memory headroom. The cache estimate is approximate, not a measurement of a running process.",
+          "A model's documented maximum is not a recommendation for your hardware. Runtime versions, backends, drivers, operating systems, other applications, and model-specific behavior can all affect whether a configuration runs. LLMGauge does not guarantee backend support or predict performance.",
         ],
       },
     ],
     references: [
       {
-        label: "llama.cpp command-line and backend documentation",
+        label: "llama.cpp README and runtime project documentation",
         url: "https://github.com/ggml-org/llama.cpp/blob/master/README.md",
+      },
+      {
+        label: "llama.cpp KV-cache implementation",
+        url: "https://github.com/ggml-org/llama.cpp/blob/master/src/llama-kv-cache.cpp",
+      },
+      {
+        label: "Meta Llama model architecture list",
+        url: "https://github.com/meta-llama/llama-models/blob/main/models/sku_list.py",
+      },
+      {
+        label: "Qwen3 4B official configuration",
+        url: "https://huggingface.co/Qwen/Qwen3-4B/blob/main/config.json",
+      },
+      {
+        label: "Qwen3-30B-A3B-Instruct-2507 official configuration",
+        url: "https://huggingface.co/Qwen/Qwen3-30B-A3B-Instruct-2507/blob/main/config.json",
+      },
+      {
+        label: "Qwen3-Coder-30B-A3B-Instruct official configuration",
+        url: "https://huggingface.co/Qwen/Qwen3-Coder-30B-A3B-Instruct/blob/main/config.json",
       },
       {
         label: "NVIDIA model profile memory guidance",
         url: "https://docs.nvidia.com/nim/large-language-models/latest/deployment/model-profiles-and-selection.html",
       },
     ],
-    lastReviewed,
+    lastReviewed: "2026-10-03",
     relatedLinks: [
-      { label: "Try the compatibility calculator", href: "/" },
+      { label: "Check one model in the calculator", href: "/" },
+      { label: "See model recommendations", href: "/recommendations" },
       {
-        label: "Mistral 7B Instruct v0.3",
-        href: "/models/mistral-7b-instruct-v0-3",
+        label: "How compatibility estimates work",
+        href: "/guides/compatibility-estimates",
       },
+      { label: "Mistral 7B Instruct v0.3", href: "/models/mistral-7b-instruct-v0-3" },
       { label: "Gemma 3 12B IT", href: "/models/gemma-3-12b-it" },
     ],
-    relatedGuideSlugs: ["what-is-vram", "llm-quantization"],
+    relatedGuideSlugs: [
+      "what-is-vram",
+      "gpu-offloading",
+      "compatibility-estimates",
+    ],
   },
   {
     slug: "compatibility-estimates",
     title: "How LLMGauge Compatibility Estimates Work",
     summary:
-      "Understand what the calculator checks, what its result categories mean, and where uncertainty remains.",
+      "Understand what the calculator checks, how explicit KV-cache estimates affect fit, and where uncertainty remains.",
     description:
-      "A plain-language guide to LLMGauge's deterministic compatibility estimates, assumptions, classifications, and limitations.",
+      "A plain-language guide to compatibility estimates, explicit context targets, cache placement, and limitations.",
     category: "Using LLMGauge",
     sections: [
       {
         heading: "What the calculator evaluates",
         paragraphs: [
-          "LLMGauge accepts a hardware profile, a catalog model, and a quantization candidate. It estimates weight memory from parameter count and bits per weight, adds named overhead assumptions, and compares the result with dedicated VRAM and system RAM.",
-          "The recommendation workflow repeats the same engine evaluation across the curated catalog. The UI does not contain a second formula or a hidden ranking model.",
+          "LLMGauge accepts a hardware profile, a catalog model, and a quantization candidate. It estimates weight memory from cataloged model or file-size inputs, applies named overhead assumptions, and compares the result with available memory.",
+          "The recommendations workflow sends the same hardware profile through the same compatibility engine for each catalog candidate. It does not use a separate formula or a hidden ranking model.",
+        ],
+      },
+      {
+        heading: "Context targets and supported KV-cache estimates",
+        paragraphs: [
+          "A context target is optional and must be entered or selected explicitly. Both workflows offer 4,096, 8,192, 16,384, and 32,768 token presets; they are quick choices, not defaults. LLMGauge does not infer a target from a model's published default or maximum. In recommendations, the target is evaluated against each model's own documented maximum. A target above that maximum makes the estimate unavailable, and the maximum does not mean the user's hardware can run that context.",
+          "For supported sourced architectures, LLMGauge estimates the FP16 key-value (KV) cache using 2 × transformer layers × KV heads × head dimension × 2 bytes × target context tokens, divided by 2^30 to get GiB. The supported catalog entries are Llama 3.1 8B Instruct, Llama 3.2 1B and 3B Instruct, Llama 3.3 70B Instruct, dense Qwen3 4B, 8B, 14B, and 32B, Qwen3-30B-A3B-Instruct-2507, and Qwen3-Coder-30B-A3B-Instruct. Cache estimates remain unavailable for other architectures.",
+          "Displayed cache sizes are rounded for readability; fit decisions use the underlying unrounded values. An unavailable estimate is not treated as zero.",
+        ],
+      },
+      {
+        heading: "When the cache enters the fit decision",
+        paragraphs: [
+          "Cache memory is counted only when the chosen execution settings establish its placement: explicit CPU execution counts it in system RAM; an explicit full-GPU choice with CUDA or Vulkan and a discrete GPU counts it in VRAM; Apple unified-memory mode counts it in its single memory pool.",
+          "Automatic, partial-offload, and otherwise unverified placements remain visible as advisory cache estimates but are excluded from fit accounting. The application does not know how a particular runtime allocates the cache.",
         ],
       },
       {
@@ -261,9 +318,9 @@ export const guideCatalog: readonly GuideDefinition[] = [
       {
         heading: "Why an estimate is not a guarantee",
         paragraphs: [
-          "Real requirements vary with the exact model file, quantization conversion, context length, runtime version, backend, driver, operating system, display use, and other programs competing for memory.",
-          "The initial LLMGauge policy is intentionally transparent: raw weights are estimated from parameters and bits per weight, a named weight overhead and runtime overhead are added, and system RAM reserves are included. Those assumptions are useful for comparison but are not benchmark measurements.",
-          "Use the result to choose a sensible starting point, then verify the exact model and runtime on your own system. A result near the boundary deserves extra headroom.",
+          "Real requirements vary with the exact model file, quantization conversion, target context, runtime version, backend, driver, operating system, display use, and other programs competing for memory. A documented context maximum is not a prediction that the selected hardware can use it.",
+          "LLMGauge uses sourced catalog metadata and explicit assumptions. It does not benchmark your computer, verify that a backend supports a model, or promise a particular memory allocation or performance.",
+          "Use the result as a starting point, then verify the exact model and runtime on your own system. Leave extra memory headroom when a result is close to the boundary.",
         ],
       },
     ],
@@ -273,16 +330,43 @@ export const guideCatalog: readonly GuideDefinition[] = [
         url: "https://github.com/ggml-org/llama.cpp/blob/master/README.md",
       },
       {
+        label: "llama.cpp model loader",
+        url: "https://github.com/ggml-org/llama.cpp/blob/master/src/llama-model.cpp",
+      },
+      {
+        label: "llama.cpp KV-cache implementation",
+        url: "https://github.com/ggml-org/llama.cpp/blob/master/src/llama-kv-cache.cpp",
+      },
+      {
+        label: "Meta Llama model architecture list",
+        url: "https://github.com/meta-llama/llama-models/blob/main/models/sku_list.py",
+      },
+      {
+        label: "Qwen3 4B official configuration",
+        url: "https://huggingface.co/Qwen/Qwen3-4B/blob/main/config.json",
+      },
+      {
+        label: "Qwen3-30B-A3B-Instruct-2507 official configuration",
+        url: "https://huggingface.co/Qwen/Qwen3-30B-A3B-Instruct-2507/blob/main/config.json",
+      },
+      {
+        label: "Qwen3-Coder-30B-A3B-Instruct official configuration",
+        url: "https://huggingface.co/Qwen/Qwen3-Coder-30B-A3B-Instruct/blob/main/config.json",
+      },
+      {
         label: "llama.cpp quantization documentation",
         url: "https://github.com/ggml-org/llama.cpp/blob/master/tools/quantize/README.md",
       },
     ],
-    lastReviewed,
+    lastReviewed: "2026-10-03",
     relatedLinks: [
       { label: "Open the compatibility calculator", href: "/" },
       { label: "Get model recommendations", href: "/recommendations" },
+      {
+        label: "Read about context length and memory",
+        href: "/guides/context-length-and-memory",
+      },
       { label: "Intel Arc B580 12GB", href: "/gpus/arc-b580-12gb" },
-      { label: "Read about VRAM", href: "/guides/what-is-vram" },
     ],
     relatedGuideSlugs: [
       "what-is-vram",
@@ -290,6 +374,7 @@ export const guideCatalog: readonly GuideDefinition[] = [
       "context-length-and-memory",
     ],
   },
+
 ];
 
 export function getGuideBySlug(slug: string): GuideDefinition | undefined {
