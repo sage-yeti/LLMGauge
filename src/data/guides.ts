@@ -77,10 +77,7 @@ export const guideCatalog: readonly GuideDefinition[] = [
       { label: "See what your PC can run", href: "/recommendations" },
       { label: "GeForce RTX 4060 8GB", href: "/gpus/rtx-4060-8gb" },
     ],
-    relatedGuideSlugs: [
-      "context-length-and-memory",
-      "compatibility-estimates",
-    ],
+    relatedGuideSlugs: ["context-length-and-memory", "compatibility-estimates"],
   },
   {
     slug: "llm-quantization",
