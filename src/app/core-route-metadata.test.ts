@@ -15,8 +15,12 @@ describe("core route canonical and Open Graph URLs", () => {
   });
 
   it("sets canonical and Open Graph URLs for GPU compatibility", () => {
-    expect(gpuCompatibilityMetadata.alternates?.canonical).toBe(absoluteUrl("/gpu-compatibility"));
-    expect(gpuCompatibilityMetadata.openGraph?.url).toBe(absoluteUrl("/gpu-compatibility"));
+    expect(gpuCompatibilityMetadata.alternates?.canonical).toBe(
+      absoluteUrl("/gpu-compatibility"),
+    );
+    expect(gpuCompatibilityMetadata.openGraph?.url).toBe(
+      absoluteUrl("/gpu-compatibility"),
+    );
     expect(gpuCompatibilityMetadata.title).toBe("Which GPUs Can Run This Model? | LLMGauge");
   });
 
