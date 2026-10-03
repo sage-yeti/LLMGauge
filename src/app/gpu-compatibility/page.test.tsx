@@ -18,6 +18,7 @@ describe("GPU compatibility route", () => {
         (entry) => entry.url === absoluteUrl("/gpu-compatibility"),
       ),
     ).toBe(true);
+    expect(sitemap().every((entry) => !entry.url.includes("?"))).toBe(true);
     render(<GpuCompatibilityPage />);
     expect(
       screen.getByRole("heading", {
