@@ -77,7 +77,10 @@ export const guideCatalog: readonly GuideDefinition[] = [
       { label: "See what your PC can run", href: "/recommendations" },
       { label: "GeForce RTX 4060 8GB", href: "/gpus/rtx-4060-8gb" },
     ],
-    relatedGuideSlugs: ["context-length-and-memory", "compatibility-estimates"],
+    relatedGuideSlugs: [
+      "context-length-and-memory",
+      "compatibility-estimates",
+    ],
   },
   {
     slug: "llm-quantization",
@@ -263,7 +266,10 @@ export const guideCatalog: readonly GuideDefinition[] = [
         label: "How compatibility estimates work",
         href: "/guides/compatibility-estimates",
       },
-      { label: "Mistral 7B Instruct v0.3", href: "/models/mistral-7b-instruct-v0-3" },
+      {
+        label: "Mistral 7B Instruct v0.3",
+        href: "/models/mistral-7b-instruct-v0-3",
+      },
       { label: "Gemma 3 12B IT", href: "/models/gemma-3-12b-it" },
     ],
     relatedGuideSlugs: [
@@ -374,7 +380,6 @@ export const guideCatalog: readonly GuideDefinition[] = [
       "context-length-and-memory",
     ],
   },
-
 ];
 
 export function getGuideBySlug(slug: string): GuideDefinition | undefined {
