@@ -37,8 +37,18 @@ jobs:
 
             const firstSession = await browser.newContext();
             const firstPage = await firstSession.newPage();
-            await firstPage.goto(shareUrl.toString(), { waitUntil: "networkidle" });
-            await firstPage.getByRole("heading", { name: "Discrete GPU results" }).waitFor();
+            firstPage.on("pageerror", (error) => console.error("PAGEERROR", error));
+            firstPage.on("console", (message) => {
+              if (message.type() === "error") console.error("BROWSERCONSOLE", message.text());
+            });
+            const response = await firstPage.goto(shareUrl.toString(), { waitUntil: "networkidle" });
+            console.log("PREVIEW RESPONSE", response?.status(), firstPage.url(), await firstPage.title());
+            try {
+              await firstPage.getByRole("heading", { name: "Discrete GPU results" }).waitFor({ timeout: 15000 });
+            } catch (error) {
+              console.error("PAGE BODY", (await firstPage.locator("body").innerText()).slice(0, 2500));
+              throw error;
+            }
             if (await firstPage.getByLabel("Model").inputValue() !== "meta-llama-3-2-1b-instruct") throw new Error("Model was not restored.");
             if (await firstPage.getByLabel("System RAM (GiB)").inputValue() !== "128") throw new Error("System RAM was not restored.");
             await firstPage.getByRole("button", { name: "Advanced settings" }).click();
