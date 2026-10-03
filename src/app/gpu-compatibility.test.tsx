@@ -7,10 +7,14 @@ describe("GPU compatibility workflow", () => {
   afterEach(() => {
     cleanup();
     window.history.replaceState({}, "", "/gpu-compatibility");
-    delete (navigator as Navigator & { clipboard?: Clipboard }).clipboard;
-    delete (
-      document as Document & { execCommand?: (command: string) => boolean }
-    ).execCommand;
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: undefined,
+    });
+    Object.defineProperty(document, "execCommand", {
+      configurable: true,
+      value: undefined,
+    });
   });
 
   it("starts without RAM or context and lists catalog GPU pages after submit", () => {
