@@ -1394,6 +1394,20 @@ export const productionModels: readonly ModelDefinition[] = [
     supportedRuntimes: ["llama.cpp"],
     license: "Apache-2.0",
     maxContextLength: 262144,
+    kvCacheMetadata: {
+      transformerLayers: 48,
+      keyValueHeads: 4,
+      headDimension: 128,
+      provenance: {
+        source: "Qwen Qwen3-Coder-30B-A3B-Instruct official config.json",
+        sourceUrl:
+          "https://huggingface.co/Qwen/Qwen3-Coder-30B-A3B-Instruct/blob/main/config.json",
+        sourceType: "official-documentation",
+        confidence: "verified",
+        lastVerified: "2026-10-03",
+        note: "The official config lists 48 hidden layers, 4 KV heads, and head_dim 128; sets use_sliding_window=false and sliding_window=null, supporting the conventional full-context FP16 cache estimate.",
+      },
+    },
     provenance: modelProvenance(
       "Qwen3-Coder-30B-A3B-Instruct publisher model card",
       "https://huggingface.co/Qwen/Qwen3-Coder-30B-A3B-Instruct",
@@ -1428,6 +1442,20 @@ export const productionModels: readonly ModelDefinition[] = [
     supportedRuntimes: ["llama.cpp"],
     license: "Apache-2.0",
     maxContextLength: 262144,
+    kvCacheMetadata: {
+      transformerLayers: 48,
+      keyValueHeads: 4,
+      headDimension: 128,
+      provenance: {
+        source: "Qwen Qwen3-30B-A3B-Instruct-2507 official config.json",
+        sourceUrl:
+          "https://huggingface.co/Qwen/Qwen3-30B-A3B-Instruct-2507/blob/main/config.json",
+        sourceType: "official-documentation",
+        confidence: "verified",
+        lastVerified: "2026-10-03",
+        note: "The official config lists 48 hidden layers, 4 KV heads, and head_dim 128; sets use_sliding_window=false and sliding_window=null, supporting the conventional full-context FP16 cache estimate.",
+      },
+    },
     provenance: modelProvenance(
       "Qwen3-30B-A3B-Instruct-2507 publisher model card",
       "https://huggingface.co/Qwen/Qwen3-30B-A3B-Instruct-2507",

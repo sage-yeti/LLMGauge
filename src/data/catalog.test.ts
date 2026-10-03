@@ -117,13 +117,35 @@ describe("catalog registry", () => {
       });
     }
 
+    for (const [id, modelName] of [
+      ["qwen-qwen3-30b-a3b-instruct-2507", "Qwen3-30B-A3B-Instruct-2507"],
+      ["qwen-qwen3-coder-30b-a3b-instruct", "Qwen3-Coder-30B-A3B-Instruct"],
+    ] as const) {
+      const entry = productionModels.find((candidate) => candidate.id === id);
+      expect(entry?.kvCacheMetadata).toMatchObject({
+        transformerLayers: 48,
+        keyValueHeads: 4,
+        headDimension: 128,
+        provenance: {
+          source: `Qwen ${modelName} official config.json`,
+          sourceUrl: `https://huggingface.co/Qwen/${modelName}/blob/main/config.json`,
+          sourceType: "official-documentation",
+          confidence: "verified",
+          lastVerified: "2026-10-03",
+          note: expect.stringContaining("use_sliding_window=false"),
+        },
+      });
+    }
+
     for (const id of [
       "qwen-qwen3-8-27b",
-      "qwen-qwen3-coder-30b-a3b-instruct",
       "qwen-qwen3-coder-next",
       "qwen-qwen3-vl-8b-instruct",
       "qwen-qwen3-vl-30b-a3b-instruct",
       "qwen-qwen3-5-4b",
+      "qwen-qwen3-5-122b-a10b",
+      "qwen-qwen3-6-27b",
+      "qwen-qwen3-6-35b-a3b",
     ]) {
       expect(
         productionModels.find((candidate) => candidate.id === id)

@@ -76,6 +76,46 @@ describe("compatibility engine", () => {
   );
 
   it.each([
+    ["qwen-qwen3-30b-a3b-instruct-2507", 0.375, 1.5],
+    ["qwen-qwen3-coder-30b-a3b-instruct", 0.375, 1.5],
+  ])(
+    "estimates sourced Qwen3 MoE %s only for explicit contexts and scales linearly",
+    (modelId, expectedAt4096, expectedAt16384) => {
+      const model = getModelById(modelId)!;
+      expect(
+        estimateKvCache(model, fixtureHardware.cpuOnly, {
+          targetContextLength: 4096,
+        }),
+      ).toMatchObject({
+        status: "estimated",
+        sizeGiB: expectedAt4096,
+        targetContextLength: 4096,
+        precision: "FP16",
+        placement: "unverified",
+        includedInFit: false,
+      });
+      expect(
+        estimateKvCache(model, fixtureHardware.cpuOnly, {
+          targetContextLength: 16384,
+        }),
+      ).toMatchObject({
+        status: "estimated",
+        sizeGiB: expectedAt16384,
+        targetContextLength: 16384,
+        includedInFit: false,
+      });
+      expect(estimateKvCache(model, fixtureHardware.cpuOnly).status).toBe(
+        "unavailable",
+      );
+      expect(
+        estimateKvCache(model, fixtureHardware.cpuOnly, {
+          targetContextLength: 262145,
+        }).status,
+      ).toBe("unavailable");
+    },
+  );
+
+  it.each([
     ["qwen-qwen3-4b", 0.5625, 2.25],
     ["qwen-qwen3-8b", 0.5625, 2.25],
     ["qwen-qwen3-14b", 0.625, 2.5],
@@ -111,7 +151,9 @@ describe("compatibility engine", () => {
 
   it.each([
     "qwen-qwen3-8-27b",
-    "qwen-qwen3-coder-30b-a3b-instruct",
+    "qwen-qwen3-6-27b",
+    "qwen-qwen3-6-35b-a3b",
+    "qwen-qwen3-5-122b-a10b",
     "qwen-qwen3-coder-next",
     "qwen-qwen3-vl-8b-instruct",
     "qwen-qwen3-vl-30b-a3b-instruct",
@@ -217,6 +259,56 @@ describe("compatibility engine", () => {
       ).toBe(level);
     }
   });
+
+  it.each([
+    "qwen-qwen3-30b-a3b-instruct-2507",
+    "qwen-qwen3-coder-30b-a3b-instruct",
+  ])(
+    "keeps Qwen3 MoE %s cache advisory until the user explicitly places it",
+    (id) => {
+      const model = getModelById(id)!;
+      const quantization = model.quantizations[0];
+      const base = estimateMemory(model, quantization);
+      const hardware = {
+        ...fixtureHardware.cpuOnly,
+        systemRamGiB: base.estimatedSystemRamGiB + 0.25,
+      };
+
+      const unverified = evaluateCompatibility(
+        hardware,
+        model,
+        quantization,
+        undefined,
+        {
+          targetContextLength: 4096,
+        },
+      );
+      expect(unverified.kvCache).toMatchObject({
+        placement: "unverified",
+        sizeGiB: 0.375,
+        includedInFit: false,
+      });
+      expect(unverified.memory.estimatedSystemRamGiB).toBe(
+        base.estimatedSystemRamGiB,
+      );
+
+      const cpuPlaced = evaluateCompatibility(
+        hardware,
+        model,
+        quantization,
+        undefined,
+        { executionPreference: "cpu", targetContextLength: 4096 },
+      );
+      expect(cpuPlaced.kvCache).toMatchObject({
+        placement: "system-ram",
+        sizeGiB: 0.375,
+        includedInFit: true,
+      });
+      expect(cpuPlaced.memory.estimatedSystemRamGiB).toBe(
+        base.estimatedSystemRamGiB + 0.375,
+      );
+    },
+  );
 
   it("includes supported cache in Apple pooled memory once and uses inclusive thresholds", () => {
     const quantization = llama31.quantizations[0];
