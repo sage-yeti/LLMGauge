@@ -107,16 +107,20 @@ export function GpuCompatibility({ models, gpus }: GpuCompatibilityProps) {
     }
 
     const url = new URL(path, window.location.origin).toString();
+    let fallbackAttempted = false;
     try {
       if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(url);
-      } else if (!copyWithDocumentCommand(url)) {
-        throw new Error("Clipboard copy was unavailable.");
+      } else {
+        fallbackAttempted = true;
+        if (!copyWithDocumentCommand(url)) {
+          throw new Error("Clipboard copy was unavailable.");
+        }
       }
       setCopyFeedback({ status: "success", message: "Comparison link copied." });
       setManualShareLink("");
     } catch {
-      if (copyWithDocumentCommand(url)) {
+      if (!fallbackAttempted && copyWithDocumentCommand(url)) {
         setCopyFeedback({ status: "success", message: "Comparison link copied." });
         setManualShareLink("");
       } else {
