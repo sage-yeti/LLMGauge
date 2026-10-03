@@ -349,6 +349,23 @@ describe("recommendations interface", () => {
     expect(screen.getAllByText("GPU-capable").length).toBeGreaterThan(0);
   });
 
+  it("explains the GPU ordering without making quality or performance claims", () => {
+    renderRecommendations();
+    choose("GPU", "nvidia-rtx-4060-8gb");
+    submit();
+
+    const note = screen.getByText(
+      /Full-GPU fits are ordered by the model's catalogued parameter count, largest first\./,
+    );
+    expect(note.textContent).toContain(
+      "This size-based order does not predict model quality or performance.",
+    );
+    expect(note.textContent).toContain(
+      "Where the catalog does not distinguish active from total parameters, the order follows the catalogued parameter-count field.",
+    );
+    expect(note.textContent).not.toMatch(/guarantee|faster|better model/i);
+  });
+
   it("includes the new model records in the recommendation workflow", () => {
     renderRecommendations();
     choose("GPU", "nvidia-rtx-5090-32gb");

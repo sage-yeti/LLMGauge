@@ -251,6 +251,13 @@ function RecommendationResults({
           {recommendationSet.recommendations.length} suitable
         </span>
       </div>
+      <p className="catalog-note">
+        Full-GPU fits are ordered by the model&apos;s catalogued parameter
+        count, largest first. This size-based order does not predict model
+        quality or performance. Where the catalog does not distinguish active
+        from total parameters, the order follows the catalogued parameter-count
+        field.
+      </p>
       {recommendationSet.recommendations.length ? (
         <div className="recommendation-list">
           {recommendationSet.recommendations.map((entry) => (
