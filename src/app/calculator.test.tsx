@@ -392,6 +392,31 @@ describe("compatibility calculator", () => {
     },
   );
 
+  it.each([
+    ["qwen-qwen3-30b-a3b-instruct-2507", "Qwen3-30B-A3B-Instruct-2507"],
+    ["qwen-qwen3-coder-30b-a3b-instruct", "Qwen3-Coder-30B-A3B-Instruct"],
+  ] as const)(
+    "shows the sourced Qwen3 MoE KV-cache estimate for %s in the calculator",
+    (modelId, modelName) => {
+      renderCalculator();
+      choose("Model", modelId);
+      fireEvent.click(screen.getByText("Advanced settings"));
+      fireEvent.change(
+        screen.getByLabelText("Target context length (tokens)"),
+        { target: { value: "4096" } },
+      );
+      submit();
+
+      expect(screen.getAllByText("4,096 tokens").length).toBeGreaterThan(0);
+      expect(screen.getByText("0.38 GiB")).toBeTruthy();
+      expect(
+        screen
+          .getByRole("link", { name: "model-specific source" })
+          .getAttribute("href"),
+      ).toBe(`https://huggingface.co/Qwen/${modelName}/blob/main/config.json`);
+    },
+  );
+
   it("opens advanced settings to expose a hidden runtime validation error", () => {
     renderCalculator();
     const summary = screen.getByText("Advanced settings");
