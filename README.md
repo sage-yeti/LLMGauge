@@ -37,7 +37,7 @@ Exact CPU model, exact system RAM, dedicated GPU VRAM, driver details, and relia
 
 ## Public catalog pages and SEO
 
-Curated real entries are available as useful server-rendered pages at `/models/[slug]` and `/gpus/[slug]`. Their slugs, summaries, metadata, provenance, source links, and quantization details come from `src/data/catalog.ts`; route components do not duplicate catalog records. Unknown slugs return a normal 404. The App Router also generates `/sitemap.xml` for the home, recommendations, real catalog pages, and educational guides, plus `/robots.txt` pointing crawlers at that sitemap.
+Curated real entries are available as useful server-rendered pages at `/models/[slug]` and `/gpus/[slug]`. Their slugs, summaries, metadata, provenance, source links, and quantization details come from `src/data/catalog.ts`; route components do not duplicate catalog records. Unknown slugs return a normal 404. The App Router also generates `/sitemap.xml` for the home, recommendations, GPU comparison, real catalog pages, and educational guides, plus `/robots.txt` pointing crawlers at that sitemap.
 
 ### Curated catalog scope and source policy
 
