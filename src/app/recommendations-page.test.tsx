@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { Recommendations } from "./recommendations";
 import { gpuCatalog, modelCatalog } from "@/data/catalog";
 
@@ -33,7 +33,18 @@ function choose(label: string, value: string) {
 }
 
 describe("recommendations interface", () => {
-  afterEach(cleanup);
+  afterEach(() => {
+    cleanup();
+    window.history.replaceState({}, "", "/recommendations");
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: undefined,
+    });
+    Object.defineProperty(document, "execCommand", {
+      configurable: true,
+      value: undefined,
+    });
+  });
 
   it("keeps context presets optional, manual, and non-submitting", () => {
     renderRecommendations();
@@ -524,6 +535,130 @@ describe("recommendations interface", () => {
     expect(screen.getByRole("alert").textContent).toBe(
       "Enter a whole number greater than 0.",
     );
+  });
+});
+
+describe("recommendations share links", () => {
+  afterEach(() => {
+    cleanup();
+    window.history.replaceState({}, "", "/recommendations");
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: undefined,
+    });
+    Object.defineProperty(document, "execCommand", {
+      configurable: true,
+      value: undefined,
+    });
+  });
+
+  it("restores valid hardware, evaluates once into results, and leaves context unset", async () => {
+    window.history.replaceState(
+      {},
+      "",
+      "/recommendations?v=1&cpu=AMD+Ryzen+5&ram=64&os=windows&gpu=none&vram=0",
+    );
+    renderRecommendations();
+    expect(
+      await screen.findByRole("heading", { name: "Models for your hardware" }),
+    ).toBeTruthy();
+    expect((screen.getByLabelText("CPU") as HTMLInputElement).value).toBe(
+      "AMD Ryzen 5",
+    );
+    expect(
+      (screen.getByLabelText("System RAM (GiB)") as HTMLInputElement).value,
+    ).toBe("64");
+    expect(window.location.search).toContain("ram=64");
+    expect(
+      screen.getByRole("button", { name: "Copy recommendations link" }),
+    ).toBeTruthy();
+    fireEvent.click(screen.getByText("Advanced settings"));
+    expect(
+      (
+        screen.getByLabelText(
+          "Target context length (tokens)",
+        ) as HTMLInputElement
+      ).value,
+    ).toBe("");
+  });
+
+  it("restores a preset context and performs no automatic clipboard or URL update", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText },
+    });
+    window.history.replaceState(
+      {},
+      "",
+      "/recommendations?v=1&cpu=AMD+Ryzen+5&ram=64&os=windows&gpu=none&vram=0&context=4096",
+    );
+    renderRecommendations();
+    expect(
+      await screen.findByRole("button", { name: "Copy recommendations link" }),
+    ).toBeTruthy();
+    expect(writeText).not.toHaveBeenCalled();
+    expect(window.location.search).toContain("context=4096");
+    expect(
+      screen.getByText(
+        /anyone with the link can see these values.*browser history or logs/i,
+      ),
+    ).toBeTruthy();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Copy recommendations link" }),
+    );
+    expect((await screen.findByRole("status")).textContent).toContain(
+      "Link copied.",
+    );
+    expect(writeText).toHaveBeenCalledWith(
+      `${window.location.origin}/recommendations?v=1&cpu=AMD+Ryzen+5&ram=64&os=windows&gpu=none&vram=0&context=4096`,
+    );
+  });
+
+  it("rejects invalid shared hardware without applying any of its values", async () => {
+    window.history.replaceState(
+      {},
+      "",
+      "/recommendations?v=1&cpu=Other+CPU&ram=128&os=windows&gpu=stale-gpu&vram=0",
+    );
+    renderRecommendations();
+    expect((await screen.findByRole("alert")).textContent).toMatch(
+      /unavailable GPU/i,
+    );
+    expect((screen.getByLabelText("CPU") as HTMLInputElement).value).toBe("");
+    expect(
+      (screen.getByLabelText("System RAM (GiB)") as HTMLInputElement).value,
+    ).toBe("16");
+    expect(screen.getByText("Ready when you are.")).toBeTruthy();
+    expect(
+      screen.queryByRole("button", { name: "Copy recommendations link" }),
+    ).toBeNull();
+    fireEvent.change(screen.getByLabelText("CPU"), {
+      target: { value: "Manual CPU" },
+    });
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
+
+  it("offers a manual selectable URL after clipboard failure", async () => {
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText: vi.fn().mockRejectedValue(new Error("blocked")) },
+    });
+    Object.defineProperty(document, "execCommand", {
+      configurable: true,
+      value: vi.fn(() => false),
+    });
+    renderRecommendations();
+    submit();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Copy recommendations link" }),
+    );
+    expect((await screen.findByRole("alert")).textContent).toMatch(
+      /select and copy/i,
+    );
+    expect(
+      (screen.getByLabelText("Share link") as HTMLInputElement).value,
+    ).toContain("cpu=AMD+Ryzen+7+7800X3D");
   });
 });
 

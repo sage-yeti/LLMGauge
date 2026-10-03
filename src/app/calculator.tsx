@@ -2,7 +2,7 @@
 
 import { UnifiedMemoryNote } from "./unified-memory-note";
 import { applyDetectedHardware } from "@/application/hardware";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type {
   CalculatorEvaluation,
@@ -24,6 +24,11 @@ import { RuntimeRequirementNote } from "./runtime-requirement-note";
 import { MemoryEstimateScopeNote } from "./memory-estimate-scope-note";
 import { SearchableCombobox } from "./searchable-combobox";
 import { QuantizationSizingNote } from "./quantization-sizing-note";
+import {
+  buildCalculatorSharePath,
+  parseCalculatorShareParams,
+} from "@/application/calculator-share";
+import { ShareLinkPanel } from "./share-link-panel";
 
 interface CalculatorProps {
   models: readonly ModelDefinition[];
@@ -64,6 +69,33 @@ export function Calculator({ models, gpus }: CalculatorProps) {
   const [evaluation, setEvaluation] = useState<CalculatorEvaluation>({
     fieldErrors: {},
   });
+  const [shareError, setShareError] = useState("");
+  const restoredQuery = useRef(false);
+
+  useEffect(() => {
+    if (restoredQuery.current) return;
+    restoredQuery.current = true;
+    const restored = parseCalculatorShareParams(
+      new URLSearchParams(window.location.search),
+      models,
+      gpus,
+    );
+    if (restored.status === "invalid") {
+      setShareError(restored.message);
+      return;
+    }
+    if (restored.status !== "valid") return;
+
+    const next = evaluateCalculator(restored.values);
+    if (!next.result) {
+      setShareError(
+        "This calculator link could not be evaluated. Enter your values manually.",
+      );
+      return;
+    }
+    setValues(restored.values);
+    setEvaluation(next);
+  }, [gpus, models]);
 
   const selectedModel =
     models.find((model) => model.id === values.modelId) ?? firstModel;
@@ -76,6 +108,7 @@ export function Calculator({ models, gpus }: CalculatorProps) {
         : {}),
     }));
     setEvaluation({ fieldErrors: {} });
+    setShareError("");
   }
 
   function updateHardwareValue(field: keyof HardwareFormValues, value: string) {
@@ -90,6 +123,7 @@ export function Calculator({ models, gpus }: CalculatorProps) {
       quantizationId: model?.quantizations[0]?.id ?? "",
     }));
     setEvaluation({ fieldErrors: {} });
+    setShareError("");
   }
 
   function handleGpuChange(gpuId: string) {
@@ -105,11 +139,13 @@ export function Calculator({ models, gpus }: CalculatorProps) {
   function applyDetected(patch: Partial<HardwareFormValues>) {
     setValues((current) => applyDetectedHardware(current, patch));
     setEvaluation({ fieldErrors: {} });
+    setShareError("");
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setEvaluation(evaluateCalculator(values));
+    setShareError("");
   }
 
   return (
@@ -211,6 +247,22 @@ export function Calculator({ models, gpus }: CalculatorProps) {
           <p className="form-error" role="alert">
             {evaluation.formError}
           </p>
+        )}
+        {shareError && (
+          <div className="form-error" role="alert">
+            <p>{shareError}</p>
+            <button type="button" onClick={() => setShareError("")}>
+              Dismiss message
+            </button>
+          </div>
+        )}
+        {evaluation.result && (
+          <ShareLinkPanel
+            title="Share this calculator result"
+            buttonLabel="Copy calculator link"
+            path={buildCalculatorSharePath(values, models, gpus)}
+            disclosure="This link includes the selected model, quantization, and hardware and runtime settings used for the estimate. Anyone with the link can see these values, and they may appear in browser history or logs."
+          />
         )}
       </form>
 

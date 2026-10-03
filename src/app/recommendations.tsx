@@ -2,7 +2,7 @@
 
 import { UnifiedMemoryNote } from "./unified-memory-note";
 import { applyDetectedHardware } from "@/application/hardware";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type {
   HardwareFormValues,
@@ -22,6 +22,11 @@ import { RuntimeProfileView } from "./runtime-profile-view";
 import { RuntimeRequirementNote } from "./runtime-requirement-note";
 import { MemoryEstimateScopeNote } from "./memory-estimate-scope-note";
 import { QuantizationSizingNote } from "./quantization-sizing-note";
+import {
+  buildRecommendationsSharePath,
+  parseRecommendationsShareParams,
+} from "@/application/recommendations-share";
+import { ShareLinkPanel } from "./share-link-panel";
 
 interface RecommendationsProps {
   models: readonly ModelDefinition[];
@@ -50,6 +55,35 @@ export function Recommendations({ models, gpus }: RecommendationsProps) {
   }>({ fieldErrors: {} });
   const [recommendationSet, setRecommendationSet] =
     useState<RecommendationSet>();
+  const [shareError, setShareError] = useState("");
+  const restoredQuery = useRef(false);
+
+  useEffect(() => {
+    if (restoredQuery.current) return;
+    restoredQuery.current = true;
+    const restored = parseRecommendationsShareParams(
+      new URLSearchParams(window.location.search),
+      gpus,
+    );
+    if (restored.status === "invalid") {
+      setShareError(restored.message);
+      return;
+    }
+    if (restored.status !== "valid") return;
+
+    const parsed = parseHardwareForm(restored.values);
+    const runtime = parseRuntimeProfile(restored.values);
+    if (!parsed.hardware || Object.keys(runtime.fieldErrors).length > 0) {
+      setShareError(
+        "This recommendations link could not be evaluated. Enter your hardware manually.",
+      );
+      return;
+    }
+    setValues(restored.values);
+    setRecommendationSet(
+      recommendModels(parsed.hardware, models, runtime.runtimeProfile),
+    );
+  }, [gpus, models]);
 
   function updateValue(
     field: keyof (HardwareFormValues & RuntimeProfileFormValues),
@@ -64,6 +98,7 @@ export function Recommendations({ models, gpus }: RecommendationsProps) {
     }));
     setFormState({ fieldErrors: {} });
     setRecommendationSet(undefined);
+    setShareError("");
   }
 
   function handleGpuChange(gpuId: string) {
@@ -75,16 +110,19 @@ export function Recommendations({ models, gpus }: RecommendationsProps) {
     }));
     setFormState({ fieldErrors: {} });
     setRecommendationSet(undefined);
+    setShareError("");
   }
 
   function applyDetected(patch: Partial<HardwareFormValues>) {
     setValues((current) => applyDetectedHardware(current, patch));
     setFormState({ fieldErrors: {} });
     setRecommendationSet(undefined);
+    setShareError("");
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setShareError("");
     const parsed = parseHardwareForm(values);
     const runtime = parseRuntimeProfile(values);
     if (!parsed.hardware || Object.keys(runtime.fieldErrors).length > 0) {
@@ -156,6 +194,22 @@ export function Recommendations({ models, gpus }: RecommendationsProps) {
             <p className="form-error" role="alert">
               {formState.formError}
             </p>
+          )}
+          {shareError && (
+            <div className="form-error" role="alert">
+              <p>{shareError}</p>
+              <button type="button" onClick={() => setShareError("")}>
+                Dismiss message
+              </button>
+            </div>
+          )}
+          {recommendationSet && (
+            <ShareLinkPanel
+              title="Share these recommendations"
+              buttonLabel="Copy recommendations link"
+              path={buildRecommendationsSharePath(values, gpus)}
+              disclosure="This link includes the hardware and selected runtime or context settings used for the evaluation. Anyone with the link can see these values, and they may appear in browser history or logs."
+            />
           )}
         </form>
         <RecommendationResults recommendationSet={recommendationSet} />
