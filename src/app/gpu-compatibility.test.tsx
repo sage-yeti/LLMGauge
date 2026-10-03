@@ -8,7 +8,9 @@ describe("GPU compatibility workflow", () => {
     cleanup();
     window.history.replaceState({}, "", "/gpu-compatibility");
     delete (navigator as Navigator & { clipboard?: Clipboard }).clipboard;
-    delete (document as Document & { execCommand?: (command: string) => boolean }).execCommand;
+    delete (
+      document as Document & { execCommand?: (command: string) => boolean }
+    ).execCommand;
   });
 
   it("starts without RAM or context and lists catalog GPU pages after submit", () => {
@@ -186,7 +188,9 @@ describe("GPU compatibility workflow", () => {
     expect((await screen.findByRole("alert")).textContent).toMatch(
       /unavailable model or invalid setting/i,
     );
-    expect(screen.getByRole("heading", { name: "Ready when you are." })).toBeTruthy();
+    expect(
+      screen.getByRole("heading", { name: "Ready when you are." }),
+    ).toBeTruthy();
     expect((screen.getByLabelText("Model") as HTMLSelectElement).value).toBe(
       "",
     );
@@ -286,5 +290,4 @@ describe("GPU compatibility workflow", () => {
     );
     expect(document.execCommand).toHaveBeenCalledWith("copy");
   });
-
 });
