@@ -139,6 +139,7 @@ export function Recommendations({ models, gpus }: RecommendationsProps) {
             <RuntimeFields
               values={values}
               fieldErrors={formState.fieldErrors}
+              recommendationMode
               onChange={updateValue}
             />
           </section>
