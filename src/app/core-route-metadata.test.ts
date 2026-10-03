@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { metadata as homeMetadata } from "./page";
 import { metadata as recommendationsMetadata } from "./recommendations/page";
+import { metadata as gpuCompatibilityMetadata } from "./gpu-compatibility/page";
 import { absoluteUrl } from "./site";
 
 describe("core route canonical and Open Graph URLs", () => {
@@ -11,6 +12,12 @@ describe("core route canonical and Open Graph URLs", () => {
     expect(homeMetadata.description).toBe(
       "Check a local LLM against your PC or discover suitable models for your hardware, with compatibility guidance and approximate memory estimates.",
     );
+  });
+
+  it("sets canonical and Open Graph URLs for GPU compatibility", () => {
+    expect(gpuCompatibilityMetadata.alternates?.canonical).toBe(absoluteUrl("/gpu-compatibility"));
+    expect(gpuCompatibilityMetadata.openGraph?.url).toBe(absoluteUrl("/gpu-compatibility"));
+    expect(gpuCompatibilityMetadata.title).toBe("Which GPUs Can Run This Model? | LLMGauge");
   });
 
   it("sets canonical and Open Graph URLs for recommendations", () => {
