@@ -41,7 +41,7 @@ describe("GPU compatibility workflow", () => {
     fireEvent.change(screen.getByLabelText("Backend/device path"), { target: { value: "cuda" } });
     fireEvent.change(screen.getByLabelText("Execution preference"), { target: { value: "full-gpu" } });
     fireEvent.click(screen.getByRole("button", { name: /compare catalog GPUs/i }));
-    expect(screen.getAllByText(/selected full-GPU preference and explicit CUDA/Vulkan backend/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/selected full-GPU preference and explicit CUDA\\/Vulkan backend/).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Estimated cache: .*vram/).length).toBeGreaterThan(0);
     const search = screen.getByLabelText("Filter GPUs");
     fireEvent.change(search, { target: { value: "no-such-gpu" } });
