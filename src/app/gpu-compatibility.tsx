@@ -35,10 +35,7 @@ const levelLabels = {
   unsupported: "Unsupported",
 } as const;
 
-export function GpuCompatibility({
-  models,
-  gpus,
-}: GpuCompatibilityProps) {
+export function GpuCompatibility({ models, gpus }: GpuCompatibilityProps) {
   const [values, setValues] = useState(initialValues);
   const [evaluation, setEvaluation] = useState<GpuCompatibilityEvaluation>({
     fieldErrors: {},
@@ -131,9 +128,7 @@ export function GpuCompatibility({
                 )}
               </div>
               <div className="field">
-                <label htmlFor="comparison-system-ram">
-                  System RAM (GiB)
-                </label>
+                <label htmlFor="comparison-system-ram">System RAM (GiB)</label>
                 <input
                   id="comparison-system-ram"
                   type="number"
@@ -152,10 +147,7 @@ export function GpuCompatibility({
                   }
                 />
                 {evaluation.fieldErrors.systemRamGiB ? (
-                  <p
-                    id="comparison-system-ram-error"
-                    className="field-error"
-                  >
+                  <p id="comparison-system-ram-error" className="field-error">
                     {evaluation.fieldErrors.systemRamGiB}
                   </p>
                 ) : (
@@ -262,12 +254,10 @@ function GpuCompatibilityResults({
             <div className="gpu-comparison-list">
               {group.entries.map((entry) => {
                 const reason =
-                  entry.result.limitingFactors[0] ?? entry.result.kvCache.reason;
+                  entry.result.limitingFactors[0] ??
+                  entry.result.kvCache.reason;
                 return (
-                  <article
-                    className="gpu-comparison-card"
-                    key={entry.gpu.id}
-                  >
+                  <article className="gpu-comparison-card" key={entry.gpu.id}>
                     <div className="gpu-comparison-card-heading">
                       <div>
                         <p className="result-kicker">
