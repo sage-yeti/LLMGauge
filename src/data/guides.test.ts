@@ -43,7 +43,7 @@ describe("guide catalog", () => {
       expect(text).toContain("2 × transformer layers × KV heads × head dimension");
       expect(text).toContain("2^30");
       expect(text).toContain("unrounded");
-      expect(text).toContain("explicit CPU");
+      expect(text).toMatch(/[Ee]xplicit CPU/);
       expect(text).toContain("CUDA or Vulkan");
       expect(text).toContain("Apple unified-memory");
       expect(text).toContain("partial-offload");
