@@ -31,6 +31,11 @@ jobs:
       - name: Run lint
         run: npm run lint
 
+      - name: Print formatted guide diff (temporary)
+        run: |
+          npx prettier --write src/data/guides.ts
+          git diff -- src/data/guides.ts
+
       - name: Check formatting
         run: npm run format
 
