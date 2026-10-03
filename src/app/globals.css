@@ -2188,28 +2188,110 @@ h3 {
   border-color: var(--action-bg);
   color: #fff;
 }
-
-
 /* Discrete GPU comparison */
-.gpu-compatibility-layout { display: grid; grid-template-columns: minmax(18rem, 0.8fr) minmax(0, 1.5fr); gap: 1.25rem; align-items: start; }
-.gpu-comparison-results { min-width: 0; }
-.gpu-comparison-search { display: grid; gap: 0.4rem; margin: 1rem 0; font-weight: 650; }
-.gpu-comparison-group { margin-top: 1.25rem; }
-.gpu-comparison-group > h3 { display: flex; align-items: baseline; justify-content: space-between; border-bottom: 1px solid var(--line); padding-bottom: 0.45rem; }
-.gpu-comparison-group > h3 span { color: var(--muted); font-size: 0.85rem; }
-.gpu-comparison-list { display: grid; gap: 0.75rem; }
-.gpu-comparison-card { border: 1px solid var(--line); border-radius: 0.75rem; padding: 1rem; background: var(--card); }
-.gpu-comparison-card-heading { display: flex; justify-content: space-between; align-items: start; gap: 1rem; }
-.gpu-comparison-card h4 { margin: 0.2rem 0 0.8rem; font-size: 1.1rem; }
-.compatibility-badge { border: 1px solid var(--line); border-radius: 999px; padding: 0.25rem 0.55rem; font-size: 0.78rem; white-space: nowrap; }
-.compatibility-gpu-capable { border-color: var(--success); color: var(--success); }
-.compatibility-partial-offload { border-color: var(--warning); color: var(--warning); }
-.compatibility-unsupported { border-color: var(--danger); color: var(--danger); }
-.gpu-comparison-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.7rem; margin: 0.5rem 0; }
-.gpu-comparison-stats div { min-width: 0; }
-.gpu-comparison-stats dt { color: var(--muted); font-size: 0.82rem; }
-.gpu-comparison-stats dd { margin: 0.15rem 0 0; font-weight: 650; }
-.gpu-comparison-caveat { margin: 0.8rem 0 0.4rem; font-weight: 600; }
-.gpu-comparison-cache { color: var(--muted); font-size: 0.9rem; }
-@media (max-width: 850px) { .gpu-compatibility-layout { grid-template-columns: 1fr; } }
-@media (max-width: 520px) { .gpu-comparison-stats { grid-template-columns: 1fr; } .gpu-comparison-card-heading { flex-direction: column; } }
+.gpu-compatibility-layout {
+  display: grid;
+  grid-template-columns: minmax(18rem, 0.8fr) minmax(0, 1.5fr);
+  gap: 1.25rem;
+  align-items: start;
+}
+.gpu-comparison-results {
+  min-width: 0;
+}
+.gpu-comparison-search {
+  display: grid;
+  gap: 0.4rem;
+  margin: 1rem 0;
+  font-weight: 650;
+}
+.gpu-comparison-group {
+  margin-top: 1.25rem;
+}
+.gpu-comparison-group > h3 {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 0.45rem;
+}
+.gpu-comparison-group > h3 span {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.gpu-comparison-list {
+  display: grid;
+  gap: 0.75rem;
+}
+.gpu-comparison-card {
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  background: var(--card);
+}
+.gpu-comparison-card-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 1rem;
+}
+.gpu-comparison-card h4 {
+  margin: 0.2rem 0 0.8rem;
+  font-size: 1.1rem;
+}
+.compatibility-badge {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.25rem 0.55rem;
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+.compatibility-gpu-capable {
+  border-color: var(--success);
+  color: var(--success);
+}
+.compatibility-partial-offload {
+  border-color: var(--warning);
+  color: var(--warning);
+}
+.compatibility-unsupported {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+.gpu-comparison-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem;
+  margin: 0.5rem 0;
+}
+.gpu-comparison-stats div {
+  min-width: 0;
+}
+.gpu-comparison-stats dt {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+.gpu-comparison-stats dd {
+  margin: 0.15rem 0 0;
+  font-weight: 650;
+}
+.gpu-comparison-caveat {
+  margin: 0.8rem 0 0.4rem;
+  font-weight: 600;
+}
+.gpu-comparison-cache {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+@media (max-width: 850px) {
+  .gpu-compatibility-layout {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 520px) {
+  .gpu-comparison-stats {
+    grid-template-columns: 1fr;
+  }
+  .gpu-comparison-card-heading {
+    flex-direction: column;
+  }
+}
