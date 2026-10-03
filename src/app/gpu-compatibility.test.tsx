@@ -35,7 +35,9 @@ describe("GPU compatibility workflow", () => {
     });
     fireEvent.change(screen.getByLabelText("System RAM (GiB)"), { target: { value: "128" } });
     fireEvent.click(screen.getByText("Advanced settings"));
-    fireEvent.change(screen.getByLabelText("Target context length (tokens)"), { target: { value: "4096" } });
+    fireEvent.click(screen.getByRole("button", { name: "Set target context to 4,096 tokens" }));
+    expect(screen.getByRole("heading", { name: "Ready when you are." })).toBeTruthy();
+    expect((screen.getByLabelText("Target context length (tokens)") as HTMLInputElement).value).toBe("4096");
     fireEvent.change(screen.getByLabelText("Backend/device path"), { target: { value: "cuda" } });
     fireEvent.change(screen.getByLabelText("Execution preference"), { target: { value: "full-gpu" } });
     fireEvent.click(screen.getByRole("button", { name: /compare catalog GPUs/i }));
