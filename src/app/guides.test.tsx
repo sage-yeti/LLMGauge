@@ -62,7 +62,7 @@ describe("educational guides", () => {
 
       expect(screen.getByRole("heading", { name: guide.title })).toBeTruthy();
       expect(screen.getByText(/Last reviewed 2026-10-03/)).toBeTruthy();
-      expect(screen.getByText(/target context|context target/i)).toBeTruthy();
+      expect(screen.getAllByText(/target context|context target/i).length).toBeGreaterThan(0);
       expect(screen.getByText(/unrounded/i)).toBeTruthy();
 
       for (const reference of guide.references) {
