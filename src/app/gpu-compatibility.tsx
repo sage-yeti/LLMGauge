@@ -1,13 +1,17 @@
 "use client";
 
 import { evaluateGpuCompatibility } from "@/application/gpu-compatibility";
+import {
+  buildGpuCompatibilitySharePath,
+  parseGpuCompatibilityShareParams,
+} from "@/application/gpu-compatibility-share";
 import type {
   GpuCompatibilityEvaluation,
   GpuCompatibilityFormValues,
 } from "@/application/gpu-compatibility";
 import type { RuntimeProfileFormValues } from "@/application/hardware";
 import type { GpuDefinition, ModelDefinition } from "@/domain/types";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import Link from "next/link";
 import { formatMemoryGiB } from "./format-memory";
@@ -41,6 +45,37 @@ export function GpuCompatibility({ models, gpus }: GpuCompatibilityProps) {
     fieldErrors: {},
   });
   const [search, setSearch] = useState("");
+  const [shareError, setShareError] = useState("");
+  const [copyFeedback, setCopyFeedback] = useState<{
+    status: "success" | "failure";
+    message: string;
+  } | null>(null);
+  const [manualShareLink, setManualShareLink] = useState("");
+  const restoredQuery = useRef(false);
+
+  useEffect(() => {
+    if (restoredQuery.current) return;
+    restoredQuery.current = true;
+    const restored = parseGpuCompatibilityShareParams(
+      new URLSearchParams(window.location.search),
+      models,
+    );
+    if (restored.status === "invalid") {
+      setShareError(restored.message);
+      return;
+    }
+    if (restored.status !== "valid") return;
+
+    const next = evaluateGpuCompatibility(restored.values, models, gpus);
+    if (next.groups && Object.keys(next.fieldErrors).length === 0) {
+      setValues(restored.values);
+      setEvaluation(next);
+    } else {
+      setShareError(
+        "This comparison link could not be evaluated. Enter your comparison manually.",
+      );
+    }
+  }, [gpus, models]);
 
   function updateValue(
     field: keyof (GpuCompatibilityFormValues & RuntimeProfileFormValues),
@@ -48,6 +83,8 @@ export function GpuCompatibility({ models, gpus }: GpuCompatibilityProps) {
   ) {
     setValues((current) => ({ ...current, [field]: value }));
     setEvaluation({ fieldErrors: {} });
+    setCopyFeedback(null);
+    setManualShareLink("");
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -55,6 +92,41 @@ export function GpuCompatibility({ models, gpus }: GpuCompatibilityProps) {
     const next = evaluateGpuCompatibility(values, models, gpus);
     setEvaluation(next);
     setSearch("");
+    setCopyFeedback(null);
+    setManualShareLink("");
+  }
+
+  async function handleCopyComparisonLink() {
+    const path = buildGpuCompatibilitySharePath(values, models);
+    if (!path) {
+      setCopyFeedback({
+        status: "failure",
+        message: "The comparison values could not be validated. Review the form and try again.",
+      });
+      return;
+    }
+
+    const url = new URL(path, window.location.origin).toString();
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url);
+      } else if (!copyWithDocumentCommand(url)) {
+        throw new Error("Clipboard copy was unavailable.");
+      }
+      setCopyFeedback({ status: "success", message: "Comparison link copied." });
+      setManualShareLink("");
+    } catch {
+      if (copyWithDocumentCommand(url)) {
+        setCopyFeedback({ status: "success", message: "Comparison link copied." });
+        setManualShareLink("");
+      } else {
+        setCopyFeedback({
+          status: "failure",
+          message: "Copy failed. Select and copy the comparison link below.",
+        });
+        setManualShareLink(url);
+      }
+    }
   }
 
   const groups = evaluation.groups
@@ -171,6 +243,44 @@ export function GpuCompatibility({ models, gpus }: GpuCompatibilityProps) {
             <p className="form-error" role="alert">
               {evaluation.formError}
             </p>
+          )}
+          {shareError && (
+            <div className="form-error" role="alert">
+              <p>{shareError}</p>
+              <button type="button" onClick={() => setShareError("")}>
+                Dismiss message
+              </button>
+            </div>
+          )}
+          {evaluation.groups && (
+            <section className="share-comparison" aria-labelledby="share-comparison-heading">
+              <h2 id="share-comparison-heading">Share this comparison</h2>
+              <p>
+                The link encodes the model, system RAM, and any runtime, backend,
+                execution preference, or context target you selected. Anyone who
+                has the link can see these values.
+              </p>
+              <button type="button" onClick={handleCopyComparisonLink}>
+                Copy comparison link
+              </button>
+              {copyFeedback && (
+                <p role={copyFeedback.status === "success" ? "status" : "alert"}>
+                  {copyFeedback.message}
+                </p>
+              )}
+              {manualShareLink && (
+                <div className="field">
+                  <label htmlFor="manual-comparison-link">Comparison link</label>
+                  <input
+                    id="manual-comparison-link"
+                    type="url"
+                    readOnly
+                    value={manualShareLink}
+                    onFocus={(event) => event.currentTarget.select()}
+                  />
+                </div>
+              )}
+            </section>
           )}
         </form>
         <GpuCompatibilityResults
@@ -326,4 +436,21 @@ function GpuCompatibilityResults({
       )}
     </section>
   );
+}
+
+function copyWithDocumentCommand(value: string): boolean {
+  const textarea = document.createElement("textarea");
+  textarea.value = value;
+  textarea.setAttribute("readonly", "");
+  textarea.style.position = "fixed";
+  textarea.style.opacity = "0";
+  document.body.appendChild(textarea);
+  textarea.select();
+  try {
+    return document.execCommand?.("copy") === true;
+  } catch {
+    return false;
+  } finally {
+    textarea.remove();
+  }
 }
