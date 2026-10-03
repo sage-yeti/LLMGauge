@@ -29,6 +29,9 @@ export function ModelCatalogPage({ model }: { model: ModelDefinition }) {
           <Link className="secondary-link" href="/recommendations">
             See what your PC can run
           </Link>
+          <Link className="secondary-link" href="/gpu-compatibility">
+            Compare GPUs for this model
+          </Link>
         </div>
       </header>
 
