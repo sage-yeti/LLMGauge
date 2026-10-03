@@ -66,9 +66,11 @@ describe("GPU compatibility workflow", () => {
       screen.getByRole("heading", { name: "Ready when you are." }),
     ).toBeTruthy();
     expect(
-      (screen.getByLabelText(
-        "Target context length (tokens)",
-      ) as HTMLInputElement).value,
+      (
+        screen.getByLabelText(
+          "Target context length (tokens)",
+        ) as HTMLInputElement
+      ).value,
     ).toBe("4096");
     fireEvent.change(screen.getByLabelText("Backend/device path"), {
       target: { value: "cuda" },
@@ -102,9 +104,7 @@ describe("GPU compatibility workflow", () => {
     fireEvent.click(
       screen.getByRole("button", { name: /compare catalog GPUs/i }),
     );
-    expect(
-      screen.getByText("Choose a model from the catalog."),
-    ).toBeTruthy();
+    expect(screen.getByText("Choose a model from the catalog.")).toBeTruthy();
     fireEvent.change(screen.getByLabelText("Model"), {
       target: { value: modelCatalog[0]!.id },
     });
@@ -114,8 +114,6 @@ describe("GPU compatibility workflow", () => {
     fireEvent.click(
       screen.getByRole("button", { name: /compare catalog GPUs/i }),
     );
-    expect(
-      screen.getByText("Enter a number greater than 0."),
-    ).toBeTruthy();
+    expect(screen.getByText("Enter a number greater than 0.")).toBeTruthy();
   });
 });
