@@ -259,7 +259,10 @@ export const guideCatalog: readonly GuideDefinition[] = [
     relatedLinks: [
       { label: "Check one model in the calculator", href: "/" },
       { label: "See model recommendations", href: "/recommendations" },
-      { label: "Compare discrete GPUs for a model", href: "/gpu-compatibility" },
+      {
+        label: "Compare discrete GPUs for a model",
+        href: "/gpu-compatibility",
+      },
       {
         label: "How compatibility estimates work",
         href: "/guides/compatibility-estimates",
