@@ -51,9 +51,7 @@ describe("educational guides", () => {
     }
   });
 
-  it(
-    "renders the reviewed context and compatibility guides with their sources and related links",
-    async () => {
+  it("renders updated guide sources and related links", async () => {
     for (const slug of [
       "context-length-and-memory",
       "compatibility-estimates",
@@ -97,8 +95,7 @@ describe("educational guides", () => {
         ).toBe(true);
       }
     }
-    },
-  );
+  });
 
   it("returns not-found behavior for unknown guide slugs", async () => {
     await expect(
