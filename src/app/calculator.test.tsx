@@ -81,7 +81,6 @@ describe("compatibility calculator", () => {
     }
   });
 
-
   it("renders corrected fallback estimates and a newly fitting GPU profile", () => {
     renderCalculator();
     choose("Model", "meta-llama-3-1-8b-instruct");
