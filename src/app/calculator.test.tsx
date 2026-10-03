@@ -40,6 +40,47 @@ function choose(label: string, value: string) {
 describe("compatibility calculator", () => {
   afterEach(cleanup);
 
+  it("keeps the optional context target unset until a preset or custom value is chosen", () => {
+    renderCalculator();
+    fireEvent.click(screen.getByText("Advanced settings"));
+
+    const input = screen.getByLabelText(
+      "Target context length (tokens)",
+    ) as HTMLInputElement;
+    const contexts = [4096, 8192, 16384, 32768];
+    expect(input.value).toBe("");
+
+    for (const contextLength of contexts) {
+      const label = contextLength.toLocaleString("en-US");
+      const preset = screen.getByRole("button", {
+        name: `Set target context to ${label} tokens`,
+      });
+      expect(preset.getAttribute("aria-pressed")).toBe("false");
+      expect(preset.getAttribute("type")).toBe("button");
+      fireEvent.click(preset);
+
+      expect(input.value).toBe(String(contextLength));
+      expect(preset.getAttribute("aria-pressed")).toBe("true");
+      expect(
+        screen.getByRole("heading", { name: "Ready when you are." }),
+      ).toBeTruthy();
+      expect(screen.queryByRole("alert")).toBeNull();
+    }
+
+    fireEvent.change(input, { target: { value: "12345" } });
+    expect(input.value).toBe("12345");
+    for (const contextLength of contexts) {
+      const label = contextLength.toLocaleString("en-US");
+      expect(
+        screen
+          .getByRole("button", {
+            name: `Set target context to ${label} tokens`,
+          })
+          .getAttribute("aria-pressed"),
+      ).toBe("false");
+    }
+  });
+
   it("renders corrected fallback estimates and a newly fitting GPU profile", () => {
     renderCalculator();
     choose("Model", "meta-llama-3-1-8b-instruct");

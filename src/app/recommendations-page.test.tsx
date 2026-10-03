@@ -35,6 +35,52 @@ function choose(label: string, value: string) {
 describe("recommendations interface", () => {
   afterEach(cleanup);
 
+  it("keeps context presets optional, manual, and non-submitting", () => {
+    renderRecommendations();
+    fireEvent.click(screen.getByText("Advanced settings"));
+
+    const input = screen.getByLabelText(
+      "Target context length (tokens)",
+    ) as HTMLInputElement;
+    const contexts = [4096, 8192, 16384, 32768];
+    expect(input.value).toBe("");
+    expect(
+      screen.getByText(
+        /evaluated against each model’s own documented context limit/,
+      ),
+    ).toBeTruthy();
+
+    for (const contextLength of contexts) {
+      const label = contextLength.toLocaleString("en-US");
+      const preset = screen.getByRole("button", {
+        name: `Set target context to ${label} tokens`,
+      });
+      expect(preset.getAttribute("aria-pressed")).toBe("false");
+      expect(preset.getAttribute("type")).toBe("button");
+      fireEvent.click(preset);
+
+      expect(input.value).toBe(String(contextLength));
+      expect(preset.getAttribute("aria-pressed")).toBe("true");
+      expect(
+        screen.getByRole("heading", { name: "Ready when you are." }),
+      ).toBeTruthy();
+      expect(screen.queryByRole("alert")).toBeNull();
+    }
+
+    fireEvent.change(input, { target: { value: "12345" } });
+    expect(input.value).toBe("12345");
+    for (const contextLength of contexts) {
+      const label = contextLength.toLocaleString("en-US");
+      expect(
+        screen
+          .getByRole("button", {
+            name: `Set target context to ${label} tokens`,
+          })
+          .getAttribute("aria-pressed"),
+      ).toBe("false");
+    }
+  });
+
   it("renders corrected fallback memory and classifies the representative using unrounded GiB", () => {
     renderRecommendations();
     choose("GPU", "nvidia-rtx-4060-8gb");
