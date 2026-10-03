@@ -1,0 +1,24 @@
+name: Temporary Prettier output
+on:
+  push:
+    branches:
+      - batch-47-gpu-compatibility
+jobs:
+  format-output:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Format and print changed files
+        run: |
+          files="src/app/catalog-pages.test.tsx src/app/core-route-metadata.test.ts src/app/gpu-compatibility.test.tsx src/app/gpu-compatibility.tsx src/app/page.tsx src/application/gpu-compatibility.test.ts src/data/guides.ts src/domain/schemas.ts"
+          npx prettier --write $files
+          for file in $files; do
+            echo "FORMAT_BEGIN:$file"
+            cat "$file"
+            echo "FORMAT_END:$file"
+          done
