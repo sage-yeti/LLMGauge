@@ -8,6 +8,7 @@ describe("GPU compatibility workflow", () => {
     cleanup();
     window.history.replaceState({}, "", "/gpu-compatibility");
     delete (navigator as Navigator & { clipboard?: Clipboard }).clipboard;
+    delete (document as Document & { execCommand?: (command: string) => boolean }).execCommand;
   });
 
   it("starts without RAM or context and lists catalog GPU pages after submit", () => {
@@ -182,7 +183,7 @@ describe("GPU compatibility workflow", () => {
       "/gpu-compatibility?v=1&model=stale-model&ram=128&backend=cuda",
     );
     render(<GpuCompatibility models={modelCatalog} gpus={gpuCatalog} />);
-    expect(await screen.findByRole("alert")).toHaveTextContent(
+    expect((await screen.findByRole("alert")).textContent).toMatch(
       /unavailable model or invalid setting/i,
     );
     expect(screen.getByRole("heading", { name: "Ready when you are." })).toBeTruthy();
@@ -224,11 +225,11 @@ describe("GPU compatibility workflow", () => {
     fireEvent.click(
       screen.getByRole("button", { name: "Copy comparison link" }),
     );
-    expect(await screen.findByRole("status")).toHaveTextContent(
+    expect((await screen.findByRole("status")).textContent).toContain(
       "Comparison link copied.",
     );
     expect(writeText).toHaveBeenCalledWith(
-      "http://localhost:3000/gpu-compatibility?v=1&model=meta-llama-3-2-1b-instruct&ram=128",
+      `${window.location.origin}/gpu-compatibility?v=1&model=meta-llama-3-2-1b-instruct&ram=128`,
     );
     expect(window.location.search).toBe("");
   });
@@ -255,7 +256,7 @@ describe("GPU compatibility workflow", () => {
     fireEvent.click(
       screen.getByRole("button", { name: "Copy comparison link" }),
     );
-    expect(await screen.findByRole("alert")).toHaveTextContent(
+    expect((await screen.findByRole("alert")).textContent).toMatch(
       /select and copy the comparison link below/i,
     );
     expect(
