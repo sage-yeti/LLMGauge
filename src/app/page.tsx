@@ -59,7 +59,9 @@ export default function HomePage() {
               Keep your system RAM fixed while comparing catalogued discrete
               GPUs.
             </p>
-            <Link href="/gpu-compatibility">Which GPUs can run this model?</Link>
+            <Link href="/gpu-compatibility">
+              Which GPUs can run this model?
+            </Link>
           </article>
         </div>
         <p className="workflow-note">
