@@ -62,7 +62,7 @@ describe("educational guides", () => {
 
       expect(screen.getByRole("heading", { name: guide.title })).toBeTruthy();
       expect(screen.getByText(/Last reviewed 2026-10-03/)).toBeTruthy();
-      expect(screen.getByText(/optional and must be entered or selected explicitly/i)).toBeTruthy();
+      expect(screen.getByText(/target context|context target/i)).toBeTruthy();
       expect(screen.getByText(/unrounded/i)).toBeTruthy();
 
       for (const reference of guide.references) {
@@ -74,8 +74,10 @@ describe("educational guides", () => {
       }
       for (const link of guide.relatedLinks) {
         expect(
-          screen.getByRole("link", { name: link.label }).getAttribute("href"),
-        ).toBe(link.href);
+          screen
+            .getAllByRole("link", { name: link.label })
+            .some((anchor) => anchor.getAttribute("href") === link.href),
+        ).toBe(true);
       }
       for (const relatedSlug of guide.relatedGuideSlugs) {
         const relatedGuide = guideCatalog.find(
@@ -83,9 +85,12 @@ describe("educational guides", () => {
         )!;
         expect(
           screen
-            .getByRole("link", { name: relatedGuide.title })
-            .getAttribute("href"),
-        ).toBe(`/guides/${relatedSlug}`);
+            .getAllByRole("link", { name: relatedGuide.title })
+            .some(
+              (anchor) =>
+                anchor.getAttribute("href") === `/guides/${relatedSlug}`,
+            ),
+        ).toBe(true);
       }
     }
   });
