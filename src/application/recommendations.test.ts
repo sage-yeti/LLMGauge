@@ -211,7 +211,7 @@ describe("recommendModels", () => {
     expect(result.unsuitable[0].result.level).toBe("unsupported");
   });
 
-  it("prefers lower memory pressure when quality and compatibility are tied", () => {
+  it("orders discrete-PC GPU-capable models by catalogued parameter count", () => {
     const smaller: ModelDefinition = {
       ...fixtureModel,
       id: "smaller-model",
@@ -240,10 +240,68 @@ describe("recommendModels", () => {
         },
       ],
     };
-    const result = recommendModels(fixtureHardware.gpu, [larger, smaller]);
-    expect(result.recommendations.map((entry) => entry.model.id)).toEqual([
-      "smaller-model",
-      "larger-model",
+    for (const models of [
+      [larger, smaller],
+      [smaller, larger],
+    ]) {
+      const result = recommendModels(fixtureHardware.gpu, models);
+      expect(result.recommendations.map((entry) => entry.model.id)).toEqual([
+        "larger-model",
+        "smaller-model",
+      ]);
+      expect(
+        result.recommendations.map((entry) => entry.quantization.id),
+      ).toEqual(["q4", "q4"]);
+    }
+  });
+
+  it("keeps full-GPU fits above partial offload and preserves partial ordering", () => {
+    const gpuFit: ModelDefinition = {
+      ...fixtureModel,
+      id: "small-gpu-fit",
+      parameterCountBillions: 3,
+      quantizations: [
+        {
+          ...fixtureModel.quantizations[0],
+          id: "fit",
+          sizeGiB: 1,
+        },
+      ],
+    };
+    const partial = (id: string, parameterCountBillions: number) => ({
+      ...fixtureModel,
+      id,
+      parameterCountBillions,
+      quantizations: [
+        {
+          ...fixtureModel.quantizations[0],
+          id: "partial",
+          sizeGiB: 8,
+        },
+      ],
+    });
+    const partialSmall = partial("partial-small", 5);
+    const partialLarge = partial("partial-large", 20);
+    const hardware = {
+      ...fixtureHardware.gpu,
+      gpu: { ...fixtureHardware.gpu.gpu!, vramGiB: 4 },
+      systemRamGiB: 32,
+    };
+
+    const result = recommendModels(hardware, [
+      partialLarge,
+      gpuFit,
+      partialSmall,
+    ]);
+    expect(
+      result.recommendations.map((entry) => [
+        entry.model.id,
+        entry.result.level,
+      ]),
+    ).toEqual([
+      ["small-gpu-fit", "gpu-capable"],
+      ["partial-large", "partial-offload"],
+      ["partial-small", "partial-offload"],
     ]);
   });
 

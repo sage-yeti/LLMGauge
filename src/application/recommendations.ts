@@ -90,7 +90,9 @@ export function recommendModels(
     }
   }
 
-  const sorted = representatives.sort(compareEntries);
+  const sorted = representatives.sort((a, b) =>
+    compareRecommendationEntries(a, b, hardware),
+  );
   return {
     recommendations: sorted.filter(
       (entry) => entry.result.level !== "unsupported",
@@ -98,6 +100,24 @@ export function recommendModels(
     unsuitable: sorted.filter((entry) => entry.result.level === "unsupported"),
     skippedModelIds,
   };
+}
+
+function compareRecommendationEntries(
+  a: RecommendationEntry,
+  b: RecommendationEntry,
+  hardware: HardwareProfile,
+): number {
+  if (
+    hardware.memoryMode !== "apple-unified" &&
+    hardware.gpu?.kind === "discrete" &&
+    a.result.level === "gpu-capable" &&
+    b.result.level === "gpu-capable"
+  ) {
+    const parameterCountDifference =
+      b.model.parameterCountBillions - a.model.parameterCountBillions;
+    if (parameterCountDifference) return parameterCountDifference;
+  }
+  return compareEntries(a, b);
 }
 
 function compareEntries(
