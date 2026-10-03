@@ -42,7 +42,7 @@ describe("GPU compatibility workflow", () => {
     expect(screen.getAllByText(/selected full-GPU preference and explicit CUDA/Vulkan backend/).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Estimated cache: .*vram/).length).toBeGreaterThan(0);
     const search = screen.getByLabelText("Filter GPUs");
-    fireEvent.change(search, { target: { value: "NVIDIA" } });
+    fireEvent.change(search, { target: { value: "no-such-gpu" } });
     expect(screen.getByText("No GPUs match that search")).toBeTruthy();
     fireEvent.change(search, { target: { value: "GeForce" } });
     expect(screen.getAllByRole("link", { name: /View .* catalog page/ }).length).toBeGreaterThan(0);
