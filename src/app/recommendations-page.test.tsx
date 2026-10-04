@@ -1,7 +1,21 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { Recommendations } from "./recommendations";
+import { Recommendations, RecommendationResults } from "./recommendations";
 import { gpuCatalog, modelCatalog } from "@/data/catalog";
+import { recommendModels } from "@/application/recommendations";
+import {
+  fixtureHardware,
+  fixtureModel,
+  fixtureProvenance,
+} from "@/data/fixtures";
+import type { ModelDefinition } from "@/domain/types";
+import type { RecommendationSet } from "@/application/recommendations";
 
 function renderRecommendations() {
   render(<Recommendations models={modelCatalog} gpus={gpuCatalog} />);
@@ -32,6 +46,60 @@ function choose(label: string, value: string) {
   fireEvent.change(screen.getByLabelText(label), { target: { value } });
 }
 
+function sizedFixtureModel(
+  id: string,
+  displayName: string,
+  parameterCountBillions: number,
+  sizeGiB: number,
+): ModelDefinition {
+  return {
+    ...fixtureModel,
+    id,
+    slug: id,
+    displayName,
+    parameterCountBillions,
+    quantizations: [
+      {
+        ...fixtureModel.quantizations[0],
+        id: "q4",
+        displayName: "Q4",
+        sizeGiB,
+        provenance: fixtureProvenance,
+      },
+    ],
+  };
+}
+
+function mixedDiscreteRecommendationSet(): RecommendationSet {
+  const gpuHardware = { ...fixtureHardware.gpu, systemRamGiB: 64 };
+  const gpuResults = recommendModels(gpuHardware, [
+    sizedFixtureModel("small-fit", "Small GPU fit", 3, 1),
+    sizedFixtureModel("large-fit", "Large GPU fit", 13, 2),
+  ]);
+  const partialResults = recommendModels(
+    { ...fixtureHardware.lowMemory, systemRamGiB: 64 },
+    [sizedFixtureModel("partial-model", "Partial model", 20, 8)],
+  );
+  const cpuResults = recommendModels(
+    { ...fixtureHardware.cpuOnly, systemRamGiB: 64 },
+    [sizedFixtureModel("cpu-model", "CPU model", 5, 1)],
+  );
+  const unsupportedResults = recommendModels(
+    { ...fixtureHardware.cpuOnly, systemRamGiB: 1 },
+    [sizedFixtureModel("unsupported-model", "Unsupported model", 30, 8)],
+  );
+
+  return {
+    recommendations: [
+      ...gpuResults.recommendations,
+      ...partialResults.recommendations,
+      ...cpuResults.recommendations,
+    ],
+    unsuitable: unsupportedResults.unsuitable,
+    skippedModelIds: [],
+  };
+}
+
 describe("recommendations interface", () => {
   afterEach(() => {
     cleanup();
@@ -44,6 +112,100 @@ describe("recommendations interface", () => {
       configurable: true,
       value: undefined,
     });
+  });
+
+  it("groups discrete-GPU recommendations in outcome order with counts and no lost cards", () => {
+    const recommendationSet = mixedDiscreteRecommendationSet();
+    render(
+      <RecommendationResults
+        recommendationSet={recommendationSet}
+        groupDiscreteGpuResults
+      />,
+    );
+
+    const categories = document.querySelectorAll(".recommendation-category");
+    expect(
+      Array.from(
+        categories,
+        (category) => category.querySelector("h3")?.textContent,
+      ),
+    ).toEqual([
+      "Fits estimated dedicated VRAM",
+      "Estimated partial offload: some layers would use system RAM",
+      "CPU-only options",
+    ]);
+    expect(
+      within(categories[0] as HTMLElement).getByText("2 models"),
+    ).toBeTruthy();
+    expect(
+      within(categories[1] as HTMLElement).getByText("1 model"),
+    ).toBeTruthy();
+    expect(
+      within(categories[2] as HTMLElement).getByText("1 model"),
+    ).toBeTruthy();
+
+    const cardNames = Array.from(
+      document.querySelectorAll(".recommendation-card-heading h3"),
+      (heading) => heading.textContent,
+    );
+    expect(cardNames).toEqual([
+      "Large GPU fit",
+      "Small GPU fit",
+      "Partial model",
+      "CPU model",
+      "Unsupported model",
+    ]);
+    expect(new Set(cardNames).size).toBe(5);
+    expect(
+      screen
+        .getByRole("heading", { name: "Unsupported model" })
+        .closest("details.unsuitable-section"),
+    ).toBeTruthy();
+  });
+
+  it("shows the full-GPU empty state while retaining partial and CPU-only choices", () => {
+    const recommendationSet = mixedDiscreteRecommendationSet();
+    recommendationSet.recommendations =
+      recommendationSet.recommendations.filter(
+        (entry) => entry.result.level !== "gpu-capable",
+      );
+    render(
+      <RecommendationResults
+        recommendationSet={recommendationSet}
+        groupDiscreteGpuResults
+      />,
+    );
+
+    const gpuSection = document.querySelector(
+      ".recommendation-category-gpu",
+    ) as HTMLElement;
+    expect(within(gpuSection).getByText("0 models")).toBeTruthy();
+    expect(within(gpuSection).getByRole("status").textContent).toMatch(
+      /No models are estimated to fit within dedicated VRAM/,
+    );
+    expect(screen.getByRole("heading", { name: "Partial model" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "CPU model" })).toBeTruthy();
+    expect(
+      screen.getByRole("heading", { name: "Unsupported model" }),
+    ).toBeTruthy();
+  });
+
+  it("keeps the legacy single-list presentation when discrete-GPU grouping is out of scope", () => {
+    render(
+      <RecommendationResults
+        recommendationSet={mixedDiscreteRecommendationSet()}
+      />,
+    );
+
+    expect(document.querySelector(".recommendation-categories")).toBeNull();
+    expect(
+      document.querySelectorAll(
+        ".recommendation-results > .recommendation-list",
+      ),
+    ).toHaveLength(1);
+    expect(screen.getByRole("heading", { name: "Large GPU fit" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Partial model" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "CPU model" })).toBeTruthy();
   });
 
   it("keeps context presets optional, manual, and non-submitting", () => {
@@ -292,6 +454,7 @@ describe("recommendations interface", () => {
     expect(
       screen.getByRole("heading", { name: "Models for your hardware" }),
     ).toBeTruthy();
+    expect(document.querySelector(".recommendation-categories")).toBeNull();
     expect(
       screen.getByRole("heading", { name: "Llama 3.2 1B Instruct" }),
     ).toBeTruthy();
@@ -310,6 +473,9 @@ describe("recommendations interface", () => {
     submit();
     expect(screen.getAllByText("GPU-capable").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Full GPU execution").length).toBeGreaterThan(0);
+    expect(
+      screen.getByRole("heading", { name: "Fits estimated dedicated VRAM" }),
+    ).toBeTruthy();
   });
 
   it("keeps the searchable no-GPU choice available for CPU-only results", () => {
@@ -326,6 +492,7 @@ describe("recommendations interface", () => {
     ).toBe(true);
     submit();
     expect(screen.getAllByText("CPU-only").length).toBeGreaterThan(0);
+    expect(document.querySelector(".recommendation-categories")).toBeNull();
   });
 
   it("searches shared GPU choices by name and memory and submits the chosen ID", () => {
@@ -486,6 +653,7 @@ describe("recommendations interface", () => {
     choose("GPU", "intel-uhd-graphics-770");
     submit();
     expect(screen.getAllByText("CPU-only").length).toBeGreaterThan(0);
+    expect(document.querySelector(".recommendation-categories")).toBeNull();
   });
 
   it("shows no suitable model when system RAM is insufficient", () => {
@@ -707,6 +875,7 @@ describe("Apple hardware workflow", () => {
     fireEvent.click(
       screen.getByRole("button", { name: /find suitable models/i }),
     );
+    expect(document.querySelector(".recommendation-categories")).toBeNull();
     expect(screen.getAllByText("Unsupported").length).toBeGreaterThan(0);
     expect(screen.queryByText("GPU-capable")).toBeNull();
     fireEvent.change(screen.getByLabelText("Total unified memory (GiB)"), {
@@ -759,6 +928,9 @@ describe("Apple hardware workflow", () => {
       screen.getByRole("button", { name: /find suitable models/i }),
     );
     expect(screen.getAllByText("GPU-capable").length).toBeGreaterThan(0);
+    expect(
+      screen.getByRole("heading", { name: "Fits estimated dedicated VRAM" }),
+    ).toBeTruthy();
     expect(screen.queryByText("Fits estimated unified memory")).toBeNull();
   });
 });
