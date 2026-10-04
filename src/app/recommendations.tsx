@@ -212,16 +212,24 @@ export function Recommendations({ models, gpus }: RecommendationsProps) {
             />
           )}
         </form>
-        <RecommendationResults recommendationSet={recommendationSet} />
+        <RecommendationResults
+          recommendationSet={recommendationSet}
+          groupDiscreteGpuResults={
+            values.memoryMode !== "apple-unified" &&
+            gpus.find((gpu) => gpu.id === values.gpuId)?.kind === "discrete"
+          }
+        />
       </div>
     </main>
   );
 }
 
-function RecommendationResults({
+export function RecommendationResults({
   recommendationSet,
+  groupDiscreteGpuResults = false,
 }: {
   recommendationSet?: RecommendationSet;
+  groupDiscreteGpuResults?: boolean;
 }) {
   if (!recommendationSet) {
     return (
@@ -258,14 +266,13 @@ function RecommendationResults({
         from total parameters, the order follows the catalogued parameter-count
         field.
       </p>
-      {recommendationSet.recommendations.length ? (
+      {groupDiscreteGpuResults ? (
+        <DiscreteGpuRecommendationGroups
+          recommendations={recommendationSet.recommendations}
+        />
+      ) : recommendationSet.recommendations.length ? (
         <div className="recommendation-list">
-          {recommendationSet.recommendations.map((entry) => (
-            <RecommendationCard
-              key={`${entry.model.id}-${entry.quantization.id}`}
-              entry={entry}
-            />
-          ))}
+          <RecommendationCards entries={recommendationSet.recommendations} />
         </div>
       ) : (
         <div className="no-results">
@@ -283,12 +290,7 @@ function RecommendationResults({
             {recommendationSet.unsuitable.length === 1 ? "" : "s"}
           </summary>
           <div className="recommendation-list">
-            {recommendationSet.unsuitable.map((entry) => (
-              <RecommendationCard
-                key={`${entry.model.id}-${entry.quantization.id}`}
-                entry={entry}
-              />
-            ))}
+            <RecommendationCards entries={recommendationSet.unsuitable} />
           </div>
         </details>
       )}
@@ -300,6 +302,103 @@ function RecommendationResults({
       )}
     </section>
   );
+}
+
+function DiscreteGpuRecommendationGroups({
+  recommendations,
+}: {
+  recommendations: RecommendationSet["recommendations"];
+}) {
+  const gpuCapable = recommendations.filter(
+    (entry) => entry.result.level === "gpu-capable",
+  );
+  const partialOffload = recommendations.filter(
+    (entry) => entry.result.level === "partial-offload",
+  );
+  const cpuOnly = recommendations.filter(
+    (entry) => entry.result.level === "cpu-only",
+  );
+  const categorized = new Set([...gpuCapable, ...partialOffload, ...cpuOnly]);
+  const other = recommendations.filter((entry) => !categorized.has(entry));
+
+  return (
+    <div className="recommendation-categories">
+      <section
+        className="recommendation-category recommendation-category-gpu"
+        aria-labelledby="gpu-fit-heading"
+      >
+        <div className="recommendation-category-heading">
+          <h3 id="gpu-fit-heading">Fits estimated dedicated VRAM</h3>
+          <span className="result-count">
+            {gpuCapable.length} {gpuCapable.length === 1 ? "model" : "models"}
+          </span>
+        </div>
+        {gpuCapable.length > 0 ? (
+          <div className="recommendation-list">
+            <RecommendationCards entries={gpuCapable} />
+          </div>
+        ) : (
+          <p className="recommendation-category-empty" role="status">
+            No models are estimated to fit within dedicated VRAM under these
+            memory assumptions.
+          </p>
+        )}
+      </section>
+      {partialOffload.length > 0 && (
+        <section
+          className="recommendation-category recommendation-category-partial"
+          aria-labelledby="partial-offload-heading"
+        >
+          <div className="recommendation-category-heading">
+            <h3 id="partial-offload-heading">
+              Estimated partial offload: some layers would use system RAM
+            </h3>
+            <span className="result-count">
+              {partialOffload.length}{" "}
+              {partialOffload.length === 1 ? "model" : "models"}
+            </span>
+          </div>
+          <div className="recommendation-list">
+            <RecommendationCards entries={partialOffload} />
+          </div>
+        </section>
+      )}
+      {cpuOnly.length > 0 && (
+        <section
+          className="recommendation-category recommendation-category-cpu"
+          aria-labelledby="cpu-only-heading"
+        >
+          <div className="recommendation-category-heading">
+            <h3 id="cpu-only-heading">CPU-only options</h3>
+            <span className="result-count">
+              {cpuOnly.length} {cpuOnly.length === 1 ? "model" : "models"}
+            </span>
+          </div>
+          <div className="recommendation-list">
+            <RecommendationCards entries={cpuOnly} />
+          </div>
+        </section>
+      )}
+      {other.length > 0 && (
+        <div className="recommendation-list">
+          <RecommendationCards entries={other} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function RecommendationCards({
+  entries,
+}: {
+  entries: RecommendationSet["recommendations"];
+}) {
+  return entries.map((entry) => (
+    <RecommendationCard
+      key={`${entry.model.id}-${entry.quantization.id}`}
+      entry={entry}
+    />
+  ));
 }
 
 function RecommendationCard({

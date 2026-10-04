@@ -708,6 +708,40 @@ h1 {
   display: grid;
   gap: 1rem;
 }
+.recommendation-category {
+  background: var(--subtle-panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 1rem;
+}
+.recommendation-category + .recommendation-category,
+.recommendation-category + .recommendation-list {
+  margin-top: 1rem;
+}
+.recommendation-category-heading {
+  align-items: flex-start;
+  border-left: 4px solid var(--success);
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  padding-left: 0.75rem;
+}
+.recommendation-category-heading h3 {
+  font-size: 1.05rem;
+  line-height: 1.4;
+  margin: 0;
+}
+.recommendation-category-partial .recommendation-category-heading {
+  border-left-color: var(--warning);
+}
+.recommendation-category-cpu .recommendation-category-heading {
+  border-left-color: var(--cpu-color);
+}
+.recommendation-category-empty {
+  color: var(--muted);
+  margin: 0;
+}
 .recommendation-card {
   background: var(--card);
   border: 1px solid var(--line);
