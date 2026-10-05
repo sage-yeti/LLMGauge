@@ -7,6 +7,7 @@ import {
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { Recommendations, RecommendationResults } from "./recommendations";
+import { Calculator } from "./calculator";
 import { gpuCatalog, modelCatalog } from "@/data/catalog";
 import { recommendModels } from "@/application/recommendations";
 import {
@@ -695,6 +696,145 @@ describe("recommendations interface", () => {
     ).toBeGreaterThan(0);
     expect(screen.getAllByText("Vulkan").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Partial offload").length).toBeGreaterThan(0);
+  });
+
+  it("carries a recommendation's selected model, hardware, and runtime into the calculator", async () => {
+    renderRecommendations();
+    choose("GPU", "nvidia-rtx-4060-8gb");
+    fireEvent.change(screen.getByLabelText("System RAM (GiB)"), {
+      target: { value: "64" },
+    });
+    fireEvent.click(screen.getByText("Advanced settings"));
+    choose("Runtime", "llama.cpp");
+    choose("Backend/device path", "vulkan");
+    choose("Execution preference", "partial-offload");
+    fireEvent.change(screen.getByLabelText("Target context length (tokens)"), {
+      target: { value: "8192" },
+    });
+    submit();
+
+    const card = screen
+      .getByRole("heading", { name: "Llama 3.1 8B Instruct" })
+      .closest("article")!;
+    const href = within(card)
+      .getByRole("link", { name: /Open the calculator/i })
+      .getAttribute("href")!;
+    const search = new URL(href, window.location.origin).searchParams;
+    const model = modelCatalog.find(
+      (candidate) => candidate.id === search.get("model"),
+    )!;
+    const recommendedQuantizationName = card
+      .querySelector(".recommendation-card-heading p")
+      ?.textContent?.split(" · ")
+      .at(-1);
+    expect(search.get("v")).toBe("1");
+    expect(search.get("model")).toBe("meta-llama-3-1-8b-instruct");
+    expect(recommendedQuantizationName).toBeTruthy();
+    expect(
+      model.quantizations.find(
+        (quantization) =>
+          quantization.displayName === recommendedQuantizationName,
+      )?.id,
+    ).toBe(search.get("quantization"));
+    expect(search.get("cpu")).toBe("AMD Ryzen 7 7800X3D");
+    expect(search.get("gpu")).toBe("nvidia-rtx-4060-8gb");
+    expect(search.get("vram")).toBe("8");
+    expect(search.get("ram")).toBe("64");
+    expect(search.get("os")).toBe("windows");
+    expect(search.get("mode")).toBeNull();
+    expect(search.get("runtime")).toBe("llama.cpp");
+    expect(search.get("backend")).toBe("vulkan");
+    expect(search.get("execution")).toBe("partial-offload");
+    expect(search.get("context")).toBe("8192");
+
+    window.history.replaceState({}, "", href);
+    cleanup();
+    render(<Calculator models={modelCatalog} gpus={gpuCatalog} />);
+    expect(
+      await screen.findByRole("button", { name: "Copy calculator link" }),
+    ).toBeTruthy();
+    expect((screen.getByLabelText("Model") as HTMLInputElement).value).toBe(
+      "Llama 3.1 8B Instruct",
+    );
+    expect(
+      (screen.getByLabelText("Quantization") as HTMLSelectElement).value,
+    ).toBe(search.get("quantization"));
+    expect((screen.getByLabelText("CPU") as HTMLInputElement).value).toBe(
+      "AMD Ryzen 7 7800X3D",
+    );
+    expect((screen.getByLabelText("GPU") as HTMLInputElement).value).toBe(
+      "GeForce RTX 4060 8GB",
+    );
+    expect(
+      (screen.getByLabelText("System RAM (GiB)") as HTMLInputElement).value,
+    ).toBe("64");
+    fireEvent.click(screen.getByText("Advanced settings"));
+    expect((screen.getByLabelText("Runtime") as HTMLSelectElement).value).toBe(
+      "llama.cpp",
+    );
+    expect(
+      (screen.getByLabelText("Backend/device path") as HTMLSelectElement).value,
+    ).toBe("vulkan");
+    expect(
+      (screen.getByLabelText("Execution preference") as HTMLSelectElement)
+        .value,
+    ).toBe("partial-offload");
+    expect(
+      (
+        screen.getByLabelText(
+          "Target context length (tokens)",
+        ) as HTMLInputElement
+      ).value,
+    ).toBe("8192");
+  });
+
+  it("carries Apple recommendations into the calculator without PC-only values", async () => {
+    renderRecommendations();
+    choose("Hardware mode", "apple-unified");
+    choose("CPU / Apple chip", "Apple M4");
+    choose("Total unified memory (GiB)", "128");
+    fireEvent.click(
+      screen.getByRole("button", { name: /find suitable models/i }),
+    );
+
+    const card = screen
+      .getByRole("heading", { name: "Llama 3.2 1B Instruct" })
+      .closest("article")!;
+    const href = within(card)
+      .getByRole("link", { name: /Open the calculator/i })
+      .getAttribute("href")!;
+    const search = new URL(href, window.location.origin).searchParams;
+    expect(search.get("model")).toBe("meta-llama-3-2-1b-instruct");
+    expect(search.get("quantization")).toBeTruthy();
+    expect(search.get("cpu")).toBe("Apple M4");
+    expect(search.get("ram")).toBe("128");
+    expect(search.get("os")).toBe("macos");
+    expect(search.get("mode")).toBe("apple-unified");
+    expect(search.has("gpu")).toBe(false);
+    expect(search.has("vram")).toBe(false);
+    expect(search.has("runtime")).toBe(false);
+    expect(search.has("backend")).toBe(false);
+    expect(search.has("execution")).toBe(false);
+    expect(search.has("context")).toBe(false);
+
+    window.history.replaceState({}, "", href);
+    cleanup();
+    render(<Calculator models={modelCatalog} gpus={gpuCatalog} />);
+    expect(
+      await screen.findByRole("button", { name: "Copy calculator link" }),
+    ).toBeTruthy();
+    expect(
+      (screen.getByLabelText("Hardware mode") as HTMLSelectElement).value,
+    ).toBe("apple-unified");
+    expect(
+      (screen.getByLabelText("CPU / Apple chip") as HTMLInputElement).value,
+    ).toBe("Apple M4");
+    expect(
+      (screen.getByLabelText("Total unified memory (GiB)") as HTMLInputElement)
+        .value,
+    ).toBe("128");
+    expect(screen.queryByLabelText("GPU")).toBeNull();
+    expect(screen.queryByLabelText("Dedicated VRAM (GiB)")).toBeNull();
   });
 
   it("opens advanced settings to expose a hidden runtime validation error", () => {

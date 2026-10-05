@@ -119,6 +119,21 @@ describe("calculator share links", () => {
       model.id +
       "&quantization=" +
       quantization.id +
+      "&cpu=CPU&ram=16&os=windows&gpu=none",
+    "v=1&model=" +
+      model.id +
+      "&quantization=" +
+      quantization.id +
+      "&cpu=Apple+M4&ram=24&os=macos&mode=apple-unified&gpu=none&vram=0",
+    "v=1&model=" +
+      model.id +
+      "&quantization=" +
+      quantization.id +
+      "&cpu=CPU&ram=16&os=windows&gpu=none&vram=0&execution=not-a-mode&context=4096",
+    "v=1&model=" +
+      model.id +
+      "&quantization=" +
+      quantization.id +
       "&cpu=CPU&ram=16&os=windows&gpu=none&vram=0&context=1.5",
     "v=1&model=" +
       model.id +

@@ -26,6 +26,7 @@ import {
   buildRecommendationsSharePath,
   parseRecommendationsShareParams,
 } from "@/application/recommendations-share";
+import { buildCalculatorSharePath } from "@/application/calculator-share";
 import { ShareLinkPanel } from "./share-link-panel";
 
 interface RecommendationsProps {
@@ -214,6 +215,20 @@ export function Recommendations({ models, gpus }: RecommendationsProps) {
         </form>
         <RecommendationResults
           recommendationSet={recommendationSet}
+          calculatorPathForEntry={
+            recommendationSet
+              ? (entry) =>
+                  buildCalculatorSharePath(
+                    {
+                      ...values,
+                      modelId: entry.model.id,
+                      quantizationId: entry.quantization.id,
+                    },
+                    models,
+                    gpus,
+                  )
+              : undefined
+          }
           groupDiscreteGpuResults={
             values.memoryMode !== "apple-unified" &&
             gpus.find((gpu) => gpu.id === values.gpuId)?.kind === "discrete"
@@ -227,9 +242,13 @@ export function Recommendations({ models, gpus }: RecommendationsProps) {
 export function RecommendationResults({
   recommendationSet,
   groupDiscreteGpuResults = false,
+  calculatorPathForEntry,
 }: {
   recommendationSet?: RecommendationSet;
   groupDiscreteGpuResults?: boolean;
+  calculatorPathForEntry?: (
+    entry: RecommendationSet["recommendations"][number],
+  ) => string | null;
 }) {
   if (!recommendationSet) {
     return (
@@ -269,10 +288,14 @@ export function RecommendationResults({
       {groupDiscreteGpuResults ? (
         <DiscreteGpuRecommendationGroups
           recommendations={recommendationSet.recommendations}
+          calculatorPathForEntry={calculatorPathForEntry}
         />
       ) : recommendationSet.recommendations.length ? (
         <div className="recommendation-list">
-          <RecommendationCards entries={recommendationSet.recommendations} />
+          <RecommendationCards
+            entries={recommendationSet.recommendations}
+            calculatorPathForEntry={calculatorPathForEntry}
+          />
         </div>
       ) : (
         <div className="no-results">
@@ -290,7 +313,10 @@ export function RecommendationResults({
             {recommendationSet.unsuitable.length === 1 ? "" : "s"}
           </summary>
           <div className="recommendation-list">
-            <RecommendationCards entries={recommendationSet.unsuitable} />
+            <RecommendationCards
+              entries={recommendationSet.unsuitable}
+              calculatorPathForEntry={calculatorPathForEntry}
+            />
           </div>
         </details>
       )}
@@ -306,8 +332,12 @@ export function RecommendationResults({
 
 function DiscreteGpuRecommendationGroups({
   recommendations,
+  calculatorPathForEntry,
 }: {
   recommendations: RecommendationSet["recommendations"];
+  calculatorPathForEntry?: (
+    entry: RecommendationSet["recommendations"][number],
+  ) => string | null;
 }) {
   const gpuCapable = recommendations.filter(
     (entry) => entry.result.level === "gpu-capable",
@@ -335,7 +365,10 @@ function DiscreteGpuRecommendationGroups({
         </div>
         {gpuCapable.length > 0 ? (
           <div className="recommendation-list">
-            <RecommendationCards entries={gpuCapable} />
+            <RecommendationCards
+              entries={gpuCapable}
+              calculatorPathForEntry={calculatorPathForEntry}
+            />
           </div>
         ) : (
           <p className="recommendation-category-empty" role="status">
@@ -359,7 +392,10 @@ function DiscreteGpuRecommendationGroups({
             </span>
           </div>
           <div className="recommendation-list">
-            <RecommendationCards entries={partialOffload} />
+            <RecommendationCards
+              entries={partialOffload}
+              calculatorPathForEntry={calculatorPathForEntry}
+            />
           </div>
         </section>
       )}
@@ -375,13 +411,19 @@ function DiscreteGpuRecommendationGroups({
             </span>
           </div>
           <div className="recommendation-list">
-            <RecommendationCards entries={cpuOnly} />
+            <RecommendationCards
+              entries={cpuOnly}
+              calculatorPathForEntry={calculatorPathForEntry}
+            />
           </div>
         </section>
       )}
       {other.length > 0 && (
         <div className="recommendation-list">
-          <RecommendationCards entries={other} />
+          <RecommendationCards
+            entries={other}
+            calculatorPathForEntry={calculatorPathForEntry}
+          />
         </div>
       )}
     </div>
@@ -390,21 +432,28 @@ function DiscreteGpuRecommendationGroups({
 
 function RecommendationCards({
   entries,
+  calculatorPathForEntry,
 }: {
   entries: RecommendationSet["recommendations"];
+  calculatorPathForEntry?: (
+    entry: RecommendationSet["recommendations"][number],
+  ) => string | null;
 }) {
   return entries.map((entry) => (
     <RecommendationCard
       key={`${entry.model.id}-${entry.quantization.id}`}
       entry={entry}
+      calculatorPath={calculatorPathForEntry?.(entry) ?? null}
     />
   ));
 }
 
 function RecommendationCard({
   entry,
+  calculatorPath,
 }: {
   entry: import("@/application/recommendations").RecommendationEntry;
+  calculatorPath: string | null;
 }) {
   const result = entry.result;
   return (
@@ -457,7 +506,7 @@ function RecommendationCard({
         <Link className="details-link" href={`/models/${entry.model.slug}`}>
           Read about this model <span aria-hidden="true">→</span>
         </Link>
-        <Link className="details-link" href="/">
+        <Link className="details-link" href={calculatorPath ?? "/"}>
           Open the calculator <span aria-hidden="true">→</span>
         </Link>
       </div>
