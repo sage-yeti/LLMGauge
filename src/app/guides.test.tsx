@@ -5,10 +5,67 @@ import GuidePage, {
   generateStaticParams,
 } from "./guides/[slug]/page";
 import sitemap from "./sitemap";
+import GuidesIndexPage from "./guides/page";
 import { guideCatalog } from "@/data/guides";
 
 describe("educational guides", () => {
   afterEach(cleanup);
+
+  it("links the Guides hub to model, GPU, and calculator examples", () => {
+    render(<GuidesIndexPage />);
+    expect(
+      screen
+        .getByRole("link", { name: "Qwen3 4B model profile" })
+        .getAttribute("href"),
+    ).toBe("/models/qwen3-4b");
+    expect(
+      screen
+        .getByRole("link", { name: "GeForce RTX 3060 12GB GPU profile" })
+        .getAttribute("href"),
+    ).toBe("/gpus/rtx-3060-12gb");
+    expect(
+      screen
+        .getByRole("link", { name: "check your hardware in the calculator" })
+        .getAttribute("href"),
+    ).toBe("/#calculator");
+  });
+
+  it("explains partial offload with a practical estimate and relevant links", async () => {
+    const guide = guideCatalog.find(
+      (entry) => entry.slug === "gpu-offloading",
+    )!;
+    render(await GuidePage({ params: Promise.resolve({ slug: guide.slug }) }));
+
+    expect(
+      screen.getByRole("heading", {
+        name: "Can you partially offload a model to GPU?",
+      }),
+    ).toBeTruthy();
+    expect(
+      screen.getByText(
+        /10 GiB planning estimate.*8 GiB VRAM.*32 GiB of system RAM/,
+      ),
+    ).toBeTruthy();
+    expect(
+      screen.getByText(/does not verify runtime support or successful loading/),
+    ).toBeTruthy();
+    expect(screen.getByText(/Last reviewed 2026-10-05/)).toBeTruthy();
+
+    for (const [label, href] of [
+      ["Check your hardware in the calculator", "/#calculator"],
+      ["Qwen3 4B model profile", "/models/qwen3-4b"],
+      [
+        "Mistral 7B Instruct v0.3 model profile",
+        "/models/mistral-7b-instruct-v0-3",
+      ],
+      ["GeForce RTX 3060 12GB", "/gpus/rtx-3060-12gb"],
+      ["Intel UHD Graphics 770", "/gpus/intel-uhd-graphics-770"],
+    ]) {
+      expect(
+        screen.getByRole("link", { name: label }).getAttribute("href"),
+      ).toBe(href);
+    }
+  });
 
   it("renders structured guide content, sources, and calculator links", async () => {
     const guide = guideCatalog[0];

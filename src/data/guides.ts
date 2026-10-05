@@ -139,6 +139,13 @@ export const guideCatalog: readonly GuideDefinition[] = [
     category: "Runtime basics",
     sections: [
       {
+        heading: "Can you partially offload a model to GPU?",
+        paragraphs: [
+          "Yes. When the selected runtime and backend support layer offload, a model can keep some layers or buffers in GPU memory and place the rest in system RAM. LLMGauge's Partial offload category describes a conservative memory fit across those pools; it does not verify runtime support or successful loading.",
+          "For example, if a model configuration has a 10 GiB planning estimate, the GPU has 8 GiB VRAM, and the computer has 32 GiB of system RAM, LLMGauge may classify it as Partial offload if the combined-memory check passes its existing rules. This category does not predict speed or guarantee that a specific file, runtime, backend, or driver will work. Actual memory use also depends on context and other programs, so leave headroom.",
+        ],
+      },
+      {
         heading: "Full GPU execution",
         paragraphs: [
           "Full GPU execution means the runtime can place the model's relevant layers and buffers on a supported GPU within the available memory. This is often the simplest way to use a discrete GPU, but fitting the weights does not guarantee a particular speed.",
@@ -170,9 +177,15 @@ export const guideCatalog: readonly GuideDefinition[] = [
         url: "https://github.com/ggml-org/llama.cpp/blob/master/docs/multi-gpu.md",
       },
     ],
-    lastReviewed,
+    lastReviewed: "2026-10-05",
     relatedLinks: [
+      { label: "Check your hardware in the calculator", href: "/#calculator" },
       { label: "See what your PC can run", href: "/recommendations" },
+      { label: "Qwen3 4B model profile", href: "/models/qwen3-4b" },
+      {
+        label: "Mistral 7B Instruct v0.3 model profile",
+        href: "/models/mistral-7b-instruct-v0-3",
+      },
       { label: "GeForce RTX 3060 12GB", href: "/gpus/rtx-3060-12gb" },
       { label: "Intel UHD Graphics 770", href: "/gpus/intel-uhd-graphics-770" },
     ],

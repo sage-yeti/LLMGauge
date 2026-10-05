@@ -849,6 +849,27 @@ describe("public catalog pages", () => {
     expect(gpusMetadata.openGraph?.url).toBe(absoluteUrl("/gpus"));
   });
 
+  it("matches each model canonical path to its hub link and sitemap URL", async () => {
+    render(<ModelCatalogIndex models={modelCatalog} />);
+    const entries = sitemap();
+
+    for (const model of modelCatalog) {
+      const modelMetadata = await generateModelMetadata({
+        params: Promise.resolve({ slug: model.slug }),
+      });
+      const canonical = modelMetadata.alternates?.canonical;
+      expect(canonical).toBe(`/models/${model.slug}`);
+      expect(
+        screen
+          .getByRole("link", { name: model.displayName })
+          .getAttribute("href"),
+      ).toBe(canonical);
+      expect(
+        entries.some((entry) => entry.url === absoluteUrl(String(canonical))),
+      ).toBe(true);
+    }
+  });
+
   it("rejects unknown slugs through Next not-found behavior", async () => {
     await expect(
       ModelPage({ params: Promise.resolve({ slug: "missing-model" }) }),

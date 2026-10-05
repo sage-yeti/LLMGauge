@@ -70,6 +70,12 @@ export default function HomePage() {
           not performance guarantees.
         </p>
       </section>
+      <p className="workflow-note catalog-examples">
+        Browse examples from the catalog:{" "}
+        <Link href="/models/qwen3-4b">Qwen3 4B</Link> has a model profile, and
+        the <Link href="/gpus/rtx-3060-12gb">GeForce RTX 3060 12GB</Link> page
+        documents a dedicated-GPU profile.
+      </p>
       <div id="calculator">
         <Calculator models={modelCatalog} gpus={gpuCatalog} />
       </div>

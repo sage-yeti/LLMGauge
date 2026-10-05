@@ -49,5 +49,13 @@ describe("homepage orientation", () => {
     expect(
       screen.getByRole("link", { name: "GPUs" }).getAttribute("href"),
     ).toBe("/gpus");
+    expect(
+      screen.getByRole("link", { name: "Qwen3 4B" }).getAttribute("href"),
+    ).toBe("/models/qwen3-4b");
+    expect(
+      screen
+        .getByRole("link", { name: "GeForce RTX 3060 12GB" })
+        .getAttribute("href"),
+    ).toBe("/gpus/rtx-3060-12gb");
   });
 });
