@@ -27,6 +27,16 @@ export default function GuidesIndexPage() {
           behind the calculator.
         </p>
       </header>
+      <p className="workflow-note catalog-examples">
+        Try these ideas with catalog examples: explore the{" "}
+        <Link href="/models/qwen3-4b">Qwen3 4B model profile</Link>, compare it
+        with the{" "}
+        <Link href="/gpus/rtx-3060-12gb">
+          GeForce RTX 3060 12GB GPU profile
+        </Link>
+        , or{" "}
+        <Link href="/#calculator">check your hardware in the calculator</Link>.
+      </p>
       <section
         className="guide-index-list"
         aria-labelledby="guide-list-heading"
