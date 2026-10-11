@@ -188,6 +188,19 @@ describe("domain schemas", () => {
     ).toBe(false);
   });
 
+  it("accepts only real YYYY-MM-DD calendar dates in provenance", () => {
+    const withDate = (lastVerified: string) =>
+      modelDefinitionSchema.safeParse({
+        ...fixtureModel,
+        provenance: { ...fixtureModel.provenance, lastVerified },
+      }).success;
+
+    expect(withDate("2026-02-30")).toBe(false);
+    expect(withDate("2026-2-03")).toBe(false);
+    expect(withDate("2024-02-29")).toBe(true);
+    expect(withDate("2026-10-11")).toBe(true);
+  });
+
   it("accepts optional runtime profiles and rejects invalid values", () => {
     expect(
       runtimeProfileSchema.safeParse({
