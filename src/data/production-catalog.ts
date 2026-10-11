@@ -46,6 +46,49 @@ function ggufQuantizations(): QuantizationDefinition[] {
   ];
 }
 
+function listedGgufQuantizations(
+  repository: string,
+  sourceType:
+    "community-conversion" | "publisher-conversion" = "community-conversion",
+): QuantizationDefinition[] {
+  const sourceUrl = `https://huggingface.co/${repository}`;
+  const provenance: CatalogProvenance = {
+    source: `${repository} GGUF repository`,
+    sourceUrl,
+    sourceType,
+    confidence: "approximate",
+    lastVerified: "2026-10-11",
+    note: "The model-specific repository lists Q4_K_M, Q5_K_M, and Q8_0 GGUF files. The bits-per-weight values remain planning approximations; they are not the listed file sizes or runtime requirements.",
+  };
+
+  return [
+    {
+      id: "q4-k-m",
+      displayName: "Q4_K_M",
+      bitsPerWeight: 4.5,
+      description:
+        "The model-specific source lists this GGUF quantization; its memory value remains an approximate planning input, not a file size or runtime guarantee.",
+      provenance,
+    },
+    {
+      id: "q5-k-m",
+      displayName: "Q5_K_M",
+      bitsPerWeight: 5.5,
+      description:
+        "The model-specific source lists this GGUF quantization; its memory value remains an approximate planning input, not a file size or runtime guarantee.",
+      provenance,
+    },
+    {
+      id: "q8-0",
+      displayName: "Q8_0",
+      bitsPerWeight: 8,
+      description:
+        "The model-specific source lists this GGUF quantization; its memory value remains an approximate planning input, not a file size or runtime guarantee.",
+      provenance,
+    },
+  ];
+}
+
 function modelProvenance(
   source: string,
   sourceUrl: string,
@@ -175,6 +218,9 @@ export const productionModels: readonly ModelDefinition[] = [
       "https://huggingface.co/meta-llama/Llama-3.2-1B-Instruct",
       "Parameter and context metadata come from the publisher's model card. GGUF quantization candidates are tracked separately and may be community-converted.",
     ),
+    quantizations: listedGgufQuantizations(
+      "bartowski/Llama-3.2-1B-Instruct-GGUF",
+    ),
   }),
   model({
     id: "meta-llama-3-2-3b-instruct",
@@ -211,6 +257,9 @@ export const productionModels: readonly ModelDefinition[] = [
       "https://huggingface.co/meta-llama/Llama-3.2-3B-Instruct",
       "Publisher metadata is separated from approximate GGUF memory-planning candidates.",
     ),
+    quantizations: listedGgufQuantizations(
+      "second-state/Llama-3.2-3B-Instruct-GGUF",
+    ),
   }),
   model({
     id: "google-gemma-3-1b-it",
@@ -238,6 +287,7 @@ export const productionModels: readonly ModelDefinition[] = [
       source: "Google Gemma 3 1B model card",
       sourceUrl: "https://huggingface.co/google/gemma-3-1b-it",
     },
+    quantizations: listedGgufQuantizations("second-state/gemma-3-1b-it-GGUF"),
   }),
   model({
     id: "google-gemma-3-4b-it",
@@ -264,6 +314,7 @@ export const productionModels: readonly ModelDefinition[] = [
       source: "ggml-org Gemma 3 4B GGUF repository",
       sourceUrl: "https://huggingface.co/ggml-org/gemma-3-4b-it-GGUF",
     },
+    quantizations: listedGgufQuantizations("second-state/gemma-3-4b-it-GGUF"),
   }),
   model({
     id: "qwen-2-5-3b-instruct",
@@ -284,6 +335,10 @@ export const productionModels: readonly ModelDefinition[] = [
       "Qwen2.5 3B Instruct GGUF model card",
       "https://huggingface.co/Qwen/Qwen2.5-3B-Instruct-GGUF",
       "The page documents the GGUF variant's 32K context and common quantization names; memory estimates remain approximate.",
+    ),
+    quantizations: listedGgufQuantizations(
+      "Qwen/Qwen2.5-3B-Instruct-GGUF",
+      "publisher-conversion",
     ),
   }),
   model({
@@ -306,6 +361,10 @@ export const productionModels: readonly ModelDefinition[] = [
       "https://huggingface.co/Qwen/Qwen2.5-7B-Instruct-GGUF",
       "The GGUF publisher page documents a 32K context configuration; the base model advertises a longer context that is not assumed here.",
     ),
+    quantizations: listedGgufQuantizations(
+      "Qwen/Qwen2.5-7B-Instruct-GGUF",
+      "publisher-conversion",
+    ),
   }),
   model({
     id: "microsoft-phi-3-5-mini-instruct",
@@ -327,6 +386,9 @@ export const productionModels: readonly ModelDefinition[] = [
       "https://huggingface.co/microsoft/Phi-3.5-mini-instruct",
       "The model card documents 128K context support; practical memory requirements depend strongly on the selected context and runtime.",
     ),
+    quantizations: listedGgufQuantizations(
+      "QuantFactory/Phi-3.5-mini-instruct-GGUF",
+    ),
   }),
   model({
     id: "mistralai-mistral-7b-instruct-v0-3",
@@ -347,6 +409,9 @@ export const productionModels: readonly ModelDefinition[] = [
       "Mistral 7B Instruct v0.3 model card",
       "https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.3",
       "The public model card identifies the instruct variant; this catalog uses a conservative 32K maximum for local GGUF planning.",
+    ),
+    quantizations: listedGgufQuantizations(
+      "bartowski/Mistral-7B-Instruct-v0.3-GGUF",
     ),
   }),
   model({
@@ -1307,7 +1372,7 @@ export const productionModels: readonly ModelDefinition[] = [
     slug: "deepseek-v4-flash-0731",
     displayName: "DeepSeek V4 Flash 0731",
     summary:
-      "DeepSeek's 284B MoE release. Memory planning uses total parameters; the publisher-hosted GGUF conversion lists the selected UD-Q4_K_XL pack as five shards totaling 155 GB.",
+      "DeepSeek's 284B total-parameter MoE architecture (13B active per token). Official sources differ by 1B; the selected GGUF is an Unsloth community conversion listed as five shards totaling 155 GB.",
     family: "DeepSeek V4",
     provider: "DeepSeek",
     architecture: "DeepSeek V4 MoE",
@@ -1318,7 +1383,7 @@ export const productionModels: readonly ModelDefinition[] = [
     provenance: modelProvenance(
       "DeepSeek V4 Flash 0731 publisher model card",
       "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash-0731",
-      "DeepSeek identifies the 0731 checkpoint as its official V4 Flash release and licenses the model under MIT. The publisher card lists 284B total parameters. Weight planning uses that total count; no context limit is added here.",
+      "DeepSeek's public V4 release announcement (https://www.deepseek.com/en/news/v4-preview/) identifies Flash as 284B total parameters and 13B active per token; its English model-card PDF (https://fe-static.deepseek.com/chat/transparency/deepseek-V4-model-card-EN.pdf) says 285B total and 13B active. The exact 0731 card says the checkpoint includes a speculative decoding module, and Hugging Face lists 304B for that safetensors checkpoint (https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash-0731). This field represents total parameters for weight planning, not active parameters. Keep 284B as the V4 Flash architecture-level value from the public announcement; the 1B discrepancy and checkpoint-versus-architecture basis remain unresolved. The listed GGUF file size is sourced separately.",
       "2026-09-29",
     ),
     quantizations: [

@@ -50,6 +50,90 @@ describe("catalog registry", () => {
     }
   });
 
+  it("uses model-specific sources for the eight formerly generic GGUF quantization sets", () => {
+    const expectedSources = {
+      "meta-llama-3-2-1b-instruct": [
+        "bartowski/Llama-3.2-1B-Instruct-GGUF",
+        "community-conversion",
+      ],
+      "meta-llama-3-2-3b-instruct": [
+        "second-state/Llama-3.2-3B-Instruct-GGUF",
+        "community-conversion",
+      ],
+      "google-gemma-3-1b-it": [
+        "second-state/gemma-3-1b-it-GGUF",
+        "community-conversion",
+      ],
+      "google-gemma-3-4b-it": [
+        "second-state/gemma-3-4b-it-GGUF",
+        "community-conversion",
+      ],
+      "qwen-2-5-3b-instruct": [
+        "Qwen/Qwen2.5-3B-Instruct-GGUF",
+        "publisher-conversion",
+      ],
+      "qwen-2-5-7b-instruct": [
+        "Qwen/Qwen2.5-7B-Instruct-GGUF",
+        "publisher-conversion",
+      ],
+      "microsoft-phi-3-5-mini-instruct": [
+        "QuantFactory/Phi-3.5-mini-instruct-GGUF",
+        "community-conversion",
+      ],
+      "mistralai-mistral-7b-instruct-v0-3": [
+        "bartowski/Mistral-7B-Instruct-v0.3-GGUF",
+        "community-conversion",
+      ],
+    } as const;
+
+    expect(Object.keys(expectedSources)).toHaveLength(8);
+    for (const [modelId, [repository, sourceType]] of Object.entries(
+      expectedSources,
+    )) {
+      const entry = productionModels.find((model) => model.id === modelId);
+      expect(
+        entry?.quantizations.map((quantization) => quantization.id),
+      ).toEqual(["q4-k-m", "q5-k-m", "q8-0"]);
+      for (const quantization of entry?.quantizations ?? []) {
+        expect(quantization.provenance).toMatchObject({
+          source: `${repository} GGUF repository`,
+          sourceUrl: `https://huggingface.co/${repository}`,
+          sourceType,
+          confidence: "approximate",
+          lastVerified: "2026-10-11",
+          note: expect.stringContaining("planning approximations"),
+        });
+      }
+    }
+
+    const phi4 = productionModels.find(
+      (model) => model.id === "microsoft-phi-4-mini-instruct",
+    );
+    expect(phi4?.quantizations[0].provenance.sourceType).not.toBe(
+      "project-documentation",
+    );
+  });
+
+  it("records DeepSeek V4 parameter semantics and the unresolved official-source discrepancy", () => {
+    const deepSeek = productionModels.find(
+      (model) => model.id === "deepseek-v4-flash-0731",
+    );
+
+    expect(deepSeek?.parameterCountBillions).toBe(284);
+    expect(deepSeek?.provenance.note).toContain(
+      "This field represents total parameters for weight planning, not active parameters",
+    );
+    expect(deepSeek?.provenance.note).toContain("285B total");
+    expect(deepSeek?.provenance.note).toContain(
+      "304B for that safetensors checkpoint",
+    );
+    expect(deepSeek?.summary).toContain("Unsloth community conversion");
+    expect(deepSeek?.summary).not.toContain("publisher-hosted GGUF");
+    expect(deepSeek?.quantizations[0].provenance.sourceType).toBe(
+      "community-conversion",
+    );
+  });
+
   it("records Meta-sourced KV-cache architecture for the three text-only Llama variants", () => {
     const expected = [
       ["meta-llama-3-2-1b-instruct", 16, 8, 64, "2048 ÷ 32 = 64"],
